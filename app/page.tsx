@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+/* eslint-disable @next/next/no-img-element -- Babylist supplies live, variable registry image URLs; native lazy loading keeps the list resilient when an item image changes. */
+
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const BOOKING_URL = "https://www.hilton.com/en/book/reservation/rooms/?ctyhocn=STSRHUP&arrivalDate=2026-09-25&departureDate=2026-09-27&groupCode=905&room1NumAdults=1&cid=OM%2CWW%2CHILTONLINK%2CEN%2CDirectLink";
 const REGISTRY_URL = "https://my.babylist.com/janelle-fernando?session_synced=true";
 const HOTEL_ADDRESS = "5870 Labath Ave, Rohnert Park, CA 94928";
 const HOTEL_APPLE_MAPS = "https://maps.apple.com/?daddr=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&dirflg=d";
 const HOTEL_GOOGLE_MAPS = "https://www.google.com/maps/dir/?api=1&destination=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&travelmode=driving&dir_action=navigate";
-const RSVP_STORAGE_KEY = "moncada-rsvp-murao-v2";
+const RSVP_INVITE_CODE = "murao-family-2-f7c4a9";
 
 const concepts = [
   { id: "glass", name: "Apple Invites / Cinematic Glass", short: "Cinematic Glass" },
@@ -26,31 +28,21 @@ const nav = [
   ["rsvp", "✓", "RSVP"],
 ] as const;
 
-const products = [
-  { category: "Feeding", name: "Philips Avent Natural Bottles · 9 oz, 4-Pack", detail: "Medium flow · BPA-free · anti-colic valve", price: "$29.95", stores: ["Babylist", "Amazon"], image: "https://images.babylist.com/image/upload/f_auto,q_auto:best,t_app_500px_square/snr07p97bdojpcdu84ll.jpg" },
-  { category: "Feeding", name: "Comfy Cubs Muslin Burp Cloths · 10-Pack", detail: "Six-layer cotton · multicolor · 20 × 10 in", price: "from $19.99", stores: ["Babylist", "Amazon", "Target", "+1"], image: "https://images.babylist.com/image/upload/f_auto,q_auto:best,t_app_500px_square/pd5gsqdciqdtgluetsid.jpg" },
-  { category: "Feeding", name: "Momcozy Portable Bottle Warmer", detail: "17 oz · precise temperature control · travel-ready", price: "$79.99", stores: ["Babylist", "Amazon", "Target", "+1"], image: "https://images.babylist.com/image/upload/f_auto,q_auto:best,t_app_500px_square/ho9kbihjwhrkjzhxiu5j.jpg" },
-  { category: "Feeding", name: "Baby Brezza Formula Pro Advanced", detail: "Automatic formula dispenser and bottle maker", price: "$229.99", stores: ["Babylist", "Amazon", "Target", "Nordstrom"], image: "https://images.babylist.com/image/upload/f_auto,q_auto:best,t_app_500px_square/nb7zmntehv1u1pj7btxa.jpg" },
-  { category: "Baby gear", name: "Graco Slim Snacker High Chair", detail: "Ultra-slim fold · multiple recline positions", price: "$99.99", stores: ["Babylist", "Amazon", "Target", "Walmart"], image: "https://images.babylist.com/image/upload/f_auto,q_auto:best,t_app_500px_square/u6v0cqiepgy6px8xsbph.jpg" },
-  { category: "Baby gear", name: "Chicco Bravo Primo Travel System", detail: "Stroller and KeyFit Max infant car seat", price: "from $499.99", stores: ["Babylist", "Amazon", "Target", "Walmart"], image: "https://images.babylist.com/image/upload/f_auto,q_auto:best,t_app_500px_square/x6lscafg7clahey72jhn.jpg" },
-  { category: "Baby gear", name: "Baby Tula Explore Linen Carrier", detail: "Newborn to toddler · front and back carry", price: "$219.00", stores: ["Babylist", "Amazon"], image: "https://images.babylist.com/image/upload/f_auto,q_auto:best,t_app_500px_square/qkukx5ha8tko9g7yxgof.jpg" },
-  { category: "Sleeping", name: "Dr.Care VistaView Baby Monitor", detail: "5-inch display · app control · night vision", price: "$129.99", stores: ["Amazon"], image: "https://images.babylist.com/image/upload/f_auto,q_auto:best,t_app_500px_square/lb902x6m8x7d6tjy8zkz.jpg" },
-  { category: "Diapering", name: "Diaper Genie Platinum Pail", detail: "Hands-free · odor-locking · Easy Roll bags", price: "from $75.00", stores: ["Babylist", "Amazon", "Target", "Walmart"], image: "https://images.babylist.com/image/upload/f_auto,q_auto:best,t_app_500px_square/s5zzlkdn11z4cvw1enxu.jpg" },
-  { category: "Bathing", name: "Frida Baby 4-in-1 Grow-with-Me Bathtub", detail: "Newborn to toddler · removable bath seat", price: "from $39.49", stores: ["Babylist", "Amazon", "Target", "Walmart"], image: "https://images.babylist.com/image/upload/f_auto,q_auto:best,t_app_500px_square/ro9s1prgmbxzoyrz7eb9.jpg" },
-  { category: "Playing", name: "I Love to Sing in Tagalog", detail: "Filipino animal-song book for children", price: "$27.00", stores: ["Amazon"], image: "https://images.babylist.com/image/upload/f_auto,q_auto:best,t_app_500px_square/fcdetrnmsrwii48eikz3.jpg" },
-  { category: "Cash & gift cards", name: "Babylist Shop Gift Card", detail: "Let Janelle and Fernando choose what they need", price: "$25–$1,000", stores: ["Babylist"], image: "https://images.babylist.com/image/upload/f_auto,q_auto:best,t_app_500px_square/nflyuwmcjwk1pygyameq.jpg" },
-] as const;
-
-const categories = [
-  ["All", 32], ["Feeding", 13], ["Sleeping", 1], ["Diapering", 1],
-  ["Baby gear", 4], ["Health & safety", 2], ["Bathing", 3], ["Playing", 6],
-  ["General", 1], ["Cash & gift cards", 1],
-] as const;
-
 type View = (typeof nav)[number][0];
-type Overlay = { type: "room"; label: string } | null;
+type RegistryOffer = { id: number; store: string; url: string; price: number | null; isBabylist: boolean; availability: string | null; availabilityText: string | null };
+type RegistryItem = { id: number; title: string; image: string; category: string; price: string | null; quantity: number; quantityNeeded: number; isFulfilled: boolean; reservedCount: number; offers: RegistryOffer[] };
+type RegistryState = { status: "loading" | "ready" | "error"; items: RegistryItem[]; updatedAt: string | null };
+type Overlay = { type: "gift"; item: RegistryItem } | null;
 type Attendance = "yes" | "no" | null;
-type RSVP = { guests: { name: string; response: Attendance }[]; note: string; submitted: boolean };
+type RSVP = {
+  household: string;
+  guests: { id: number; name: string; response: Attendance }[];
+  note: string;
+  submitted: boolean;
+  updatedAt: string | null;
+  status: "loading" | "ready" | "saving" | "error";
+  error: string | null;
+};
 
 function getCountdown() {
   const target = new Date(2026, 8, 26, 0, 0, 0).getTime();
@@ -74,30 +66,71 @@ export default function Home() {
   const [chosen, setChosen] = useState("");
   const [category, setCategory] = useState("All");
   const [overlay, setOverlay] = useState<Overlay>(null);
+  const [registry, setRegistry] = useState<RegistryState>({ status: "loading", items: [], updatedAt: null });
+  const phoneContentRef = useRef<HTMLDivElement>(null);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-  const [rsvp, setRsvp] = useState<RSVP>({ guests: [{ name: "Elsa", response: null }, { name: "Jonathan", response: null }], note: "", submitted: false });
+  const [rsvp, setRsvp] = useState<RSVP>({ household: "The Murao Family", guests: [], note: "", submitted: false, updatedAt: null, status: "loading", error: null });
   const concept = concepts[style];
 
   useEffect(() => {
-    try {
-      setFavorites(JSON.parse(localStorage.getItem("moncada-favorites") || "[]"));
-      setChosen(localStorage.getItem("moncada-chosen") || "");
-      const savedRSVP = JSON.parse(localStorage.getItem(RSVP_STORAGE_KEY) || "null");
-      if (savedRSVP?.guests?.length === 2) setRsvp(savedRSVP);
-    } catch {}
-    setCountdown(getCountdown());
+    const initialFrame = window.requestAnimationFrame(() => {
+      try {
+        setFavorites(JSON.parse(localStorage.getItem("moncada-favorites") || "[]"));
+        setChosen(localStorage.getItem("moncada-chosen") || "");
+      } catch {
+        // The invitation remains usable when private browsing blocks storage.
+      }
+      setCountdown(getCountdown());
+    });
     const timer = window.setInterval(() => setCountdown(getCountdown()), 1000);
-    return () => window.clearInterval(timer);
+    return () => {
+      window.cancelAnimationFrame(initialFrame);
+      window.clearInterval(timer);
+    };
   }, []);
 
-  const visibleProducts = useMemo(() => category === "All" ? products : products.filter((product) => product.category === category), [category]);
+  useEffect(() => {
+    let active = true;
+    async function loadRSVP() {
+      try {
+        const response = await fetch(`/api/rsvp?code=${encodeURIComponent(RSVP_INVITE_CODE)}`, { cache: "no-store" });
+        const data = await response.json() as Omit<RSVP, "status" | "error"> & { error?: string };
+        if (!response.ok) throw new Error(data.error || "RSVP unavailable");
+        if (active) setRsvp({ ...data, status: "ready", error: null });
+      } catch {
+        if (active) setRsvp((current) => ({ ...current, status: "error", error: "We couldn’t load this invitation. Please try again." }));
+      }
+    }
+    loadRSVP();
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    async function loadRegistry() {
+      try {
+        const response = await fetch("/api/registry");
+        if (!response.ok) throw new Error("Registry refresh failed");
+        const data = await response.json() as { items: RegistryItem[]; updatedAt: string };
+        if (active) setRegistry({ status: "ready", items: data.items, updatedAt: data.updatedAt });
+      } catch {
+        if (active) setRegistry({ status: "error", items: [], updatedAt: null });
+      }
+    }
+    loadRegistry();
+    return () => { active = false; };
+  }, []);
+
+  const visibleProducts = useMemo(() => category === "All" ? registry.items : registry.items.filter((product) => product.category === category), [category, registry.items]);
   const chosenConcept = concepts.find((item) => item.id === chosen);
 
   function savePicker(nextFavorites = favorites, nextChosen = chosen) {
     try {
       localStorage.setItem("moncada-favorites", JSON.stringify(nextFavorites));
       if (nextChosen) localStorage.setItem("moncada-chosen", nextChosen);
-    } catch {}
+    } catch {
+      // The invitation remains usable when private browsing blocks storage.
+    }
   }
 
   function toggleFavorite(id: string) {
@@ -114,12 +147,23 @@ export default function Home() {
   function changeView(next: View) {
     setView(next);
     setOverlay(null);
+    if (phoneContentRef.current) phoneContentRef.current.scrollTop = 0;
   }
 
-  function saveRSVP() {
-    const submitted = { ...rsvp, submitted: true };
-    setRsvp(submitted);
-    try { localStorage.setItem(RSVP_STORAGE_KEY, JSON.stringify(submitted)); } catch {}
+  async function saveRSVP() {
+    setRsvp((current) => ({ ...current, status: "saving", error: null }));
+    try {
+      const response = await fetch(`/api/rsvp?code=${encodeURIComponent(RSVP_INVITE_CODE)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ guests: rsvp.guests.map(({ id, response }) => ({ id, response })), note: rsvp.note }),
+      });
+      const data = await response.json() as Omit<RSVP, "status" | "error"> & { error?: string };
+      if (!response.ok) throw new Error(data.error || "RSVP was not saved");
+      setRsvp({ ...data, status: "ready", error: null });
+    } catch {
+      setRsvp((current) => ({ ...current, status: "error", error: "Your response wasn’t saved. Check your connection and try again." }));
+    }
   }
 
   function downloadCalendar() {
@@ -168,10 +212,10 @@ export default function Home() {
             <div className={`phone theme-${concept.id}`}>
               <div className="island" />
               <div className="status"><span>9:41</span><span>▮▮▮ ᴡɪꜰɪ ▰</span></div>
-              <div className="phone-content">
+              <div className="phone-content" ref={phoneContentRef}>
                 {view === "invite" && <InviteScreen countdown={countdown} onRSVP={() => changeView("rsvp")} onCalendar={downloadCalendar} />}
-                {view === "stay" && <StayScreen onRoom={(label) => setOverlay({ type: "room", label })} />}
-                {view === "registry" && <RegistryScreen category={category} setCategory={setCategory} products={visibleProducts} />}
+                {view === "stay" && <StayScreen />}
+                {view === "registry" && <RegistryScreen category={category} setCategory={setCategory} products={visibleProducts} registry={registry} onGift={(item) => setOverlay({ type: "gift", item })} />}
                 {view === "maps" && <MapsScreen />}
                 {view === "rsvp" && <RSVPScreen rsvp={rsvp} setRsvp={setRsvp} onSave={saveRSVP} />}
               </div>
@@ -200,7 +244,7 @@ function InviteScreen({ countdown, onRSVP, onCalendar }: { countdown: ReturnType
       <p className="recipient-line">Elsa &amp; Jonathan · Party of two</p>
     </div>
     <div className="event-card">
-      <div><span>▣</span><p><strong>Saturday, September 26, 2026</strong><br />Rohnert Park, California</p></div>
+      <div><span>▣</span><p><strong>Saturday, September 26, 2026</strong><br />Event time to be announced</p></div>
       <div><span>⌂</span><p><strong>Hotel Centro Sonoma Wine Country</strong><br />{HOTEL_ADDRESS}</p></div>
     </div>
     <div className="countdown" aria-label="Countdown to September 26, 2026">
@@ -214,59 +258,79 @@ function ScreenHeader({ kicker, title, mark }: { kicker: string; title: string; 
   return <header className="screen-header"><div><p className="phone-eyebrow">{kicker}</p><h2>{title}</h2></div><span>{mark}</span></header>;
 }
 
-function StayScreen({ onRoom }: { onRoom: (label: string) => void }) {
+function StayScreen() {
   return <div className="feature-screen">
-    <ScreenHeader kicker="Baby shower + weekend stay" title="Stay on site" mark="HILTON" />
+    <ScreenHeader kicker="Baby shower + weekend stay" title="Stay on site" mark="$149 avg/night" />
     <div className="info-block venue-block"><strong>Hotel Centro Sonoma Wine Country</strong><p>Tapestry by Hilton<br />{HOTEL_ADDRESS}</p><div><span>One address</span>The baby shower and room block are both here.</div></div>
-    <div className="stay-facts"><div><span>Check in</span><strong>Fri, Sep 25</strong></div><div><span>Check out</span><strong>Sun, Sep 27</strong></div><div><span>Group rate</span><strong>Code 905</strong></div></div>
+    <div className="stay-facts"><div><span>Check in</span><strong>Fri, Sep 25</strong></div><div><span>Check out</span><strong>Sun, Sep 27</strong></div><div><span>Group code</span><strong>905</strong></div></div>
     <div className="room-list">
-      <Room name="1 King Bed" detail="Sleeps 2 · workspace · mini refrigerator" onChoose={onRoom} />
-      <Room name="2 Queen Beds" detail="Sleeps 4 · workspace · mini refrigerator" onChoose={onRoom} />
+      <Room name="1 King Bed" detail="Sleeps 2 · workspace · mini refrigerator" />
+      <Room name="2 Queen Beds" detail="Sleeps 4 · workspace · mini refrigerator" />
     </div>
     <div className="amenities"><span>Free Wi-Fi</span><span>Outdoor pool</span><span>Restaurant</span><span>Fitness center</span><span>Pet friendly</span></div>
+    <div className="booking-panel"><div><span>Official room block</span><strong>September 25–27</strong><p>Hilton will confirm current availability, the final total, and your reservation.</p></div><ExternalLink href={BOOKING_URL} primary>Check rooms &amp; book with Hilton</ExternalLink><small>Hilton currently shows King and two-Queen options at an average group rate of $149 per night. Rates and availability can change until booked.</small></div>
   </div>;
 }
 
-function Room({ name, detail, onChoose }: { name: string; detail: string; onChoose: (label: string) => void }) {
-  return <article className="room"><div className="room-top"><h3>{name}</h3><div className="room-price">$149<span>per night</span></div></div><p>{detail}</p><button className="phone-action primary full" onClick={() => onChoose(name)}>View this room</button></article>;
+function Room({ name, detail }: { name: string; detail: string }) {
+  return <article className="room"><div className="room-top"><h3>{name}</h3><span className="room-status">In block</span></div><p>{detail}</p></article>;
 }
 
-function RegistryScreen({ category, setCategory, products: visible }: { category: string; setCategory: (value: string) => void; products: readonly (typeof products)[number][] }) {
+function RegistryScreen({ category, setCategory, products: visible, registry, onGift }: { category: string; setCategory: (value: string) => void; products: RegistryItem[]; registry: RegistryState; onGift: (item: RegistryItem) => void }) {
+  const categoryCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const item of registry.items) counts.set(item.category, (counts.get(item.category) ?? 0) + 1);
+    return [["All", registry.items.length], ...Array.from(counts.entries()).sort(([a], [b]) => a.localeCompare(b))] as [string, number][];
+  }, [registry.items]);
+
+  if (registry.status === "loading") return <div className="feature-screen">
+    <ScreenHeader kicker="Babylist registry" title="Janelle’s registry" mark="Updating" />
+    <div className="registry-loading" role="status"><div className="loading-ring" /><strong>Loading the current registry</strong><p>Checking gift availability and retailer options.</p></div>
+  </div>;
+
+  if (registry.status === "error") return <div className="feature-screen">
+    <ScreenHeader kicker="Babylist registry" title="Janelle’s registry" mark="Unavailable" />
+    <div className="registry-empty"><strong>We couldn’t refresh the gift list.</strong><p>Nothing stale is being shown. Open Babylist to see the current registry and purchase status.</p><ExternalLink href={REGISTRY_URL} primary>Open the registry on Babylist</ExternalLink></div>
+  </div>;
+
+  const stillNeeded = registry.items.filter((item) => !item.isFulfilled).length;
   return <div className="feature-screen">
-    <ScreenHeader kicker="Babylist registry" title="Janelle’s registry" mark="32 gifts" />
+    <ScreenHeader kicker="Live from Babylist" title="Janelle’s registry" mark={`${stillNeeded} still needed`} />
     <div className="registry-profile">
       <div className="registry-monogram" aria-hidden="true">J <span>+</span> F</div>
       <div><strong>Janelle &amp; Fernando Moncada</strong><p>Rohnert Park, CA · Baby due November 25, 2026</p></div>
     </div>
-    <div className="registry-summary"><span><strong>32</strong> gifts</span><span><strong>10</strong> categories</span><ExternalLink href={REGISTRY_URL}>Open all</ExternalLink></div>
-    <div className="category-row" aria-label="Registry categories">{categories.map(([name, count]) => <button key={name} aria-pressed={category === name} onClick={() => setCategory(name)}>{name} {count}</button>)}</div>
-    <div className="products">{visible.map((product) => <article className="product" key={product.name}>
+    <div className="registry-summary"><span><strong>{registry.items.length}</strong> gifts</span><span><strong>{categoryCounts.length - 1}</strong> categories</span><span className="live-state"><i /> Current</span></div>
+    <p className="registry-trust">Availability and purchase status refresh from Babylist. Choose a gift to see its exact buying options.</p>
+    <div className="category-row" aria-label="Registry categories">{categoryCounts.map(([name, count]) => <button key={name} aria-pressed={category === name} onClick={() => setCategory(name)}>{name} {count}</button>)}</div>
+    <div className="products">{visible.map((product) => <article className={`product${product.isFulfilled ? " reserved" : ""}`} key={product.id}>
         <img className="product-art" src={product.image} alt="" loading="lazy" />
         <div className="product-body">
           <span className="product-category">{product.category}</span>
-          <h3>{product.name}</h3>
-          <p>{product.detail}</p>
-          <div className="product-meta"><strong>{product.price}</strong><div className="store-list" aria-label={`Available from ${product.stores.join(", ")}`}>{product.stores.slice(0, 3).map((store) => <span key={store}>{store}</span>)}</div></div>
-          <ExternalLink href={REGISTRY_URL} primary>View on Babylist</ExternalLink>
+          <h3>{product.title}</h3>
+          <div className="product-meta"><strong>{product.isFulfilled ? "Already purchased" : product.price || "See current price"}</strong>{product.quantity > 1 && !product.isFulfilled && <span className="quantity-needed">{product.quantityNeeded} of {product.quantity} still needed</span>}<div className="store-list" aria-label={`Available from ${product.offers.map((offer) => offer.store).join(", ")}`}>{product.offers.slice(0, 3).map((offer) => <span key={offer.id}>{offer.store}</span>)}</div></div>
+          <button className="phone-action primary" disabled={product.isFulfilled} onClick={() => onGift(product)}>{product.isFulfilled ? "Gift fulfilled" : `View ${product.offers.length || ""} option${product.offers.length === 1 ? "" : "s"}`}</button>
         </div>
       </article>)}</div>
-    {visible.length === 0 && <div className="registry-empty"><strong>More gifts in this category</strong><p>The complete selection and current availability are on Janelle and Fernando’s Babylist.</p><ExternalLink href={REGISTRY_URL} primary>View this category on Babylist</ExternalLink></div>}
-    {category === "All" && <div className="registry-footer"><p>Showing 12 of 32 gifts</p><ExternalLink href={REGISTRY_URL} primary>Continue through the full registry</ExternalLink></div>}
+    {visible.length === 0 && <div className="registry-empty"><strong>No gifts in this category.</strong><p>Choose another category to continue browsing.</p></div>}
+    <div className="registry-footer"><p>Babylist remains the source of truth for checkout, gift reservations, returns, and thank-you tracking.</p><ExternalLink href={REGISTRY_URL}>See the full registry on Babylist</ExternalLink></div>
   </div>;
 }
 
 function MapsScreen() {
   return <div className="feature-screen">
     <ScreenHeader kicker="One destination" title="Shower & stay" mark="⌖" />
-    <div className="map-visual" role="img" aria-label="Hotel Centro Sonoma Wine Country location map"><div className="map-pin venue"><span>H</span></div><b>Rohnert Park</b></div>
+    <div className="map-visual"><iframe title="Map showing Hotel Centro Sonoma Wine Country" loading="lazy" src="https://www.openstreetmap.org/export/embed.html?bbox=-122.7305%2C38.3456%2C-122.7105%2C38.3577&amp;layer=mapnik&amp;marker=38.3516523%2C-122.7205662" /></div>
     <div className="place-list">
-      <article className="place venue-place"><span>Baby shower and room block</span><h3>Hotel Centro Sonoma Wine Country</h3><p>{HOTEL_ADDRESS}</p><div><ExternalLink href={HOTEL_APPLE_MAPS}>Directions in Apple Maps</ExternalLink><ExternalLink href={HOTEL_GOOGLE_MAPS}>Directions in Google Maps</ExternalLink></div></article>
-      <p className="travel-note">Guests staying at Hotel Centro will already be at the shower venue.</p>
+      <article className="place venue-place"><span>Your destination</span><h3>Hotel Centro Sonoma Wine Country</h3><p>{HOTEL_ADDRESS}</p><div><ExternalLink href={HOTEL_APPLE_MAPS}>Open in Apple Maps</ExternalLink><ExternalLink href={HOTEL_GOOGLE_MAPS}>Open in Google Maps</ExternalLink></div></article>
+      <p className="travel-note">The shower and guest rooms are at the same address—no travel between the event and hotel is needed.</p>
     </div>
   </div>;
 }
 
 function RSVPScreen({ rsvp, setRsvp, onSave }: { rsvp: RSVP; setRsvp: React.Dispatch<React.SetStateAction<RSVP>>; onSave: () => void }) {
+  if (rsvp.status === "loading") return <div className="feature-screen rsvp-screen"><ScreenHeader kicker="Your invitation" title="RSVP" mark="Loading" /><div className="registry-loading" role="status"><div className="loading-ring" /><strong>Finding your invitation</strong><p>Loading the people included in your party.</p></div></div>;
+  if (rsvp.status === "error" && rsvp.guests.length === 0) return <div className="feature-screen rsvp-screen"><ScreenHeader kicker="Your invitation" title="RSVP" mark="Unavailable" /><div className="registry-empty"><strong>We couldn’t open this RSVP.</strong><p>{rsvp.error}</p><button className="phone-action primary full" onClick={() => window.location.reload()}>Try again</button></div></div>;
   const complete = rsvp.guests.every((guest) => guest.response !== null);
   const attending = rsvp.guests.filter((guest) => guest.response === "yes").map((guest) => guest.name);
 
@@ -282,8 +346,9 @@ function RSVPScreen({ rsvp, setRsvp, onSave }: { rsvp: RSVP; setRsvp: React.Disp
         <div className="success-mark" aria-hidden="true">✓</div>
         <h3>{responseSummary}</h3>
         {rsvp.note && <blockquote>“{rsvp.note}”</blockquote>}
-        <p>This preview is saved on this device and has not notified the hosts.</p>
-        <button className="phone-action full" onClick={() => setRsvp({ ...rsvp, submitted: false })}>Change response</button>
+        <p>Your response is saved. You can return with this invitation link to make a change.</p>
+        {rsvp.updatedAt && <span className="saved-time">Last updated {new Date(rsvp.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>}
+        <button className="phone-action full" onClick={() => setRsvp({ ...rsvp, submitted: false, error: null })}>Change response</button>
       </div>
     </div>;
   }
@@ -309,15 +374,28 @@ function RSVPScreen({ rsvp, setRsvp, onSave }: { rsvp: RSVP; setRsvp: React.Disp
       <label htmlFor="rsvp-note">Note for Janelle &amp; Fernando <span>Optional</span></label>
       <textarea id="rsvp-note" value={rsvp.note} onChange={(event) => setRsvp({ ...rsvp, note: event.target.value })} placeholder="Share a quick note" maxLength={180} />
     </div>
-    <button className="phone-action primary full save-rsvp" disabled={!complete} onClick={onSave}>Confirm RSVP</button>
+    {rsvp.error && <p className="form-error" role="alert">{rsvp.error}</p>}
+    <button className="phone-action primary full save-rsvp" disabled={!complete || rsvp.status === "saving"} onClick={onSave}>{rsvp.status === "saving" ? "Saving response…" : rsvp.updatedAt ? "Save changes" : "Confirm RSVP"}</button>
     {!complete && <p className="rsvp-guidance">Choose a response for Elsa and Jonathan to continue.</p>}
   </div>;
 }
 
 function HandoffSheet({ overlay, onClose }: { overlay: Exclude<Overlay, null>; onClose: () => void }) {
-  return <div className="handoff-overlay" role="dialog" aria-modal="true" aria-labelledby="handoff-title"><div className="handoff-sheet"><div className="sheet-handle" />
-    <h3 id="handoff-title">{overlay.label}</h3>
-    <p>The September 25–27 stay is at the baby shower venue. Group code 905 is ready; Hilton will open to collect guest details and confirm the reservation.</p>
-    <div><button className="phone-action" onClick={onClose}>Back to rooms</button><ExternalLink href={BOOKING_URL} primary>Continue with Hilton</ExternalLink></div>
-  </div></div>;
+  if (overlay.type === "gift") {
+    const { item } = overlay;
+    const externalOnly = item.offers.length > 0 && item.offers.every((offer) => !offer.isBabylist);
+    return <div className="handoff-overlay" role="dialog" aria-modal="true" aria-labelledby="handoff-title"><div className="handoff-sheet gift-sheet"><div className="sheet-handle" />
+      <button className="sheet-close" aria-label="Close gift details" onClick={onClose}>×</button>
+      <div className="gift-sheet-head"><img src={item.image} alt="" /><div><span>{item.category}</span><h3 id="handoff-title">{item.title}</h3><strong>{item.price || "See current price"}</strong></div></div>
+      <div className="offer-list">
+        {item.offers.map((offer) => <ExternalLink key={offer.id} href={offer.url} primary={offer.isBabylist}>
+          <span>{offer.isBabylist ? "Buy through Babylist" : `View at ${offer.store}`}</span><b>{offer.price != null ? `$${offer.price.toFixed(2)}` : "Current price"} ↗</b>
+        </ExternalLink>)}
+      </div>
+      {item.offers.length === 0 && <p>No item-level purchase option is available right now. Babylist may have changed this gift.</p>}
+      {externalOnly && <div className="purchase-note"><strong>Buying from another store?</strong><p>Babylist does not automatically know when an outside retailer purchase is complete. After checkout, return to the registry and mark this gift as purchased so another guest doesn’t buy it too.</p><ExternalLink href={REGISTRY_URL}>Return to Babylist after purchase</ExternalLink></div>}
+      <button className="phone-action full" onClick={onClose}>Keep browsing gifts</button>
+    </div></div>;
+  }
+  return null;
 }

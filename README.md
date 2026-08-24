@@ -1,100 +1,48 @@
-# vinext-starter
+# Baby Moncada Invitation
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+A mobile-first digital invitation for Janelle and Fernando Moncada’s baby shower on September 26, 2026. The current public entry point includes six visual directions so the family can choose a design; every direction uses the same functional guest experience inside the phone.
 
-## Prerequisites
+## Guest experience
 
-- Node.js `>=22.13.0`
+- personalized invitation for the Murao family, party of two: Elsa and Jonathan
+- live countdown to September 26
+- named, per-person RSVP with durable Cloudflare D1 storage and editable confirmations
+- Hotel Centro room-block summary with dates, verified room types, group code, average rate, and an official Hilton booking handoff
+- current Babylist registry items, images, categories, quantities, fulfillment state, and exact item-level retailer offers
+- an embedded destination map plus Apple Maps and Google Maps directions
+- an all-day calendar file until the hosts confirm the event time
 
-## Quick Start
+## Source-of-truth boundaries
+
+The invitation does not pretend to complete transactions it cannot own:
+
+- Babylist remains responsible for checkout, outside-retailer purchase marking, returns, and thank-you tracking. The app reads the public registry feed and opens each gift’s exact offer URL.
+- Hilton remains responsible for current availability, guest details, payment, and reservation confirmation. The app uses the official group deep link for September 25–27 with group code 905.
+- This app owns household invitations and RSVP responses in D1.
+
+If the Babylist feed cannot be refreshed, the app shows an explicit unavailable state instead of stale gift cards. If an RSVP save fails, the guest remains on the form with a retryable error instead of seeing a false confirmation.
+
+## Run and verify
+
+Requires Node.js 22.13 or newer.
 
 ```bash
 npm install
+npm run db:generate
+npm test
 npm run dev
-npm run build
 ```
 
-This starter does not use `wrangler.jsonc`.
+`npm test` performs a production build and verifies the event facts, item-level registry integration, durable RSVP contract, and map handoffs. `npm run lint` performs the static code audit.
 
-## Included Shape
+## Data model
 
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
+- `households`: one private invitation token hash and display name per invited household
+- `guests`: the named people included in that household’s invitation
+- `rsvp_responses`: the household’s current per-guest attendance choices, note, and timestamps
 
-## Workspace Auth Headers
+The public selector currently seeds the Murao sample invitation. Additional guest households require the final guest roster and unique invitation links before general distribution.
 
-Signed-in visitors receive both `oai-authenticated-user-id` and `oai-authenticated-user-email`. Private Sites require every visitor to sign in; public Sites may also have anonymous visitors, for whom neither header is present.
+## Confirm before final guest launch
 
-The user ID is stable for the same user on the same Site and different across Sites. Email and name are intended for display or contact purposes.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const userId = requestHeaders.get("oai-authenticated-user-id");
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
-```
-
-## Optional Dispatch-Owned ChatGPT Sign-In
-
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
-
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
-
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
-
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
-
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
-
-## Useful Commands
-
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
-
-## Learn More
-
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+The hosts have not yet supplied an event start/end time or RSVP deadline. The interface says “Event time to be announced,” the countdown ends at the start of September 26, and the calendar download is intentionally all-day. Do not invent those values; update them after the hosts confirm them.
