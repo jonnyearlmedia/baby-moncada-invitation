@@ -27,7 +27,7 @@ const allHouseholdSlugs = [
 async function openRsvpForm(page: import("@playwright/test").Page, guestCount: number) {
   await page.getByRole("button", { name: "RSVP", exact: true }).first().click();
   const change = page.getByRole("button", { name: "Change response" });
-  const invited = page.getByText(`${guestCount} invited`, { exact: true });
+  const invited = page.getByText(new RegExp(`Party of ${guestCount}$`)).first();
   await Promise.any([
     change.waitFor({ state: "visible", timeout: 5_000 }),
     invited.waitFor({ state: "visible", timeout: 5_000 }),
@@ -39,7 +39,7 @@ async function openRsvpForm(page: import("@playwright/test").Page, guestCount: n
 for (const [slug, label, guests] of pilots) {
   test(`${slug} renders the correct household and RSVP roster`, async ({ page }) => {
     await page.goto(`/invite/${slug}`);
-    await expect(page.getByText(`For ${label}`, { exact: true })).toBeVisible();
+    await expect(page.locator(".ticket-header")).toContainText(`For ${label}`);
     await openRsvpForm(page, guests.length);
     for (const guest of guests) await expect(page.getByText(guest, { exact: true }).first()).toBeVisible();
   });
@@ -50,12 +50,13 @@ test("every household shortlink resolves to a populated invitation", async ({ pa
   for (const slug of allHouseholdSlugs) {
     await page.goto(`/invite/${slug}`);
     await expect(page.locator(".invite-screen")).toBeVisible();
-    await expect(page.getByText("You're invited to", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Baby Moncada" })).toBeVisible();
     await expect(page.locator(".recipient-line")).not.toContainText("Party of —");
   }
 });
 
 test("a real RSVP survives reload and can be changed", async ({ page }) => {
+  test.skip(process.env.RUN_LIVE_RSVP !== "1", "Only run the controlled live RSVP mutation during the production release gate.");
   await page.goto("/invite/ponticelle");
   await openRsvpForm(page, 1);
   await page.getByRole("button", { name: "Attending" }).click();
@@ -78,8 +79,8 @@ test("hotel, maps, and registry handoffs use their exact destinations", async ({
   await page.getByRole("button", { name: "Hotel" }).click();
   await expect(page.getByRole("link", { name: /Check rooms/ })).toHaveAttribute("href", /hilton\.com.*arrivalDate=2026-09-25.*groupCode=905/);
   await page.getByRole("button", { name: "Travel" }).click();
-  await expect(page.getByRole("link", { name: "Open in Apple Maps" })).toHaveAttribute("href", /maps\.apple\.com.*5870/);
-  await expect(page.getByRole("link", { name: "Open in Google Maps" })).toHaveAttribute("href", /google\.com\/maps\/dir.*5870/);
-  await page.getByRole("button", { name: "Gifts" }).click();
+  await expect(page.getByRole("link", { name: "Apple Maps" })).toHaveAttribute("href", /maps\.apple\.com.*5870/);
+  await expect(page.getByRole("link", { name: "Google Maps" })).toHaveAttribute("href", /google\.com\/maps\/dir.*5870/);
+  await page.getByRole("button", { name: "Registry" }).click();
   await expect(page.getByRole("link", { name: "Open the registry on Babylist" })).toHaveAttribute("href", /^https:\/\/my\.babylist\.com\/janelle-fernando/);
 });

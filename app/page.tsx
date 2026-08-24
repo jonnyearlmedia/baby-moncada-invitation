@@ -14,7 +14,7 @@ const HOTEL_GOOGLE_MAPS = "https://www.google.com/maps/dir/?api=1&destination=58
 const nav = [
   ["invite", "home", "Invite"],
   ["stay", "hotel", "Hotel"],
-  ["registry", "gift", "Gifts"],
+  ["registry", "gift", "Registry"],
   ["maps", "pin", "Travel"],
   ["rsvp", "check", "RSVP"],
 ] as const;
@@ -57,9 +57,9 @@ function ExternalLink({ href, children, primary = false }: { href: string; child
 
 function Icon({ name }: { name: IconName }) {
   return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    {name === "home" && <><path d="M3 10.5 12 3l9 7.5" /><path d="M5.5 9.5V21h13V9.5M9.5 21v-6h5v6" /></>}
+    {name === "home" && <path d="M3 11 20 4 13 21 11 14 3 11Z" />}
     {name === "hotel" && <><path d="M4 3h16v18H4z" /><path d="M8 7h2M14 7h2M8 11h2M14 11h2M9 21v-5h6v5" /></>}
-    {name === "gift" && <><path d="M4 10h16v11H4zM2.5 6h19v4h-19zM12 6v15" /><path d="M12 6H8.7a2.2 2.2 0 1 1 2.2-2.2L12 6Zm0 0h3.3a2.2 2.2 0 1 0-2.2-2.2L12 6Z" /></>}
+    {name === "gift" && <><path d="M4 9h16v12H4z" /><path d="M4 9V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3M12 4v17M4 14h16" /></>}
     {name === "pin" && <><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="2.5" /></>}
     {name === "check" && <><circle cx="12" cy="12" r="9" /><path d="m8 12 2.6 2.6L16.5 9" /></>}
     {name === "calendar" && <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M7 3v4M17 3v4M3 10h18" /></>}
@@ -158,7 +158,7 @@ export default function Home({ inviteSlug = "murao" }: { inviteSlug?: string }) 
 
   return (
     <main className="app-page">
-      <section className="phone theme-paper-blue" aria-label="Baby Moncada invitation">
+      <section className="phone boarding-pass" aria-label="Baby Moncada invitation">
         <div className="phone-content" ref={phoneContentRef}>
           {view === "invite" && <InviteScreen countdown={countdown} rsvp={rsvp} onRSVP={() => changeView("rsvp")} onCalendar={downloadCalendar} />}
           {view === "stay" && <StayScreen bookingUrl={rsvp.event?.hotelBookingUrl ?? BOOKING_URL} />}
@@ -167,7 +167,7 @@ export default function Home({ inviteSlug = "murao" }: { inviteSlug?: string }) 
           {view === "rsvp" && <RSVPScreen rsvp={rsvp} setRsvp={setRsvp} onSave={saveRSVP} />}
         </div>
         <nav className="phone-nav" aria-label="Invitation features">
-          {nav.map((item) => <button key={item[0]} className={view === item[0] ? "selected" : ""} aria-current={view === item[0] ? "page" : undefined} onClick={() => changeView(item[0])}><Icon name={item[1]} />{item[2]}</button>)}
+          {nav.map((item) => <button key={item[0]} className={view === item[0] ? "selected" : ""} aria-current={view === item[0] ? "page" : undefined} onClick={() => changeView(item[0])}><span className="nav-icon"><Icon name={item[1]} />{item[0] === "rsvp" && rsvp.submitted && <i aria-label="RSVP submitted" />}</span>{item[2]}</button>)}
         </nav>
         {overlay && <HandoffSheet overlay={overlay} onClose={() => setOverlay(null)} />}
       </section>
@@ -176,49 +176,72 @@ export default function Home({ inviteSlug = "murao" }: { inviteSlug?: string }) 
 }
 
 function InviteScreen({ countdown, rsvp, onRSVP, onCalendar }: { countdown: ReturnType<typeof getCountdown>; rsvp: RSVP; onRSVP: () => void; onCalendar: () => void }) {
-  return <div className="invite-screen">
-    <div className="invite-art" aria-hidden="true"><i /><i /><i /><i /></div>
-    <div className="invite-copy">
-      <div className="paper-monogram" aria-hidden="true"><span>J</span><i>✦</i><span>F</span></div>
-      <p className="phone-eyebrow">For {rsvp.invitationLabel || "your household"}</p>
-      <h2>You&apos;re invited to</h2>
-      <div className="baby-title">Baby<br />Moncada</div>
-      <p className="honoring">A celebration honoring</p>
-      <p className="names">Janelle &amp; Fernando</p>
+  const [shareLabel, setShareLabel] = useState("Share invite");
+  async function shareInvite() {
+    try {
+      if (navigator.share) await navigator.share({ title: "Baby Moncada", text: "You’re invited to celebrate Baby Moncada", url: window.location.href });
+      else await navigator.clipboard.writeText(window.location.href);
+      setShareLabel("Link copied ✓");
+    } catch { return; }
+    window.setTimeout(() => setShareLabel("Share invite"), 2000);
+  }
+  const passengerNames = rsvp.guests.map((guest) => guest.name).join(", ") || "Your invited party";
+  return <div className="invite-screen ticket-screen">
+    <header className="ticket-header">
+      <p>Boarding Pass<br />For {rsvp.invitationLabel || "your household"}</p>
+      <div className="paper-monogram" aria-hidden="true">J✦F</div>
+    </header>
+    <section className="ticket-hero">
+      <p className="script-line">the little one is coming ✈</p>
+      <h1>Baby<br />Moncada</h1>
+      <p className="host-line">A celebration honoring Janelle &amp; Fernando</p>
       <span className="boy-pill">A little boy is on the way</span>
-      <p className="recipient-line">{rsvp.guests.map((guest) => guest.name).join(" & ")} · Party of {rsvp.guests.length || "—"}</p>
-    </div>
-    <div className="event-card">
-      <div><span><Icon name="calendar" /></span><p><strong>Saturday, September 26, 2026</strong><br />4:00 PM</p></div>
-      <div><span><Icon name="pin" /></span><p><strong>Hotel Centro Sonoma Wine Country</strong><br />{HOTEL_ADDRESS}</p></div>
-    </div>
-    <div className="countdown" aria-label="Countdown to September 26, 2026">
-      {Object.entries(countdown).map(([label, value]) => <div key={label}><strong>{label === "days" ? value : String(value).padStart(2, "0")}</strong><span>{label}</span></div>)}
-    </div>
+      <p className="recipient-line">{passengerNames} · Party of {rsvp.guests.length || "—"}</p>
+    </section>
+    <div className="flight-wrap"><svg className="flight-path" viewBox="0 0 300 56" aria-hidden="true"><path d="M6 44 C 80 10, 160 60, 230 18" /><text x="222" y="22">✈</text></svg></div>
+    <TicketDivider />
+    <section className="ticket-details">
+      <TicketFact label="Departure" value="Sat, Sep 26 2026" />
+      <TicketFact label="Boarding time" value="4:00 PM" />
+      <TicketFact full label="Destination" value="Hotel Centro Sonoma Wine Country" detail={HOTEL_ADDRESS} />
+      <TicketFact full label="Passenger" value={passengerNames} />
+    </section>
+    <TicketDivider />
+    <section className="countdown-wrap"><p className="phone-eyebrow">Time to boarding</p><div className="countdown" aria-label="Countdown to September 26, 2026">
+      {Object.entries(countdown).map(([label, value]) => <div key={label}><strong>{label === "days" ? value : String(value).padStart(2, "0")}</strong><span>{label === "hours" ? "Hrs" : label === "minutes" ? "Min" : label === "seconds" ? "Sec" : "Days"}</span></div>)}
+    </div></section>
+    <div className="ticket-barcode" aria-hidden="true" />
+    <div className="baby-on-board"><strong>✈ Baby On Board</strong><span>Moncada Airways</span></div>
+    <div className="diaper-raffle"><strong>✈ Diaper Raffle</strong><span>Bring a pack, any size, for a chance to win a prize</span></div>
     <div className="home-actions"><button className="phone-action primary" onClick={onRSVP}>RSVP</button><button className="phone-action" onClick={onCalendar}>Add to calendar</button></div>
+    <div className="save-invite"><strong>📌 Save this invite</strong><p>You&apos;ll want this again for the registry and directions. On your phone: Share → Add to Home Screen. On desktop: Ctrl/Cmd + D to bookmark.</p><button onClick={shareInvite}>{shareLabel}</button></div>
   </div>;
 }
 
-function ScreenHeader({ kicker, title, mark }: { kicker: string; title: string; mark: string }) {
-  return <header className="screen-header"><div><p className="phone-eyebrow">{kicker}</p><h2>{title}</h2></div><span>{mark}</span></header>;
+function TicketDivider() { return <div className="ticket-divider" aria-hidden="true"><i /><i /></div>; }
+function TicketFact({ label, value, detail, full = false }: { label: string; value: string; detail?: string; full?: boolean }) { return <div className={full ? "ticket-fact-full" : undefined}><span>{label}</span><strong>{value}</strong>{detail && <p>{detail}</p>}</div>; }
+
+function ScreenHeader({ kicker, title, mark, subtitle }: { kicker: string; title: string; mark: string; subtitle?: string }) {
+  return <header className="screen-header"><div><p className="phone-eyebrow">{kicker}</p><h2>{title}</h2>{subtitle && <p className="screen-subtitle">{subtitle}</p>}</div><span>{mark}</span></header>;
 }
 
 function StayScreen({ bookingUrl }: { bookingUrl: string }) {
   return <div className="feature-screen">
-    <ScreenHeader kicker="Baby shower + weekend stay" title="Stay on site" mark="$149 avg/night" />
-    <div className="info-block venue-block"><strong>Hotel Centro Sonoma Wine Country</strong><p>Tapestry by Hilton<br />{HOTEL_ADDRESS}</p><div><span>One address</span>The baby shower and room block are both here.</div></div>
+    <ScreenHeader kicker="Boarding Pass · Hotel Stay" title="Stay on site" subtitle="Hotel Centro Sonoma Wine Country · Tapestry by Hilton" mark="" />
+    <div className="info-block venue-block"><strong>Hotel Centro Sonoma Wine Country</strong><p>Tapestry by Hilton<br />{HOTEL_ADDRESS}</p></div>
     <div className="stay-facts"><div><span>Check in</span><strong>Fri, Sep 25</strong></div><div><span>Check out</span><strong>Sun, Sep 27</strong></div><div><span>Group code</span><strong>905</strong></div></div>
     <div className="room-list">
       <Room name="1 King Bed" detail="Sleeps 2 · workspace · mini refrigerator" />
       <Room name="2 Queen Beds" detail="Sleeps 4 · workspace · mini refrigerator" />
     </div>
     <div className="amenities"><span>Free Wi-Fi</span><span>Outdoor pool</span><span>Restaurant</span><span>Fitness center</span><span>Pet friendly</span></div>
-    <div className="booking-panel"><div><span>Official room block</span><strong>September 25–27</strong><p>Book by September 11, 2026. Hilton will confirm current availability, the final total, and your reservation.</p></div><ExternalLink href={bookingUrl} primary>Check rooms &amp; book with Hilton</ExternalLink><small>Hilton currently shows King and two-Queen options at an average group rate of $149 per night. Rates and availability can change until booked.</small></div>
+    <div className="booking-deadline"><strong>Book by Sep 11</strong><span>The group rate closes September 11, 2026 — reserve before then.</span></div>
+    <div className="booking-panel"><div><span>Official room block</span><strong>September 25–27</strong><p>Hilton confirms current availability, the final total, and your reservation. Average group rate $149/night.</p></div><ExternalLink href={bookingUrl} primary>Check rooms &amp; book with Hilton</ExternalLink></div>
   </div>;
 }
 
 function Room({ name, detail }: { name: string; detail: string }) {
-  return <article className="room"><div className="room-top"><h3>{name}</h3><span className="room-status">In block</span></div><p>{detail}</p></article>;
+  return <article className="room"><div className="room-top"><h3>{name}</h3><span className="room-status">Special Rate</span></div><p>{detail}</p></article>;
 }
 
 function RegistryScreen({ category, setCategory, products: visible, registry, onGift }: { category: string; setCategory: (value: string) => void; products: RegistryItem[]; registry: RegistryState; onGift: (item: RegistryItem) => void }) {
@@ -269,12 +292,16 @@ function RegistryScreen({ category, setCategory, products: visible, registry, on
 }
 
 function MapsScreen() {
+  const [copyLabel, setCopyLabel] = useState("Copy address");
+  async function copyAddress() { await navigator.clipboard.writeText(HOTEL_ADDRESS); setCopyLabel("Copied ✓"); window.setTimeout(() => setCopyLabel("Copy address"), 2000); }
   return <div className="feature-screen">
-    <ScreenHeader kicker="One destination" title="Shower & stay" mark="⌖" />
-    <div className="map-visual"><iframe title="Map showing Hotel Centro Sonoma Wine Country" loading="lazy" src="https://www.openstreetmap.org/export/embed.html?bbox=-122.7305%2C38.3456%2C-122.7105%2C38.3577&amp;layer=mapnik&amp;marker=38.3516523%2C-122.7205662" /></div>
+    <ScreenHeader kicker="Boarding Pass · Travel" title="Shower & stay" subtitle="One destination — no travel between the shower and hotel." mark="" />
+    <div className="map-visual"><svg viewBox="0 0 600 360" role="img" aria-label="Map showing Hotel Centro Sonoma Wine Country"><rect width="600" height="360" fill="oklch(93% 0.02 232)" /><path d="M0 260 C 140 220, 220 300, 340 250 S 520 190, 600 230" stroke="oklch(85% 0.02 232)" strokeWidth="18" fill="none" /><path d="M0 120 C 160 160, 260 90, 420 130 S 560 110, 600 90" stroke="oklch(88% 0.015 232)" strokeWidth="10" fill="none" /><path d="M260 0 C 300 100, 240 220, 300 360" stroke="oklch(88% 0.015 232)" strokeWidth="8" fill="none" /><circle cx="300" cy="185" r="9" fill="oklch(58% 0.1 232)" /><path d="M300 150 C 320 150, 335 165, 335 185 C 335 210, 300 235, 300 235 C 300 235, 265 210, 265 185 C 265 165, 280 150, 300 150 Z" fill="oklch(58% 0.1 232)" /><text x="300" y="270" textAnchor="middle" fill="oklch(48% 0.035 250)">5870 Labath Ave, Rohnert Park, CA</text></svg></div>
     <div className="place-list">
-      <article className="place venue-place"><span>Your destination</span><h3>Hotel Centro Sonoma Wine Country</h3><p>{HOTEL_ADDRESS}</p><div><ExternalLink href={HOTEL_APPLE_MAPS}>Open in Apple Maps</ExternalLink><ExternalLink href={HOTEL_GOOGLE_MAPS}>Open in Google Maps</ExternalLink></div></article>
-      <p className="travel-note">The shower and guest rooms are at the same address—no travel between the event and hotel is needed.</p>
+      <article className="place venue-place"><span>Your destination</span><h3>Hotel Centro Sonoma Wine Country</h3><p>{HOTEL_ADDRESS}</p><div><ExternalLink href={HOTEL_APPLE_MAPS}>Apple Maps</ExternalLink><ExternalLink href={HOTEL_GOOGLE_MAPS}>Google Maps</ExternalLink><ExternalLink href="https://waze.com/ul?q=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&navigate=yes">Waze</ExternalLink><button className="phone-action" onClick={copyAddress}>{copyLabel}</button></div></article>
+      <div className="arrival-card"><span>On arrival</span><ol><li>Park in the hotel&apos;s self-parking lot. Confirm the parking fee with the front desk.</li><li>Enter through the main hotel lobby.</li><li>Ask the front desk for the Baby Moncada shower or follow the event signage.</li></ol></div>
+      <div className="wear-note"><strong>What to wear</strong><p>Sonoma in late September is typically warm and dry during the day, then cooler in the evening. Dress for indoor and outdoor mingling.</p></div>
+      <p className="travel-note">The shower and guest rooms share the same address.</p>
     </div>
   </div>;
 }
@@ -306,13 +333,12 @@ function RSVPScreen({ rsvp, setRsvp, onSave }: { rsvp: RSVP; setRsvp: React.Disp
   }
 
   return <div className="feature-screen">
-    <ScreenHeader kicker="Your invitation" title="RSVP" mark={`${rsvp.guests.length} invited`} />
+    <ScreenHeader kicker="Boarding Pass · RSVP" title="Who’s on board?" subtitle="Respond for each passenger named on this invitation." mark="" />
     <div className="party-summary">
       <span>Invitation for</span>
       <strong>{rsvp.household}</strong>
       <p>{rsvp.guests.map((guest) => guest.name).join(", ")} · Party of {rsvp.guests.length}</p>
     </div>
-    <div className="rsvp-intro"><h3>Who can make it?</h3><p>Please respond for each person named on this invitation.</p></div>
     <div className="invitee-list">
       {rsvp.guests.map((guest, index) => <article className="invitee" key={guest.id}>
         <div className="invitee-heading"><span className="guest-avatar" aria-hidden="true">{guest.name[0]}</span><div><strong>{guest.name}</strong><p>{guest.response === "yes" ? "Attending" : guest.response === "no" ? "Can’t attend" : "Response needed"}</p></div></div>

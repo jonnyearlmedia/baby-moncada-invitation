@@ -7,7 +7,7 @@ const read = (path) => readFile(new URL(path, root), "utf8");
 
 test("confirmed event facts are consistent in UI and database seed", async () => {
   const [page, migration] = await Promise.all([read("app/page.tsx"), read("supabase/migrations/20260824073636_production_rsvp_pilot.sql")]);
-  assert.match(page, /Saturday, September 26, 2026/);
+  assert.match(page, /Sat, Sep 26 2026/);
   assert.match(page, /4:00 PM/);
   assert.match(page, /DTSTART;TZID=America\/Los_Angeles:20260926T160000/);
   assert.match(migration, /2026-09-26 16:00:00-07/);
