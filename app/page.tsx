@@ -10,6 +10,7 @@ const REGISTRY_URL = "https://my.babylist.com/janelle-fernando";
 const HOTEL_ADDRESS = "5870 Labath Ave, Rohnert Park, CA 94928";
 const HOTEL_APPLE_MAPS = "https://maps.apple.com/?daddr=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&dirflg=d";
 const HOTEL_GOOGLE_MAPS = "https://www.google.com/maps/dir/?api=1&destination=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&travelmode=driving&dir_action=navigate";
+const HOTEL_MAP_EMBED = "https://www.openstreetmap.org/export/embed.html?bbox=-122.7305%2C38.3456%2C-122.7105%2C38.3577&layer=mapnik&marker=38.3516523%2C-122.7205662";
 
 const nav = [
   ["invite", "home", "Invite"],
@@ -246,7 +247,7 @@ function StayScreen({ bookingUrl }: { bookingUrl: string }) {
     </div>
     <div className="amenities"><span>Free Wi-Fi</span><span>Outdoor pool</span><span>Restaurant</span><span>Fitness center</span><span>Pet friendly</span></div>
     <div className="booking-deadline"><strong>Book by Sep 11</strong><span>The group rate closes September 11, 2026 — reserve before then.</span></div>
-    <div className="booking-panel"><div><span>Official room block</span><strong>September 25–27</strong><p>Hilton confirms current availability, the final total, and your reservation. Average group rate $149/night.</p></div><ExternalLink href={bookingUrl} primary>Check rooms &amp; book with Hilton</ExternalLink></div>
+    <div className="booking-panel"><div><span>Official room block</span><strong>$149/night special group rate</strong><p>September 25–27. Hilton confirms live room availability, taxes and fees, and the final total before booking.</p></div><ExternalLink href={bookingUrl} primary>Check rooms &amp; book with Hilton</ExternalLink></div>
   </div>;
 }
 
@@ -306,11 +307,11 @@ function MapsScreen() {
   async function copyAddress() { await navigator.clipboard.writeText(HOTEL_ADDRESS); setCopyLabel("Copied ✓"); window.setTimeout(() => setCopyLabel("Copy address"), 2000); }
   return <div className="feature-screen">
     <ScreenHeader kicker="Boarding Pass · Travel" title="Shower & stay" subtitle="One destination — no travel between the shower and hotel." mark="" />
-    <div className="map-visual"><svg viewBox="0 0 600 360" role="img" aria-label="Map showing Hotel Centro Sonoma Wine Country"><rect width="600" height="360" fill="oklch(93% 0.02 232)" /><path d="M0 260 C 140 220, 220 300, 340 250 S 520 190, 600 230" stroke="oklch(85% 0.02 232)" strokeWidth="18" fill="none" /><path d="M0 120 C 160 160, 260 90, 420 130 S 560 110, 600 90" stroke="oklch(88% 0.015 232)" strokeWidth="10" fill="none" /><path d="M260 0 C 300 100, 240 220, 300 360" stroke="oklch(88% 0.015 232)" strokeWidth="8" fill="none" /><circle cx="300" cy="185" r="9" fill="oklch(58% 0.1 232)" /><path d="M300 150 C 320 150, 335 165, 335 185 C 335 210, 300 235, 300 235 C 300 235, 265 210, 265 185 C 265 165, 280 150, 300 150 Z" fill="oklch(58% 0.1 232)" /><text x="300" y="270" textAnchor="middle" fill="oklch(48% 0.035 250)">5870 Labath Ave, Rohnert Park, CA</text></svg></div>
+    <div className="map-visual"><iframe title="Interactive map showing Hotel Centro Sonoma Wine Country at 5870 Labath Avenue" loading="lazy" src={HOTEL_MAP_EMBED} /></div>
     <div className="place-list">
       <article className="place venue-place"><span>Your destination</span><h3>Hotel Centro Sonoma Wine Country</h3><p>{HOTEL_ADDRESS}</p><div><ExternalLink href={HOTEL_APPLE_MAPS}>Apple Maps</ExternalLink><ExternalLink href={HOTEL_GOOGLE_MAPS}>Google Maps</ExternalLink><ExternalLink href="https://waze.com/ul?q=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&navigate=yes">Waze</ExternalLink><button className="phone-action" onClick={copyAddress}>{copyLabel}</button></div></article>
-      <div className="arrival-card"><span>On arrival</span><ol><li>Park in the hotel&apos;s self-parking lot. Confirm the parking fee with the front desk.</li><li>Enter through the main hotel lobby.</li><li>Ask the front desk for the Baby Moncada shower or follow the event signage.</li></ol></div>
-      <div className="wear-note"><strong>What to wear</strong><p>Sonoma in late September is typically warm and dry during the day, then cooler in the evening. Dress for indoor and outdoor mingling.</p></div>
+      <div className="arrival-card"><span>On arrival</span><ol><li>Use the hotel&apos;s on-site self-parking. Hilton currently lists parking at $8 per day.</li><li>Enter through the main hotel lobby.</li><li>Ask the front desk for the Baby Moncada shower location or follow any posted event signs.</li></ol></div>
+      <div className="wear-note"><strong>What to wear</strong><p>Late September is typically warm during the day and cooler in the evening. Dress comfortably and bring a light layer.</p></div>
       <p className="travel-note">The shower and guest rooms share the same address.</p>
     </div>
   </div>;

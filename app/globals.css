@@ -62,6 +62,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .guest-edit span[data-response="yes"] { color:#236044;background:#dff2e7; }.guest-edit span[data-response="no"] { color:#8a3338;background:#f7e2e4; }
 .submission-note { font-size:12px;font-style:italic; }
 .response-directory-card { scroll-margin-top:20px; }
+.directory-help { margin:-6px 0 16px;color:#4f687a!important;font-size:13px;line-height:1.5; }
 .directory-controls { display:grid;gap:14px;margin:16px 0; }
 .directory-controls label { display:grid;gap:7px;color:#38556a;font-size:12px;font-weight:700; }
 .directory-controls input { width:100%;min-height:44px;padding:10px 12px;border:1px solid #bdd0dc;border-radius:10px;color:#17324a;background:#fff;font:inherit; }
@@ -78,6 +79,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .party-directory-card>header>div:first-child { display:grid;gap:4px; }
 .party-directory-card>header strong { color:#17324a;font-size:15px; }
 .party-directory-card>header a { color:#52758e;font-family:monospace;font-size:11px; }
+.party-copy-row { margin:0;padding:12px 16px;border-bottom:1px solid #e1eaef;background:#fff; }
+.party-copy-row button,.party-copy-row a { flex:0 1 auto; }
 .party-guest-list { display:grid; }
 .party-guest-row { display:flex;justify-content:space-between;gap:16px;align-items:center;padding:11px 16px;border-left:4px solid #9fb5c3;border-bottom:1px solid #e1eaef;background:#fff; }
 .party-guest-row:last-child { border-bottom:0; }
@@ -254,7 +257,7 @@ details[open] .household-body { animation:panel-in .24s ease-out; }
 .boarding-pass .amenities{gap:8px;margin:0 0 18px}.boarding-pass .amenities span{padding:5px 10px;font-size:11px}
 .booking-deadline{margin:0 0 14px;padding:12px 14px}.booking-deadline strong{font-size:13px;font-weight:700}.booking-deadline span{font-size:11px}
 .boarding-pass .booking-panel{gap:0;margin:0;padding:16px}.boarding-pass .booking-panel>div>span{font-size:10px}.boarding-pass .booking-panel>div>strong{margin:4px 0 8px;font-size:15px}.boarding-pass .booking-panel p{margin:0 0 12px;font-size:12px}.boarding-pass .booking-panel .phone-action{padding:17px;font-size:16px}
-.boarding-pass .map-visual{height:180px;margin:0 0 16px;border-radius:14px}.map-visual svg{display:block;width:100%;height:100%;background:oklch(93% .02 232)}.map-visual svg>rect{fill:oklch(93% .02 232)}.map-visual svg>path{fill:none;stroke:oklch(88% .015 232);stroke-width:10}.map-visual svg>.map-road-wide{stroke:oklch(85% .02 232);stroke-width:18}.map-visual svg>circle,.map-visual svg>.map-pin{fill:var(--app-accent);stroke:none}.map-visual svg text{fill:var(--app-muted);font-family:var(--font-ticket-mono),monospace;font-size:12px}
+.boarding-pass .map-visual{height:240px;margin:0 0 16px;border-radius:14px}.boarding-pass .map-visual iframe{display:block;width:100%;height:100%;border:0;filter:none}
 .boarding-pass .place-list{gap:0}.boarding-pass .place{margin:0 0 14px;padding:16px}.boarding-pass .place>span,.arrival-card>span{font-size:9px}.boarding-pass .place h3{margin:4px 0 2px;font-size:14px}.boarding-pass .place p{margin:0 0 12px;font-size:12px}.boarding-pass .place>div{gap:10px}.boarding-pass .place .phone-action{min-height:0;padding:10px;border-radius:10px;font-size:12px;font-weight:400}
 .arrival-card{margin:0 0 14px;padding:16px}.arrival-card ol{gap:10px;margin-top:10px}.arrival-card li{font-size:12px}.wear-note{margin:0 0 14px;padding:14px 16px}.wear-note strong{font-size:12px}.wear-note p{font-size:11px}.boarding-pass .travel-note{margin:0 0 24px;font-size:11px;text-align:left}
 .boarding-pass .party-summary{margin:0 0 18px;padding:14px 16px;border-radius:12px;background:oklch(93% .025 232)}.boarding-pass .party-summary>span{font-size:10px}.boarding-pass .party-summary>strong{margin-top:2px;font-family:var(--font-ticket-mono),monospace;font-size:14px;font-weight:700}.boarding-pass .party-summary p{margin-top:2px;font-size:12px}

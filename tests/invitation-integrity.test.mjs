@@ -54,17 +54,34 @@ test("host dashboard uses a hashed passcode, signed cookie, rate limits, and aud
   assert.match(dashboard, /Copy link/);
   assert.match(dashboard, /Copy message/);
   assert.match(dashboard, /household\.submission\.note/);
-  assert.match(dashboard, /Responses by invitation party/);
+  assert.match(dashboard, /Send links and track RSVPs/);
+  assert.match(dashboard, /party-copy-row/);
   assert.match(dashboard, /Individual guests/);
   assert.match(dashboard, /Search guests, parties, or short links/);
   assert.match(dashboard, /responseFilter/);
   assert.match(migration, /admin_audit_log/);
 });
 
-test("registry does not claim stale mirrored data when no authorized integration exists", async () => {
+test("registry refreshes current Babylist items without caching or generic item fallbacks", async () => {
   const [route, page] = await Promise.all([read("app/api/registry/route.ts"), read("app/page.tsx")]);
-  assert.match(route, /Automated mirroring is disabled until Babylist authorizes/);
-  assert.match(route, /mode: "handoff"/);
+  assert.match(route, /reg_items\/minimal\?offset=0&limit=100/);
+  assert.match(route, /cache: "no-store"/);
+  assert.match(route, /offer\.url/);
+  assert.doesNotMatch(route, /normal_url/);
+  assert.match(route, /is_reserved/);
+  assert.match(route, /quantityNeeded === 0/);
+  assert.match(page, /View.*option/);
   assert.match(page, /Open the registry on Babylist/);
   assert.match(page, /Nothing stale is being shown/);
+});
+
+test("travel view uses an interactive map at the exact venue coordinates", async () => {
+  const page = await read("app/page.tsx");
+  assert.match(page, /openstreetmap\.org\/export\/embed\.html/);
+  assert.match(page, /marker=38\.3516523%2C-122\.7205662/);
+  assert.match(page, /<iframe title="Interactive map showing Hotel Centro/);
+  assert.doesNotMatch(page, /<div className="map-visual"><svg/);
+  assert.match(page, /Hilton currently lists parking at \$8 per day/);
+  assert.match(page, /Ask the front desk for the Baby Moncada shower location or follow any posted event signs/);
+  assert.match(page, /warm during the day and cooler in the evening/);
 });

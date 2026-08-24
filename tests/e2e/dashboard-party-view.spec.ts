@@ -54,13 +54,20 @@ test.beforeEach(async ({ context, page }) => {
 
 test("dashboard defaults to invitation parties and preserves the individual guest view", async ({ page }) => {
   await page.goto("/dashboard");
-  await expect(page.getByRole("heading", { name: "Responses by invitation party" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Send links and track RSVPs" })).toBeVisible();
+  await expect(page.getByText("Copy or preview each party’s invitation directly from its card. No extra section required.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Parties", exact: true })).toHaveClass(/selected/);
   await expect(page.locator(".party-directory-card")).toHaveCount(58);
   await expect(page.locator(".party-guest-row")).toHaveCount(128);
   await expect(page.locator(".party-directory-card").first()).toContainText("/invite/ponticelle");
   await expect(page.locator(".party-directory-card").first()).toContainText("Auntie Grace Ponticelle");
   await expect(page.locator(".party-directory-card").first()).toContainText("Excited to celebrate!");
+  const firstParty = page.locator(".party-directory-card").first();
+  await expect(firstParty.getByRole("button", { name: "Copy link" })).toBeVisible();
+  await expect(firstParty.getByRole("button", { name: "Copy message" })).toBeVisible();
+  await expect(firstParty.getByRole("link", { name: "Preview invitation" })).toHaveAttribute("href", "/invite/ponticelle");
+  await firstParty.getByRole("button", { name: "Copy link" }).click();
+  await expect(firstParty.getByRole("button", { name: "✓ Copied!" })).toBeVisible();
 
   await page.getByRole("button", { name: "Individual guests" }).click();
   await expect(page.getByRole("heading", { name: "Every guest, at a glance" })).toBeVisible();

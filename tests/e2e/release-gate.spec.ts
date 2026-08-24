@@ -31,9 +31,15 @@ test("every guest-facing control works and every destination is exact", async ({
   await expect(page.getByRole("link", { name: "Check rooms & book with Hilton" })).toHaveAttribute("href", /ctyhocn=STSRHUP.*arrivalDate=2026-09-25.*departureDate=2026-09-27.*groupCode=905/);
 
   await nav.getByRole("button", { name: "Registry", exact: true }).click();
-  await expect(page.getByRole("link", { name: "Open the registry on Babylist" })).toHaveAttribute("href", "https://my.babylist.com/janelle-fernando");
+  await expect(page.locator(".product").first()).toBeVisible();
+  const firstProductTitle = await page.locator(".product h3").first().textContent();
+  expect(firstProductTitle?.trim().length).toBeGreaterThan(0);
+  await page.locator(".product").first().getByRole("button", { name: /View .* option/ }).click();
+  await expect(page.locator(".offer-list a").first()).toHaveAttribute("href", /^https:\/\/(?!my\.babylist\.com\/janelle-fernando\/?$).+/);
+  await page.getByRole("button", { name: "Keep browsing gifts" }).click();
 
   await nav.getByRole("button", { name: "Travel", exact: true }).click();
+  await expect(page.getByTitle(/Interactive map showing Hotel Centro/)).toHaveAttribute("src", /openstreetmap\.org.*marker=38\.3516523%2C-122\.7205662/);
   await expect(page.getByRole("link", { name: "Apple Maps" })).toHaveAttribute("href", /^https:\/\/maps\.apple\.com\/\?daddr=5870/);
   await expect(page.getByRole("link", { name: "Google Maps" })).toHaveAttribute("href", /^https:\/\/www\.google\.com\/maps\/dir\/\?api=1&destination=5870/);
   await expect(page.getByRole("link", { name: "Waze" })).toHaveAttribute("href", /^https:\/\/waze\.com\/ul\?q=5870/);
