@@ -10,6 +10,7 @@ const eventSchema = z.object({
   eventTitle: z.string().trim().min(1).max(100),
   hostsDisplay: z.string().trim().min(1).max(100),
   eventStartsAt: z.string().datetime({ offset: true }),
+  rsvpDeadline: z.string().date(),
   venueName: z.string().trim().min(1).max(150),
   venueAddress: z.string().trim().min(1).max(250),
   contactEmail: z.string().email(),

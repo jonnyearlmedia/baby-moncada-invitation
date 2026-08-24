@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type EventRow = {
-  event_title: string; hosts_display: string; event_starts_at: string; venue_name: string; venue_address: string;
+  event_title: string; hosts_display: string; event_starts_at: string; rsvp_deadline: string; venue_name: string; venue_address: string;
   contact_email: string; contact_phone: string; registry_url: string; hotel_booking_url: string;
   hotel_booking_deadline: string; hotel_group_code: string; hotel_rate_label: string; copy_message_template: string;
 };
@@ -127,6 +127,7 @@ export default function DashboardClient() {
         <label>Event title<input value={event.event_title} onChange={(e) => updateEvent("event_title", e.target.value)} /></label>
         <label>Hosts<input value={event.hosts_display} onChange={(e) => updateEvent("hosts_display", e.target.value)} /></label>
         <label>Date and time<input type="datetime-local" value={toLocalInput(event.event_starts_at)} onChange={(e) => updateEvent("event_starts_at", new Date(e.target.value).toISOString())} /></label>
+        <label>RSVP deadline<input type="date" value={event.rsvp_deadline} onChange={(e) => updateEvent("rsvp_deadline", e.target.value)} /></label>
         <label>Venue<input value={event.venue_name} onChange={(e) => updateEvent("venue_name", e.target.value)} /></label>
         <label className="wide">Address<input value={event.venue_address} onChange={(e) => updateEvent("venue_address", e.target.value)} /></label>
         <label>Email<input type="email" value={event.contact_email} onChange={(e) => updateEvent("contact_email", e.target.value)} /></label>
@@ -138,7 +139,7 @@ export default function DashboardClient() {
         <label>Rate label<input value={event.hotel_rate_label} onChange={(e) => updateEvent("hotel_rate_label", e.target.value)} /></label>
         <label className="wide">Copy-message template<textarea value={event.copy_message_template} onChange={(e) => updateEvent("copy_message_template", e.target.value)} /><small>Keep <code>{"{{household}}"}</code> and <code>{"{{link}}"}</code> where the name and link should appear.</small></label>
       </div>
-      <button className="admin-primary" disabled={busy === "event"} onClick={() => save({ kind: "event", eventTitle: event.event_title, hostsDisplay: event.hosts_display, eventStartsAt: event.event_starts_at, venueName: event.venue_name, venueAddress: event.venue_address, contactEmail: event.contact_email, contactPhone: event.contact_phone, registryUrl: event.registry_url, hotelBookingUrl: event.hotel_booking_url, hotelBookingDeadline: event.hotel_booking_deadline, hotelGroupCode: event.hotel_group_code, hotelRateLabel: event.hotel_rate_label, copyMessageTemplate: event.copy_message_template }, "event")}>{busy === "event" ? "Saving…" : "Save event details"}</button>
+      <button className="admin-primary" disabled={busy === "event"} onClick={() => save({ kind: "event", eventTitle: event.event_title, hostsDisplay: event.hosts_display, eventStartsAt: event.event_starts_at, rsvpDeadline: event.rsvp_deadline, venueName: event.venue_name, venueAddress: event.venue_address, contactEmail: event.contact_email, contactPhone: event.contact_phone, registryUrl: event.registry_url, hotelBookingUrl: event.hotel_booking_url, hotelBookingDeadline: event.hotel_booking_deadline, hotelGroupCode: event.hotel_group_code, hotelRateLabel: event.hotel_rate_label, copyMessageTemplate: event.copy_message_template }, "event")}>{busy === "event" ? "Saving…" : "Save event details"}</button>
     </section>
 
     <section className="admin-card"><div className="section-heading"><div><p className="admin-kicker">Invitation management</p><h2>All invitation links</h2></div><span>Open a party to copy its link or make edits</span></div>

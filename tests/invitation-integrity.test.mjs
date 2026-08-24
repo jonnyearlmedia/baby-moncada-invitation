@@ -6,7 +6,7 @@ const root = new URL("../", import.meta.url);
 const read = (path) => readFile(new URL(path, root), "utf8");
 
 test("confirmed event facts are consistent in UI and database seed", async () => {
-  const [page, migration] = await Promise.all([read("app/page.tsx"), read("supabase/migrations/20260824073636_production_rsvp_pilot.sql")]);
+  const [page, layout, migration, deadlineMigration] = await Promise.all([read("app/page.tsx"), read("app/layout.tsx"), read("supabase/migrations/20260824073636_production_rsvp_pilot.sql"), read("supabase/migrations/20260824155828_add_rsvp_deadline.sql")]);
   assert.match(page, /Sat, Sep 26 2026/);
   assert.match(page, /4:00 PM/);
   assert.match(page, /DTSTART;TZID=America\/Los_Angeles:20260926T160000/);
@@ -14,6 +14,11 @@ test("confirmed event facts are consistent in UI and database seed", async () =>
   assert.match(migration, /5870 Labath Ave, Rohnert Park, CA 94928/);
   assert.match(migration, /2026-09-11/);
   assert.match(migration, /groupCode=905/);
+  assert.match(page, /A baby shower honoring Janelle/);
+  assert.match(page, /Baby Moncada Baby Shower/);
+  assert.match(layout, /Baby Moncada Baby Shower · September 26, 2026/);
+  assert.match(deadlineMigration, /rsvp_deadline date not null default date '2026-09-11'/);
+  assert.match(deadlineMigration, /'rsvpDeadline', e\.rsvp_deadline/);
 });
 
 test("all 58 households and readable links are seeded", async () => {

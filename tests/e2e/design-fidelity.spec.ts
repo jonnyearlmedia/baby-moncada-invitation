@@ -3,6 +3,8 @@ import { expect, test } from "@playwright/test";
 test("boarding-pass design preserves Claude handoff geometry and typography", async ({ page }) => {
   await page.goto("/invite/murao");
   await expect(page.getByRole("heading", { name: "Baby Moncada" })).toBeVisible();
+  await expect(page.getByText("A baby shower honoring Janelle & Fernando")).toBeVisible();
+  await expect(page.getByText("RSVP by September 11, 2026")).toBeVisible();
 
   const design = await page.evaluate(() => {
     const card = document.querySelector<HTMLElement>(".phone.boarding-pass")!;
@@ -52,4 +54,7 @@ test("all five Claude-designed screens fit and retain their exact labels", async
     await expect(page.getByRole("heading", { name: heading })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   }
+
+  await page.getByRole("navigation", { name: "Invitation features" }).getByRole("button", { name: "RSVP", exact: true }).click();
+  await expect(page.getByText("RSVP by September 11, 2026")).toBeVisible();
 });

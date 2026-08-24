@@ -4,6 +4,7 @@ export type EventSettings = {
   title: string;
   hostsDisplay: string;
   startsAt: string;
+  rsvpDeadline: string;
   venueName: string;
   venueAddress: string;
   contactEmail: string;

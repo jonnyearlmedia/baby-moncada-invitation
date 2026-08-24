@@ -34,7 +34,7 @@ function dashboardFixture() {
   });
   return {
     event: {
-      event_title: "Baby Moncada Shower", hosts_display: "Janelle & Fernando", event_starts_at: "2026-10-10T23:00:00.000Z",
+      event_title: "Baby Moncada Shower", hosts_display: "Janelle & Fernando", event_starts_at: "2026-10-10T23:00:00.000Z", rsvp_deadline: "2026-09-11",
       venue_name: "Venue", venue_address: "5870 Address", contact_email: "j_elyssa05@yahoo.com", contact_phone: "+17073345988",
       registry_url: "https://my.babylist.com/janelle-fernando", hotel_booking_url: "https://www.hilton.com/", hotel_booking_deadline: "2026-09-01",
       hotel_group_code: "MON", hotel_rate_label: "Special rate", copy_message_template: "Hi {{household}}! {{link}}",

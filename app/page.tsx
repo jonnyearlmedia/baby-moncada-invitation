@@ -145,8 +145,8 @@ export default function Home({ inviteSlug = "murao" }: { inviteSlug?: string }) 
     const calendar = [
       "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Baby Moncada//Invitation//EN", "BEGIN:VEVENT",
       "UID:baby-moncada-20260926", "DTSTART;TZID=America/Los_Angeles:20260926T160000",
-      "SUMMARY:Baby Moncada Celebration", `LOCATION:${HOTEL_ADDRESS}`,
-      "DESCRIPTION:A little boy is on the way. Join Janelle and Fernando at Hotel Centro Sonoma Wine Country.",
+      "SUMMARY:Baby Moncada Baby Shower", `LOCATION:${HOTEL_ADDRESS}`,
+      "DESCRIPTION:Join Janelle and Fernando for the Baby Moncada baby shower at Hotel Centro Sonoma Wine Country.",
       "END:VEVENT", "END:VCALENDAR",
     ].join("\r\n");
     const link = document.createElement("a");
@@ -179,7 +179,7 @@ function InviteScreen({ countdown, rsvp, onRSVP, onCalendar }: { countdown: Retu
   const [shareLabel, setShareLabel] = useState("Share invite");
   async function shareInvite() {
     try {
-      if (navigator.share) await navigator.share({ title: "Baby Moncada", text: "You’re invited to celebrate Baby Moncada", url: window.location.href });
+      if (navigator.share) await navigator.share({ title: "Baby Moncada Baby Shower", text: "You’re invited to Janelle and Fernando’s baby shower", url: window.location.href });
       else await navigator.clipboard.writeText(window.location.href);
       setShareLabel("Link copied ✓");
     } catch { return; }
@@ -194,7 +194,7 @@ function InviteScreen({ countdown, rsvp, onRSVP, onCalendar }: { countdown: Retu
     <section className="ticket-hero">
       <p className="script-line">the little one is coming ✈</p>
       <h1>Baby<br />Moncada</h1>
-      <p className="host-line">A celebration honoring Janelle &amp; Fernando</p>
+      <p className="host-line">A baby shower honoring Janelle &amp; Fernando</p>
       <span className="boy-pill">A little boy is on the way</span>
       <p className="recipient-line">{passengerNames} · Party of {rsvp.guests.length || "—"}</p>
     </section>
@@ -213,6 +213,7 @@ function InviteScreen({ countdown, rsvp, onRSVP, onCalendar }: { countdown: Retu
     <div className="ticket-barcode" aria-hidden="true" />
     <div className="baby-on-board"><strong>✈ Baby On Board</strong><span>Moncada Airways</span></div>
     <div className="diaper-raffle"><strong>✈ Diaper Raffle</strong><span>Bring a pack, any size, for a chance to win a prize</span></div>
+    <RSVPDeadline value={rsvp.event?.rsvpDeadline ?? "2026-09-11"} />
     <div className="home-actions"><button className="phone-action primary" onClick={onRSVP}>RSVP</button><button className="phone-action" onClick={onCalendar}>Add to calendar</button></div>
     <div className="save-invite"><strong>📌 Save this invite</strong><p>You&apos;ll want this again for the registry and directions. On your phone: Share → Add to Home Screen. On desktop: Ctrl/Cmd + D to bookmark.</p><button onClick={shareInvite}>{shareLabel}</button></div>
   </div>;
@@ -220,6 +221,15 @@ function InviteScreen({ countdown, rsvp, onRSVP, onCalendar }: { countdown: Retu
 
 function TicketDivider() { return <div className="ticket-divider" aria-hidden="true"><i /><i /></div>; }
 function TicketFact({ label, value, detail, full = false }: { label: string; value: string; detail?: string; full?: boolean }) { return <div className={full ? "ticket-fact-full" : undefined}><span>{label}</span><strong>{value}</strong>{detail && <p>{detail}</p>}</div>; }
+
+function RSVPDeadline({ value, compact = false }: { value: string; compact?: boolean }) {
+  const formatted = new Date(`${value}T12:00:00`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  return <div className={`rsvp-deadline${compact ? " compact" : ""}`}>
+    <span>Reply requested</span>
+    <strong>RSVP by {formatted}</strong>
+    {!compact && <p>Please respond for everyone named on this invitation.</p>}
+  </div>;
+}
 
 function ScreenHeader({ kicker, title, mark, subtitle }: { kicker: string; title: string; mark: string; subtitle?: string }) {
   return <header className="screen-header"><div><p className="phone-eyebrow">{kicker}</p><h2>{title}</h2>{subtitle && <p className="screen-subtitle">{subtitle}</p>}</div><span>{mark}</span></header>;
@@ -334,6 +344,7 @@ function RSVPScreen({ rsvp, setRsvp, onSave }: { rsvp: RSVP; setRsvp: React.Disp
 
   return <div className="feature-screen">
     <ScreenHeader kicker="Boarding Pass · RSVP" title="Who’s on board?" subtitle="Respond for each passenger named on this invitation." mark="" />
+    <RSVPDeadline value={rsvp.event?.rsvpDeadline ?? "2026-09-11"} compact />
     <div className="party-summary">
       <span>Invitation for</span>
       <strong>{rsvp.household}</strong>
