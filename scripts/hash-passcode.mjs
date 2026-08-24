@@ -5,7 +5,7 @@ import { stdin, stdout } from "node:process";
 const prompt = createInterface({ input: stdin, output: stdout });
 const passcode = await prompt.question("New host passcode: ");
 await prompt.close();
-if (passcode.length < 10) throw new Error("Use a passcode with at least 10 characters.");
+if (!/^\d{4,12}$/.test(passcode)) throw new Error("Use a numeric passcode containing 4 to 12 digits.");
 const salt = randomBytes(16);
 const N = 16_384;
 const r = 8;
