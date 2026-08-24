@@ -59,6 +59,7 @@ export async function GET() {
         guests: guests.filter((guest) => guest.household_id === household.id).map((guest) => ({
           ...guest,
           response: responses.find((response) => response.guest_id === guest.id)?.response ?? null,
+          response_updated_at: responses.find((response) => response.guest_id === guest.id)?.updated_at ?? null,
         })),
         submission: submissions.find((submission) => submission.household_id === household.id) ?? null,
       })),

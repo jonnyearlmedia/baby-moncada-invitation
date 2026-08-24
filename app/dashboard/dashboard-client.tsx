@@ -8,12 +8,24 @@ type EventRow = {
   contact_email: string; contact_phone: string; registry_url: string; hotel_booking_url: string;
   hotel_booking_deadline: string; hotel_group_code: string; hotel_rate_label: string; copy_message_template: string;
 };
-type GuestRow = { id: string; display_name: string; response: "yes" | "no" | null };
+type GuestRow = { id: string; display_name: string; response: "yes" | "no" | null; response_updated_at: string | null };
 type HouseholdRow = {
   id: string; slug: string; display_name: string; invitation_label: string; message_greeting: string;
   guests: GuestRow[]; submission: { note: string; updated_at: string } | null;
 };
 type DashboardData = { event: EventRow; households: HouseholdRow[]; registrySync: { status: string; finished_at: string | null } | null };
+type ResponseFilter = "all" | "yes" | "no" | "pending";
+
+function formatDateTime(value: string | null) {
+  if (!value) return "Not replied yet";
+  return new Date(value).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+}
+
+function responseLabel(response: GuestRow["response"]) {
+  if (response === "yes") return "Yes — attending";
+  if (response === "no") return "No — can’t attend";
+  return "Pending — no response";
+}
 
 function toLocalInput(value: string) {
   const date = new Date(value);
@@ -27,6 +39,9 @@ export default function DashboardClient() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState("");
+  const [copiedKey, setCopiedKey] = useState("");
+  const [responseFilter, setResponseFilter] = useState<ResponseFilter>("all");
+  const [search, setSearch] = useState("");
 
   const load = useCallback(async () => {
     const response = await fetch("/api/admin/dashboard", { cache: "no-store" });
@@ -44,6 +59,21 @@ export default function DashboardClient() {
     const guests = data?.households.flatMap((household) => household.guests) ?? [];
     return { invited: guests.length, attending: guests.filter((guest) => guest.response === "yes").length, declined: guests.filter((guest) => guest.response === "no").length, pending: guests.filter((guest) => guest.response === null).length };
   }, [data]);
+
+  const responseDirectory = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase();
+    return data?.households.flatMap((household) => household.guests.map((guest) => ({
+      ...guest,
+      householdName: household.display_name,
+      householdSlug: household.slug,
+      invitationLink: `/invite/${household.slug}`,
+      submissionUpdatedAt: household.submission?.updated_at ?? null,
+    }))).filter((guest) => {
+      const matchesFilter = responseFilter === "all" || (responseFilter === "pending" ? guest.response === null : guest.response === responseFilter);
+      const haystack = `${guest.display_name} ${guest.householdName} ${guest.householdSlug}`.toLocaleLowerCase();
+      return matchesFilter && (!query || haystack.includes(query));
+    }) ?? [];
+  }, [data, responseFilter, search]);
 
   async function save(body: Record<string, unknown>, key: string) {
     setBusy(key); setError(""); setNotice("");
@@ -63,14 +93,19 @@ export default function DashboardClient() {
   function updateGuest(householdId: string, guestId: string, name: string) {
     setData((current) => current ? { ...current, households: current.households.map((household) => household.id === householdId ? { ...household, guests: household.guests.map((guest) => guest.id === guestId ? { ...guest, display_name: name } : guest) } : household) } : current);
   }
-  async function copy(text: string, message: string) { await navigator.clipboard.writeText(text); setNotice(message); }
+  async function copy(text: string, message: string, key: string) { await navigator.clipboard.writeText(text); setCopiedKey(key); setNotice(message); window.setTimeout(() => setCopiedKey((current) => current === key ? "" : current), 1800); }
   function invitationLink(slug: string) { return `${window.location.origin}/invite/${slug}`; }
 
   if (!data) return <main className="admin-shell"><section className="admin-card"><p>{error || "Loading the host dashboard…"}</p></section></main>;
   const event = data.event;
   return <main className="admin-shell"><header className="admin-top"><div><p className="admin-kicker">Baby Moncada</p><h1>Host dashboard</h1><p>Manage pilot links, guest names, event details, and live RSVP results.</p></div><button className="admin-secondary" onClick={async () => { await fetch("/api/admin/session", { method: "DELETE" }); router.replace("/dashboard/login"); }}>Log out</button></header>
     {(error || notice) && <div className={error ? "admin-alert error" : "admin-alert"} role="status">{error || notice}</div>}
-    <section className="stats-grid"><div><strong>{stats.invited}</strong><span>Invited</span></div><div><strong>{stats.attending}</strong><span>Attending</span></div><div><strong>{stats.declined}</strong><span>Can’t attend</span></div><div><strong>{stats.pending}</strong><span>Pending</span></div></section>
+    <section className="stats-grid" aria-label="RSVP totals"><button className={responseFilter === "all" ? "stats-card selected" : "stats-card"} onClick={() => setResponseFilter("all")}><strong>{stats.invited}</strong><span>All invited</span></button><button className={responseFilter === "yes" ? "stats-card selected" : "stats-card"} onClick={() => setResponseFilter("yes")}><strong>{stats.attending}</strong><span>Yes — attending</span></button><button className={responseFilter === "no" ? "stats-card selected" : "stats-card"} onClick={() => setResponseFilter("no")}><strong>{stats.declined}</strong><span>No — can’t attend</span></button><button className={responseFilter === "pending" ? "stats-card selected" : "stats-card"} onClick={() => setResponseFilter("pending")}><strong>{stats.pending}</strong><span>Pending</span></button></section>
+
+    <section className="admin-card response-directory-card"><div className="section-heading"><div><p className="admin-kicker">Live guest directory</p><h2>Every RSVP, at a glance</h2></div><span>{responseDirectory.length} matching guest{responseDirectory.length === 1 ? "" : "s"}</span></div>
+      <div className="directory-controls"><label>Search guests or households<input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Try Grace, Ponticelle, or a short link" /></label><div className="filter-row" aria-label="Filter RSVP responses">{(["all", "yes", "no", "pending"] as ResponseFilter[]).map((filter) => <button key={filter} className={responseFilter === filter ? "filter-button selected" : "filter-button"} onClick={() => setResponseFilter(filter)}>{filter === "all" ? "Everyone" : filter === "yes" ? "Yes" : filter === "no" ? "No" : "Pending"}</button>)}</div></div>
+      <div className="directory-list">{responseDirectory.length ? responseDirectory.map((guest) => <div className={`directory-row status-${guest.response ?? "pending"}`} key={guest.id}><div><strong>{guest.display_name}</strong><span>{guest.householdName} · <a href={guest.invitationLink}>{guest.invitationLink}</a></span></div><div><b>{responseLabel(guest.response)}</b><time>{formatDateTime(guest.response_updated_at ?? guest.submissionUpdatedAt)}</time></div></div>) : <p className="empty-state">No guests match this search and filter.</p>}</div>
+    </section>
 
     <section className="admin-card"><div className="section-heading"><div><p className="admin-kicker">Shared across every link</p><h2>Event details</h2></div><span>Basic edits update all invitations</span></div>
       <div className="field-grid">
@@ -96,7 +131,8 @@ export default function DashboardClient() {
         const link = invitationLink(household.slug);
         const message = event.copy_message_template.replaceAll("{{household}}", household.message_greeting).replaceAll("{{link}}", link);
         return <details className="household-card" key={household.id}><summary><div><strong>{household.display_name}</strong><span>/invite/{household.slug}</span></div><div className="response-pills"><i>{household.guests.filter((g) => g.response === "yes").length} yes</i><i>{household.guests.filter((g) => g.response === "no").length} no</i><i>{household.guests.filter((g) => g.response === null).length} pending</i></div></summary>
-          <div className="household-body"><div className="copy-row"><button onClick={() => copy(link, "Invitation link copied.")}>Copy link</button><button onClick={() => copy(message, "Ready-to-send message copied.")}>Copy message</button><a href={`/invite/${household.slug}`} target="_blank" rel="noreferrer">Preview invitation</a></div>
+          <div className="household-body"><div className="copy-row"><button className={copiedKey === `${household.id}-link` ? "copy-success" : ""} onClick={() => copy(link, "Invitation link copied.", `${household.id}-link`)}>{copiedKey === `${household.id}-link` ? "✓ Copied!" : "Copy link"}</button><button className={copiedKey === `${household.id}-message` ? "copy-success" : ""} onClick={() => copy(message, "Ready-to-send message copied.", `${household.id}-message`)}>{copiedKey === `${household.id}-message` ? "✓ Copied!" : "Copy message"}</button><a href={`/invite/${household.slug}`} target="_blank" rel="noreferrer">Preview invitation</a></div>
+            <div className="household-response-list"><div className="subsection-heading"><strong>Who responded</strong><span>{household.guests.filter((guest) => guest.response === "yes").length} yes · {household.guests.filter((guest) => guest.response === "no").length} no · {household.guests.filter((guest) => guest.response === null).length} pending</span></div>{household.guests.map((guest) => <div className={`household-response-row status-${guest.response ?? "pending"}`} key={guest.id}><div><strong>{guest.display_name}</strong><span>{responseLabel(guest.response)}</span></div><time>{formatDateTime(guest.response_updated_at ?? household.submission?.updated_at ?? null)}</time></div>)}</div>
             <div className="field-grid"><label>Short link<input value={household.slug} onChange={(e) => updateHousehold(household.id, { slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-") })} /></label><label>Dashboard name<input value={household.display_name} onChange={(e) => updateHousehold(household.id, { display_name: e.target.value })} /></label><label className="wide">Invitation “For” wording<input value={household.invitation_label} onChange={(e) => updateHousehold(household.id, { invitation_label: e.target.value })} /></label><label>Thank-you greeting<input value={household.message_greeting} onChange={(e) => updateHousehold(household.id, { message_greeting: e.target.value })} /></label></div>
             <fieldset><legend>Names shown on this RSVP</legend>{household.guests.map((guest) => <label className="guest-edit" key={guest.id}><input value={guest.display_name} onChange={(e) => updateGuest(household.id, guest.id, e.target.value)} /><span data-response={guest.response ?? "pending"}>{guest.response ?? "pending"}</span></label>)}</fieldset>
             {household.submission && <p className="submission-note">Last response {new Date(household.submission.updated_at).toLocaleString()}{household.submission.note ? ` · “${household.submission.note}”` : ""}</p>}
