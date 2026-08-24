@@ -14,6 +14,16 @@ test("keeps the confirmed event facts consistent", async () => {
   assert.doesNotMatch(page, /Saturday, October 18, 2025|The Garden Room|Houston, TX/);
 });
 
+test("opens directly as the selected blue stationery invitation", async () => {
+  const [page, css, layout] = await Promise.all([read("app/page.tsx"), read("app/globals.css"), read("app/layout.tsx")]);
+  assert.match(page, /theme-paper-blue/);
+  assert.match(page, /aria-label="Baby Moncada invitation"/);
+  assert.match(css, /--app-bg:#dce9f2/);
+  assert.match(layout, /Baby Moncada · September 26, 2026/);
+  assert.doesNotMatch(page, /Choose the invitation|Visual directions|concepts =/);
+  assert.doesNotMatch(page, /className="island"|className="status"/);
+});
+
 test("uses live item-level registry actions instead of repeated generic buttons", async () => {
   const [page, route] = await Promise.all([read("app/page.tsx"), read("app/api/registry/route.ts")]);
   assert.match(route, /reg_items\/minimal\?limit=100&offset=0/);

@@ -18,8 +18,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const host = requestHeaders.get("x-forwarded-host") || requestHeaders.get("host") || "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") || (host.startsWith("localhost") ? "http" : "https");
   const origin = `${protocol}://${host}`;
-  const title = "Baby Moncada Invitation Style Picker";
-  const description = "A personalized Baby Moncada invitation for Elsa and Jonathan Murao.";
+  const title = "Baby Moncada · September 26, 2026";
+  const description = "A personalized baby shower invitation for the Murao family.";
   return {
     title,
     description,

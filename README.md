@@ -1,6 +1,6 @@
 # Baby Moncada Invitation
 
-A mobile-first digital invitation for Janelle and Fernando Moncada’s baby shower on September 26, 2026. The current public entry point includes six visual directions so the family can choose a design; every direction uses the same functional guest experience inside the phone.
+A mobile-first digital invitation for Janelle and Fernando Moncada’s baby shower on September 26, 2026. The selected design direction is blue luxe stationery, inspired by the polished physical-card feeling of Paperless Post.
 
 ## Guest experience
 
@@ -41,7 +41,7 @@ npm run dev
 - `guests`: the named people included in that household’s invitation
 - `rsvp_responses`: the household’s current per-guest attendance choices, note, and timestamps
 
-The public selector currently seeds the Murao sample invitation. Additional guest households require the final guest roster and unique invitation links before general distribution.
+The current test link seeds the Murao sample invitation. Additional guest households require the final guest roster and unique invitation links before general distribution.
 
 ## Confirm before final guest launch
 

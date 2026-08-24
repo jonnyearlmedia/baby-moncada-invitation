@@ -11,24 +11,16 @@ const HOTEL_APPLE_MAPS = "https://maps.apple.com/?daddr=5870%20Labath%20Ave%2C%2
 const HOTEL_GOOGLE_MAPS = "https://www.google.com/maps/dir/?api=1&destination=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&travelmode=driving&dir_action=navigate";
 const RSVP_INVITE_CODE = "murao-family-2-f7c4a9";
 
-const concepts = [
-  { id: "glass", name: "Apple Invites / Cinematic Glass", short: "Cinematic Glass" },
-  { id: "paper", name: "Paperless Post / Luxe Stationery", short: "Luxe Stationery" },
-  { id: "editorial", name: "Modern Editorial / Magazine", short: "Modern Editorial" },
-  { id: "dreamy", name: "Dreamy Storybook / Soft 3D", short: "Dreamy Storybook" },
-  { id: "bold", name: "Bold Contemporary / Partiful-Adjacent", short: "Bold Contemporary" },
-  { id: "minimal", name: "Minimal Luxury / Architectural", short: "Minimal Luxury" },
-] as const;
-
 const nav = [
-  ["invite", "⌂", "Invite"],
-  ["stay", "▤", "Hotel"],
-  ["registry", "♧", "Gifts"],
-  ["maps", "⌖", "Travel"],
-  ["rsvp", "✓", "RSVP"],
+  ["invite", "home", "Invite"],
+  ["stay", "hotel", "Hotel"],
+  ["registry", "gift", "Gifts"],
+  ["maps", "pin", "Travel"],
+  ["rsvp", "check", "RSVP"],
 ] as const;
 
 type View = (typeof nav)[number][0];
+type IconName = (typeof nav)[number][1] | "calendar";
 type RegistryOffer = { id: number; store: string; url: string; price: number | null; isBabylist: boolean; availability: string | null; availabilityText: string | null };
 type RegistryItem = { id: number; title: string; image: string; category: string; price: string | null; quantity: number; quantityNeeded: number; isFulfilled: boolean; reservedCount: number; offers: RegistryOffer[] };
 type RegistryState = { status: "loading" | "ready" | "error"; items: RegistryItem[]; updatedAt: string | null };
@@ -59,27 +51,27 @@ function ExternalLink({ href, children, primary = false }: { href: string; child
   return <a className={`phone-action${primary ? " primary" : ""}`} href={href} target="_blank" rel="noopener noreferrer">{children}</a>;
 }
 
+function Icon({ name }: { name: IconName }) {
+  return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    {name === "home" && <><path d="M3 10.5 12 3l9 7.5" /><path d="M5.5 9.5V21h13V9.5M9.5 21v-6h5v6" /></>}
+    {name === "hotel" && <><path d="M4 3h16v18H4z" /><path d="M8 7h2M14 7h2M8 11h2M14 11h2M9 21v-5h6v5" /></>}
+    {name === "gift" && <><path d="M4 10h16v11H4zM2.5 6h19v4h-19zM12 6v15" /><path d="M12 6H8.7a2.2 2.2 0 1 1 2.2-2.2L12 6Zm0 0h3.3a2.2 2.2 0 1 0-2.2-2.2L12 6Z" /></>}
+    {name === "pin" && <><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="2.5" /></>}
+    {name === "check" && <><circle cx="12" cy="12" r="9" /><path d="m8 12 2.6 2.6L16.5 9" /></>}
+    {name === "calendar" && <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M7 3v4M17 3v4M3 10h18" /></>}
+  </svg>;
+}
+
 export default function Home() {
-  const [style, setStyle] = useState(0);
   const [view, setView] = useState<View>("invite");
-  const [favorites, setFavorites] = useState<string[]>([]);
-  const [chosen, setChosen] = useState("");
   const [category, setCategory] = useState("All");
   const [overlay, setOverlay] = useState<Overlay>(null);
   const [registry, setRegistry] = useState<RegistryState>({ status: "loading", items: [], updatedAt: null });
   const phoneContentRef = useRef<HTMLDivElement>(null);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [rsvp, setRsvp] = useState<RSVP>({ household: "The Murao Family", guests: [], note: "", submitted: false, updatedAt: null, status: "loading", error: null });
-  const concept = concepts[style];
-
   useEffect(() => {
     const initialFrame = window.requestAnimationFrame(() => {
-      try {
-        setFavorites(JSON.parse(localStorage.getItem("moncada-favorites") || "[]"));
-        setChosen(localStorage.getItem("moncada-chosen") || "");
-      } catch {
-        // The invitation remains usable when private browsing blocks storage.
-      }
       setCountdown(getCountdown());
     });
     const timer = window.setInterval(() => setCountdown(getCountdown()), 1000);
@@ -122,28 +114,6 @@ export default function Home() {
   }, []);
 
   const visibleProducts = useMemo(() => category === "All" ? registry.items : registry.items.filter((product) => product.category === category), [category, registry.items]);
-  const chosenConcept = concepts.find((item) => item.id === chosen);
-
-  function savePicker(nextFavorites = favorites, nextChosen = chosen) {
-    try {
-      localStorage.setItem("moncada-favorites", JSON.stringify(nextFavorites));
-      if (nextChosen) localStorage.setItem("moncada-chosen", nextChosen);
-    } catch {
-      // The invitation remains usable when private browsing blocks storage.
-    }
-  }
-
-  function toggleFavorite(id: string) {
-    const next = favorites.includes(id) ? favorites.filter((item) => item !== id) : [...favorites, id];
-    setFavorites(next);
-    savePicker(next, chosen);
-  }
-
-  function chooseStyle() {
-    setChosen(concept.id);
-    savePicker(favorites, concept.id);
-  }
-
   function changeView(next: View) {
     setView(next);
     setOverlay(null);
@@ -182,51 +152,20 @@ export default function Home() {
   }
 
   return (
-    <main className="picker-page">
-      <header className="picker-header">
-        <div><p className="outer-eyebrow">Baby Moncada · September 26, 2026</p><h1>Choose the invitation that feels like them.</h1></div>
-        <div className="picker-summary"><span>{favorites.length} favorite{favorites.length === 1 ? "" : "s"}</span><strong>{chosenConcept ? `${chosenConcept.short} selected` : "Still deciding"}</strong></div>
-      </header>
-
-      <div className="picker-layout">
-        <aside className="concept-panel">
-          <nav className="concept-list" aria-label="Visual directions">
-            {concepts.map((item, index) => (
-              <div className="concept-row" key={item.id}>
-                <button className={index === style ? "concept active" : "concept"} aria-pressed={index === style} onClick={() => { setStyle(index); setOverlay(null); }}>
-                  <span>0{index + 1}</span>{item.name}
-                </button>
-                <button className={favorites.includes(item.id) ? "heart active" : "heart"} aria-label={`Favorite ${item.name}`} aria-pressed={favorites.includes(item.id)} onClick={() => toggleFavorite(item.id)}>{favorites.includes(item.id) ? "♥" : "♡"}</button>
-              </div>
-            ))}
-          </nav>
-          <div className="choice-actions">
-            <button onClick={() => toggleFavorite(concept.id)}>{favorites.includes(concept.id) ? "Favorited ♥" : "Favorite"}</button>
-            <button className="choose" onClick={chooseStyle}>{chosen === concept.id ? "Selected ✓" : "Select this direction"}</button>
-          </div>
-        </aside>
-
-        <section className="phone-column" aria-label={`${concept.name} interactive invitation`}>
-          <div className="phone-label"><span>{concept.name}</span><span>Tap through the full invitation</span></div>
-          <div className="device">
-            <div className={`phone theme-${concept.id}`}>
-              <div className="island" />
-              <div className="status"><span>9:41</span><span>▮▮▮ ᴡɪꜰɪ ▰</span></div>
-              <div className="phone-content" ref={phoneContentRef}>
-                {view === "invite" && <InviteScreen countdown={countdown} onRSVP={() => changeView("rsvp")} onCalendar={downloadCalendar} />}
-                {view === "stay" && <StayScreen />}
-                {view === "registry" && <RegistryScreen category={category} setCategory={setCategory} products={visibleProducts} registry={registry} onGift={(item) => setOverlay({ type: "gift", item })} />}
-                {view === "maps" && <MapsScreen />}
-                {view === "rsvp" && <RSVPScreen rsvp={rsvp} setRsvp={setRsvp} onSave={saveRSVP} />}
-              </div>
-              <nav className="phone-nav" aria-label="Invitation features">
-                {nav.map((item) => <button key={item[0]} className={view === item[0] ? "selected" : ""} aria-current={view === item[0] ? "page" : undefined} onClick={() => changeView(item[0])}><span>{item[1]}</span>{item[2]}</button>)}
-              </nav>
-              {overlay && <HandoffSheet overlay={overlay} onClose={() => setOverlay(null)} />}
-            </div>
-          </div>
-        </section>
-      </div>
+    <main className="app-page">
+      <section className="phone theme-paper-blue" aria-label="Baby Moncada invitation">
+        <div className="phone-content" ref={phoneContentRef}>
+          {view === "invite" && <InviteScreen countdown={countdown} onRSVP={() => changeView("rsvp")} onCalendar={downloadCalendar} />}
+          {view === "stay" && <StayScreen />}
+          {view === "registry" && <RegistryScreen category={category} setCategory={setCategory} products={visibleProducts} registry={registry} onGift={(item) => setOverlay({ type: "gift", item })} />}
+          {view === "maps" && <MapsScreen />}
+          {view === "rsvp" && <RSVPScreen rsvp={rsvp} setRsvp={setRsvp} onSave={saveRSVP} />}
+        </div>
+        <nav className="phone-nav" aria-label="Invitation features">
+          {nav.map((item) => <button key={item[0]} className={view === item[0] ? "selected" : ""} aria-current={view === item[0] ? "page" : undefined} onClick={() => changeView(item[0])}><Icon name={item[1]} />{item[2]}</button>)}
+        </nav>
+        {overlay && <HandoffSheet overlay={overlay} onClose={() => setOverlay(null)} />}
+      </section>
     </main>
   );
 }
@@ -235,6 +174,7 @@ function InviteScreen({ countdown, onRSVP, onCalendar }: { countdown: ReturnType
   return <div className="invite-screen">
     <div className="invite-art" aria-hidden="true"><i /><i /><i /><i /></div>
     <div className="invite-copy">
+      <div className="paper-monogram" aria-hidden="true"><span>J</span><i>✦</i><span>F</span></div>
       <p className="phone-eyebrow">For the Murao family</p>
       <h2>You&apos;re invited to</h2>
       <div className="baby-title">Baby<br />Moncada</div>
@@ -244,8 +184,8 @@ function InviteScreen({ countdown, onRSVP, onCalendar }: { countdown: ReturnType
       <p className="recipient-line">Elsa &amp; Jonathan · Party of two</p>
     </div>
     <div className="event-card">
-      <div><span>▣</span><p><strong>Saturday, September 26, 2026</strong><br />Event time to be announced</p></div>
-      <div><span>⌂</span><p><strong>Hotel Centro Sonoma Wine Country</strong><br />{HOTEL_ADDRESS}</p></div>
+      <div><span><Icon name="calendar" /></span><p><strong>Saturday, September 26, 2026</strong><br />Event time to be announced</p></div>
+      <div><span><Icon name="pin" /></span><p><strong>Hotel Centro Sonoma Wine Country</strong><br />{HOTEL_ADDRESS}</p></div>
     </div>
     <div className="countdown" aria-label="Countdown to September 26, 2026">
       {Object.entries(countdown).map(([label, value]) => <div key={label}><strong>{label === "days" ? value : String(value).padStart(2, "0")}</strong><span>{label}</span></div>)}
