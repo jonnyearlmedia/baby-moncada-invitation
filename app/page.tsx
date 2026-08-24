@@ -48,7 +48,7 @@ const categories = [
 ] as const;
 
 type View = (typeof nav)[number][0];
-type Overlay = { type: "room"; label: string } | { type: "product"; index: number } | null;
+type Overlay = { type: "room"; label: string } | null;
 type Attendance = "yes" | "no" | null;
 type RSVP = { guests: { name: string; response: Attendance }[]; note: string; submitted: boolean };
 
@@ -171,7 +171,7 @@ export default function Home() {
               <div className="phone-content">
                 {view === "invite" && <InviteScreen countdown={countdown} onRSVP={() => changeView("rsvp")} onCalendar={downloadCalendar} />}
                 {view === "stay" && <StayScreen onRoom={(label) => setOverlay({ type: "room", label })} />}
-                {view === "registry" && <RegistryScreen category={category} setCategory={setCategory} products={visibleProducts} onProduct={(index) => setOverlay({ type: "product", index })} />}
+                {view === "registry" && <RegistryScreen category={category} setCategory={setCategory} products={visibleProducts} />}
                 {view === "maps" && <MapsScreen />}
                 {view === "rsvp" && <RSVPScreen rsvp={rsvp} setRsvp={setRsvp} onSave={saveRSVP} />}
               </div>
@@ -231,7 +231,7 @@ function Room({ name, detail, onChoose }: { name: string; detail: string; onChoo
   return <article className="room"><div className="room-top"><h3>{name}</h3><div className="room-price">$149<span>per night</span></div></div><p>{detail}</p><button className="phone-action primary full" onClick={() => onChoose(name)}>View this room</button></article>;
 }
 
-function RegistryScreen({ category, setCategory, products: visible, onProduct }: { category: string; setCategory: (value: string) => void; products: readonly (typeof products)[number][]; onProduct: (index: number) => void }) {
+function RegistryScreen({ category, setCategory, products: visible }: { category: string; setCategory: (value: string) => void; products: readonly (typeof products)[number][] }) {
   return <div className="feature-screen">
     <ScreenHeader kicker="Babylist registry" title="Janelle’s registry" mark="32 gifts" />
     <div className="registry-profile">
@@ -240,19 +240,16 @@ function RegistryScreen({ category, setCategory, products: visible, onProduct }:
     </div>
     <div className="registry-summary"><span><strong>32</strong> gifts</span><span><strong>10</strong> categories</span><ExternalLink href={REGISTRY_URL}>Open all</ExternalLink></div>
     <div className="category-row" aria-label="Registry categories">{categories.map(([name, count]) => <button key={name} aria-pressed={category === name} onClick={() => setCategory(name)}>{name} {count}</button>)}</div>
-    <div className="products">{visible.map((product) => {
-      const index = products.indexOf(product);
-      return <article className="product" key={product.name}>
+    <div className="products">{visible.map((product) => <article className="product" key={product.name}>
         <img className="product-art" src={product.image} alt="" loading="lazy" />
         <div className="product-body">
           <span className="product-category">{product.category}</span>
           <h3>{product.name}</h3>
           <p>{product.detail}</p>
           <div className="product-meta"><strong>{product.price}</strong><div className="store-list" aria-label={`Available from ${product.stores.join(", ")}`}>{product.stores.slice(0, 3).map((store) => <span key={store}>{store}</span>)}</div></div>
-          <button className="phone-action full" onClick={() => onProduct(index)}>See buying options</button>
+          <ExternalLink href={REGISTRY_URL} primary>View on Babylist</ExternalLink>
         </div>
-      </article>;
-    })}</div>
+      </article>)}</div>
     {visible.length === 0 && <div className="registry-empty"><strong>More gifts in this category</strong><p>The complete selection and current availability are on Janelle and Fernando’s Babylist.</p><ExternalLink href={REGISTRY_URL} primary>View this category on Babylist</ExternalLink></div>}
     {category === "All" && <div className="registry-footer"><p>Showing 12 of 32 gifts</p><ExternalLink href={REGISTRY_URL} primary>Continue through the full registry</ExternalLink></div>}
   </div>;
@@ -318,12 +315,9 @@ function RSVPScreen({ rsvp, setRsvp, onSave }: { rsvp: RSVP; setRsvp: React.Disp
 }
 
 function HandoffSheet({ overlay, onClose }: { overlay: Exclude<Overlay, null>; onClose: () => void }) {
-  const isRoom = overlay.type === "room";
-  const product = !isRoom ? products[overlay.index] : null;
   return <div className="handoff-overlay" role="dialog" aria-modal="true" aria-labelledby="handoff-title"><div className="handoff-sheet"><div className="sheet-handle" />
-    {!isRoom && product && <div className="sheet-product"><img src={product.image} alt="" /><div><span>{product.category}</span><strong>{product.price}</strong></div></div>}
-    <h3 id="handoff-title">{isRoom ? overlay.label : product?.name}</h3>
-    <p>{isRoom ? "The September 25–27 stay is at the baby shower venue. Group code 905 is ready; Hilton will open to collect guest details and confirm the reservation." : "Babylist will show current prices and retailer availability for this gift. Open the registry there to purchase it and prevent duplicate gifts."}</p>
-    <div><button className="phone-action" onClick={onClose}>{isRoom ? "Back to rooms" : "Back to gifts"}</button><ExternalLink href={isRoom ? BOOKING_URL : REGISTRY_URL} primary>{isRoom ? "Continue with Hilton" : "View on Babylist"}</ExternalLink></div>
+    <h3 id="handoff-title">{overlay.label}</h3>
+    <p>The September 25–27 stay is at the baby shower venue. Group code 905 is ready; Hilton will open to collect guest details and confirm the reservation.</p>
+    <div><button className="phone-action" onClick={onClose}>Back to rooms</button><ExternalLink href={BOOKING_URL} primary>Continue with Hilton</ExternalLink></div>
   </div></div>;
 }
