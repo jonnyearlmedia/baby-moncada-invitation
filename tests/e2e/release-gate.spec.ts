@@ -135,8 +135,14 @@ test("a submitted RSVP reaches the host dashboard with note and timestamp", asyn
   const note = `Controlled release gate ${Date.now()}`;
   await page.goto("/invite/ponticelle");
   await page.getByRole("button", { name: "RSVP", exact: true }).first().click();
-  if (await page.getByRole("button", { name: "Change response" }).isVisible()) await page.getByRole("button", { name: "Change response" }).click();
-  await page.getByRole("button", { name: "Attending" }).click();
+  const changeResponse = page.getByRole("button", { name: "Change response" });
+  const attendingButton = page.getByRole("button", { name: "Attending" });
+  await Promise.any([
+    changeResponse.waitFor({ state: "visible", timeout: 10_000 }),
+    attendingButton.waitFor({ state: "visible", timeout: 10_000 }),
+  ]);
+  if (await changeResponse.isVisible()) await changeResponse.click();
+  await attendingButton.click();
   await page.getByLabel(/Note for Janelle & Fernando/).fill(note);
   const save = page.waitForResponse((response) => response.url().includes("/api/rsvp") && response.request().method() === "POST");
   await page.getByRole("button", { name: /Confirm RSVP|Save changes/ }).click();
