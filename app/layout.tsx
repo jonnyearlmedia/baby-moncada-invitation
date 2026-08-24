@@ -23,13 +23,20 @@ export async function generateMetadata(): Promise<Metadata> {
   const protocol = requestHeaders.get("x-forwarded-proto") || (host.startsWith("localhost") ? "http" : "https");
   const origin = `${protocol}://${host}`;
   const title = "Baby Moncada · September 26, 2026";
-  const description = "A personalized baby shower invitation for the Murao family.";
+  const description = "A personalized boarding pass invitation to celebrate Baby Moncada.";
   return {
     title,
     description,
-    icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
-    openGraph: { title, description, type: "website", images: [{ url: `${origin}/og.png`, width: 1200, height: 630, alt: "Baby Moncada invitation for September 26, 2026" }] },
-    twitter: { card: "summary_large_image", title, description, images: [`${origin}/og.png`] },
+    applicationName: "Baby Moncada",
+    manifest: "/manifest.webmanifest",
+    appleWebApp: { capable: true, title: "Baby Moncada", statusBarStyle: "default" },
+    icons: {
+      icon: [{ url: "/favicon.ico", sizes: "any" }, { url: "/icon.png", type: "image/png", sizes: "512x512" }],
+      shortcut: "/favicon.ico",
+      apple: [{ url: "/apple-icon.png", type: "image/png", sizes: "180x180" }],
+    },
+    openGraph: { title, description, type: "website", siteName: "Baby Moncada", images: [{ url: `${origin}/opengraph-image.png`, width: 1200, height: 630, alt: "Baby Moncada boarding pass invitation" }] },
+    twitter: { card: "summary_large_image", title, description, images: [`${origin}/twitter-image.png`] },
   };
 }
 
