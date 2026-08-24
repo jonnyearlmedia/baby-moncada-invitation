@@ -75,8 +75,12 @@ test("dashboard controls work on the complete roster", async ({ context, page })
   await page.goto("/dashboard");
   await page.locator("input").first().fill("1991");
   await page.getByRole("button", { name: "Open dashboard" }).click();
-  await expect(page.getByRole("heading", { name: "Every RSVP, at a glance" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Responses by invitation party" })).toBeVisible();
   await expect(page.locator("details.household-card")).toHaveCount(58);
+  await expect(page.getByRole("button", { name: "Parties", exact: true })).toHaveClass(/selected/);
+  await expect(page.locator(".party-directory-card")).toHaveCount(58);
+  await expect(page.locator(".directory-row")).toHaveCount(0);
+  await page.getByRole("button", { name: "Individual guests" }).click();
   await expect(page.locator(".directory-row")).toHaveCount(128);
 
   for (const label of ["All invited", "Yes — attending", "No — can’t attend", "Pending"]) {
@@ -91,10 +95,10 @@ test("dashboard controls work on the complete roster", async ({ context, page })
   }
 
   await page.getByRole("button", { name: "Everyone", exact: true }).click();
-  await page.getByRole("textbox", { name: "Search guests or households" }).fill("Grace Ponticelle");
+  await page.getByRole("textbox", { name: "Search guests, parties, or short links" }).fill("Grace Ponticelle");
   await expect(page.locator(".directory-row")).toHaveCount(1);
   await expect(page.locator(".directory-row")).toContainText("Auntie Grace Ponticelle");
-  await page.getByRole("textbox", { name: "Search guests or households" }).fill("");
+  await page.getByRole("textbox", { name: "Search guests, parties, or short links" }).fill("");
 
   const grace = page.locator("details.household-card").filter({ hasText: "Auntie Grace Ponticelle" });
   await grace.locator("summary").click();
@@ -157,7 +161,8 @@ test("a submitted RSVP reaches the host dashboard with note and timestamp", asyn
   await dashboard.goto("/dashboard");
   await dashboard.locator("input").first().fill("1991");
   await dashboard.getByRole("button", { name: "Open dashboard" }).click();
-  await dashboard.getByRole("textbox", { name: "Search guests or households" }).fill("Grace Ponticelle");
+  await dashboard.getByRole("button", { name: "Individual guests" }).click();
+  await dashboard.getByRole("textbox", { name: "Search guests, parties, or short links" }).fill("Grace Ponticelle");
   const row = dashboard.locator(".directory-row").filter({ hasText: "Auntie Grace Ponticelle" });
   await expect(row).toContainText("Yes — attending");
   await expect(row.locator("time")).not.toHaveText("Not replied yet");
@@ -172,6 +177,7 @@ test("a submitted RSVP reaches the host dashboard with note and timestamp", asyn
   expect((await change).ok()).toBe(true);
   await expect(page.getByText("Auntie Grace Ponticelle can’t make it.", { exact: true })).toBeVisible();
   await dashboard.reload();
-  await dashboard.getByRole("textbox", { name: "Search guests or households" }).fill("Grace Ponticelle");
+  await dashboard.getByRole("button", { name: "Individual guests" }).click();
+  await dashboard.getByRole("textbox", { name: "Search guests, parties, or short links" }).fill("Grace Ponticelle");
   await expect(dashboard.locator(".directory-row").filter({ hasText: "Auntie Grace Ponticelle" })).toContainText("No — can’t attend");
 });

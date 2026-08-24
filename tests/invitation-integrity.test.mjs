@@ -49,8 +49,9 @@ test("host dashboard uses a hashed passcode, signed cookie, rate limits, and aud
   assert.match(dashboard, /Copy link/);
   assert.match(dashboard, /Copy message/);
   assert.match(dashboard, /household\.submission\.note/);
-  assert.match(dashboard, /Every RSVP, at a glance/);
-  assert.match(dashboard, /Search guests or households/);
+  assert.match(dashboard, /Responses by invitation party/);
+  assert.match(dashboard, /Individual guests/);
+  assert.match(dashboard, /Search guests, parties, or short links/);
   assert.match(dashboard, /responseFilter/);
   assert.match(migration, /admin_audit_log/);
 });

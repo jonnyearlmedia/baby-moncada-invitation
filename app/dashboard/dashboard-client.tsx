@@ -15,6 +15,7 @@ type HouseholdRow = {
 };
 type DashboardData = { event: EventRow; households: HouseholdRow[]; registrySync: { status: string; finished_at: string | null } | null };
 type ResponseFilter = "all" | "yes" | "no" | "pending";
+type DashboardView = "parties" | "guests";
 
 function formatDateTime(value: string | null) {
   if (!value) return "Not replied yet";
@@ -41,6 +42,7 @@ export default function DashboardClient() {
   const [busy, setBusy] = useState("");
   const [copiedKey, setCopiedKey] = useState("");
   const [responseFilter, setResponseFilter] = useState<ResponseFilter>("all");
+  const [dashboardView, setDashboardView] = useState<DashboardView>("parties");
   const [search, setSearch] = useState("");
 
   const load = useCallback(async () => {
@@ -75,6 +77,15 @@ export default function DashboardClient() {
     }) ?? [];
   }, [data, responseFilter, search]);
 
+  const partyDirectory = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase();
+    return data?.households.filter((household) => {
+      const matchesFilter = responseFilter === "all" || household.guests.some((guest) => responseFilter === "pending" ? guest.response === null : guest.response === responseFilter);
+      const haystack = `${household.display_name} ${household.slug} ${household.invitation_label} ${household.guests.map((guest) => guest.display_name).join(" ")}`.toLocaleLowerCase();
+      return matchesFilter && (!query || haystack.includes(query));
+    }) ?? [];
+  }, [data, responseFilter, search]);
+
   async function save(body: Record<string, unknown>, key: string) {
     setBusy(key); setError(""); setNotice("");
     const response = await fetch("/api/admin/dashboard", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -102,9 +113,13 @@ export default function DashboardClient() {
     {(error || notice) && <div className={error ? "admin-alert error" : "admin-alert"} role="status">{error || notice}</div>}
     <section className="stats-grid" aria-label="RSVP totals"><button className={responseFilter === "all" ? "stats-card selected" : "stats-card"} onClick={() => setResponseFilter("all")}><strong>{stats.invited}</strong><span>All invited</span></button><button className={responseFilter === "yes" ? "stats-card selected" : "stats-card"} onClick={() => setResponseFilter("yes")}><strong>{stats.attending}</strong><span>Yes — attending</span></button><button className={responseFilter === "no" ? "stats-card selected" : "stats-card"} onClick={() => setResponseFilter("no")}><strong>{stats.declined}</strong><span>No — can’t attend</span></button><button className={responseFilter === "pending" ? "stats-card selected" : "stats-card"} onClick={() => setResponseFilter("pending")}><strong>{stats.pending}</strong><span>Pending</span></button></section>
 
-    <section className="admin-card response-directory-card"><div className="section-heading"><div><p className="admin-kicker">Live guest directory</p><h2>Every RSVP, at a glance</h2></div><span>{responseDirectory.length} matching guest{responseDirectory.length === 1 ? "" : "s"}</span></div>
-      <div className="directory-controls"><label>Search guests or households<input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Try Grace, Ponticelle, or a short link" /></label><div className="filter-row" aria-label="Filter RSVP responses">{(["all", "yes", "no", "pending"] as ResponseFilter[]).map((filter) => <button key={filter} className={responseFilter === filter ? "filter-button selected" : "filter-button"} onClick={() => setResponseFilter(filter)}>{filter === "all" ? "Everyone" : filter === "yes" ? "Yes" : filter === "no" ? "No" : "Pending"}</button>)}</div></div>
-      <div className="directory-list">{responseDirectory.length ? responseDirectory.map((guest) => <div className={`directory-row status-${guest.response ?? "pending"}`} key={guest.id}><div><strong>{guest.display_name}</strong><span>{guest.householdName} · <a href={guest.invitationLink}>{guest.invitationLink}</a></span></div><div><b>{responseLabel(guest.response)}</b><time>{formatDateTime(guest.response_updated_at ?? guest.submissionUpdatedAt)}</time></div></div>) : <p className="empty-state">No guests match this search and filter.</p>}</div>
+    <section className="admin-card response-directory-card"><div className="section-heading"><div><p className="admin-kicker">Live RSVP results</p><h2>{dashboardView === "parties" ? "Responses by invitation party" : "Every guest, at a glance"}</h2></div><span>{dashboardView === "parties" ? `${partyDirectory.length} matching ${partyDirectory.length === 1 ? "party" : "parties"}` : `${responseDirectory.length} matching ${responseDirectory.length === 1 ? "guest" : "guests"}`}</span></div>
+      <div className="view-switch" aria-label="Dashboard view"><button className={dashboardView === "parties" ? "selected" : ""} onClick={() => setDashboardView("parties")}>Parties</button><button className={dashboardView === "guests" ? "selected" : ""} onClick={() => setDashboardView("guests")}>Individual guests</button></div>
+      <div className="directory-controls"><label>Search guests, parties, or short links<input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Try Grace, Ponticelle, or a short link" /></label><div className="filter-row" aria-label="Filter RSVP responses">{(["all", "yes", "no", "pending"] as ResponseFilter[]).map((filter) => <button key={filter} className={responseFilter === filter ? "filter-button selected" : "filter-button"} onClick={() => setResponseFilter(filter)}>{filter === "all" ? "Everyone" : filter === "yes" ? "Yes" : filter === "no" ? "No" : "Pending"}</button>)}</div></div>
+      {dashboardView === "parties" ? <div className="party-directory-list">{partyDirectory.length ? partyDirectory.map((household) => {
+        const link = `/invite/${household.slug}`;
+        return <article className="party-directory-card" key={household.id}><header><div><strong>{household.display_name}</strong><a href={link}>{link}</a></div><div className="response-pills"><i>{household.guests.filter((guest) => guest.response === "yes").length} yes</i><i>{household.guests.filter((guest) => guest.response === "no").length} no</i><i>{household.guests.filter((guest) => guest.response === null).length} pending</i></div></header><div className="party-guest-list">{household.guests.map((guest) => <div className={`party-guest-row status-${guest.response ?? "pending"}`} key={guest.id}><div><strong>{guest.display_name}</strong><span>{responseLabel(guest.response)}</span></div><time>{formatDateTime(guest.response_updated_at ?? household.submission?.updated_at ?? null)}</time></div>)}</div>{household.submission?.note && <p className="party-note"><strong>Note:</strong> {household.submission.note}</p>}</article>;
+      }) : <p className="empty-state">No invitation parties match this search and filter.</p>}</div> : <div className="directory-list">{responseDirectory.length ? responseDirectory.map((guest) => <div className={`directory-row status-${guest.response ?? "pending"}`} key={guest.id}><div><strong>{guest.display_name}</strong><span>{guest.householdName} · <a href={guest.invitationLink}>{guest.invitationLink}</a></span></div><div><b>{responseLabel(guest.response)}</b><time>{formatDateTime(guest.response_updated_at ?? guest.submissionUpdatedAt)}</time></div></div>) : <p className="empty-state">No guests match this search and filter.</p>}</div>}
     </section>
 
     <section className="admin-card"><div className="section-heading"><div><p className="admin-kicker">Shared across every link</p><h2>Event details</h2></div><span>Basic edits update all invitations</span></div>
@@ -126,7 +141,7 @@ export default function DashboardClient() {
       <button className="admin-primary" disabled={busy === "event"} onClick={() => save({ kind: "event", eventTitle: event.event_title, hostsDisplay: event.hosts_display, eventStartsAt: event.event_starts_at, venueName: event.venue_name, venueAddress: event.venue_address, contactEmail: event.contact_email, contactPhone: event.contact_phone, registryUrl: event.registry_url, hotelBookingUrl: event.hotel_booking_url, hotelBookingDeadline: event.hotel_booking_deadline, hotelGroupCode: event.hotel_group_code, hotelRateLabel: event.hotel_rate_label, copyMessageTemplate: event.copy_message_template }, "event")}>{busy === "event" ? "Saving…" : "Save event details"}</button>
     </section>
 
-    <section className="admin-card"><div className="section-heading"><div><p className="admin-kicker">Battle-test group</p><h2>Six pilot invitations</h2></div><span>Old slugs remain working after a rename</span></div>
+    <section className="admin-card"><div className="section-heading"><div><p className="admin-kicker">Invitation management</p><h2>All invitation links</h2></div><span>Open a party to copy its link or make edits</span></div>
       <div className="household-list">{data.households.map((household) => {
         const link = invitationLink(household.slug);
         const message = event.copy_message_template.replaceAll("{{household}}", household.message_greeting).replaceAll("{{link}}", link);
