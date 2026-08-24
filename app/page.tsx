@@ -3,13 +3,13 @@
 /* eslint-disable @next/next/no-img-element -- Babylist supplies live, variable registry image URLs; native lazy loading keeps the list resilient when an item image changes. */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { EventSettings } from "@/lib/invitation-types";
 
 const BOOKING_URL = "https://www.hilton.com/en/book/reservation/rooms/?ctyhocn=STSRHUP&arrivalDate=2026-09-25&departureDate=2026-09-27&groupCode=905&room1NumAdults=1&cid=OM%2CWW%2CHILTONLINK%2CEN%2CDirectLink";
-const REGISTRY_URL = "https://my.babylist.com/janelle-fernando?session_synced=true";
+const REGISTRY_URL = "https://my.babylist.com/janelle-fernando";
 const HOTEL_ADDRESS = "5870 Labath Ave, Rohnert Park, CA 94928";
 const HOTEL_APPLE_MAPS = "https://maps.apple.com/?daddr=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&dirflg=d";
 const HOTEL_GOOGLE_MAPS = "https://www.google.com/maps/dir/?api=1&destination=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&travelmode=driving&dir_action=navigate";
-const RSVP_INVITE_CODE = "murao-family-2-f7c4a9";
 
 const nav = [
   ["invite", "home", "Invite"],
@@ -23,21 +23,25 @@ type View = (typeof nav)[number][0];
 type IconName = (typeof nav)[number][1] | "calendar";
 type RegistryOffer = { id: number; store: string; url: string; price: number | null; isBabylist: boolean; availability: string | null; availabilityText: string | null };
 type RegistryItem = { id: number; title: string; image: string; category: string; price: string | null; quantity: number; quantityNeeded: number; isFulfilled: boolean; reservedCount: number; offers: RegistryOffer[] };
-type RegistryState = { status: "loading" | "ready" | "error"; items: RegistryItem[]; updatedAt: string | null };
+type RegistryState = { status: "loading" | "ready" | "handoff" | "error"; items: RegistryItem[]; updatedAt: string | null };
 type Overlay = { type: "gift"; item: RegistryItem } | null;
 type Attendance = "yes" | "no" | null;
 type RSVP = {
+  canonicalSlug: string;
   household: string;
-  guests: { id: number; name: string; response: Attendance }[];
+  invitationLabel: string;
+  messageGreeting: string;
+  guests: { id: string; name: string; response: Attendance }[];
   note: string;
   submitted: boolean;
   updatedAt: string | null;
   status: "loading" | "ready" | "saving" | "error";
   error: string | null;
+  event: EventSettings | null;
 };
 
 function getCountdown() {
-  const target = new Date(2026, 8, 26, 0, 0, 0).getTime();
+  const target = new Date(2026, 8, 26, 16, 0, 0).getTime();
   const difference = Math.max(0, target - Date.now());
   return {
     days: Math.floor(difference / 86400000),
@@ -62,14 +66,14 @@ function Icon({ name }: { name: IconName }) {
   </svg>;
 }
 
-export default function Home() {
+export default function Home({ inviteSlug = "murao" }: { inviteSlug?: string }) {
   const [view, setView] = useState<View>("invite");
   const [category, setCategory] = useState("All");
   const [overlay, setOverlay] = useState<Overlay>(null);
   const [registry, setRegistry] = useState<RegistryState>({ status: "loading", items: [], updatedAt: null });
   const phoneContentRef = useRef<HTMLDivElement>(null);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-  const [rsvp, setRsvp] = useState<RSVP>({ household: "The Murao Family", guests: [], note: "", submitted: false, updatedAt: null, status: "loading", error: null });
+  const [rsvp, setRsvp] = useState<RSVP>({ canonicalSlug: inviteSlug, household: "", invitationLabel: "", messageGreeting: "", guests: [], note: "", submitted: false, updatedAt: null, status: "loading", error: null, event: null });
   useEffect(() => {
     const initialFrame = window.requestAnimationFrame(() => {
       setCountdown(getCountdown());
@@ -85,7 +89,7 @@ export default function Home() {
     let active = true;
     async function loadRSVP() {
       try {
-        const response = await fetch(`/api/rsvp?code=${encodeURIComponent(RSVP_INVITE_CODE)}`, { cache: "no-store" });
+        const response = await fetch(`/api/rsvp?slug=${encodeURIComponent(inviteSlug)}`, { cache: "no-store" });
         const data = await response.json() as Omit<RSVP, "status" | "error"> & { error?: string };
         if (!response.ok) throw new Error(data.error || "RSVP unavailable");
         if (active) setRsvp({ ...data, status: "ready", error: null });
@@ -95,7 +99,7 @@ export default function Home() {
     }
     loadRSVP();
     return () => { active = false; };
-  }, []);
+  }, [inviteSlug]);
 
   useEffect(() => {
     let active = true;
@@ -103,8 +107,9 @@ export default function Home() {
       try {
         const response = await fetch("/api/registry");
         if (!response.ok) throw new Error("Registry refresh failed");
-        const data = await response.json() as { items: RegistryItem[]; updatedAt: string };
-        if (active) setRegistry({ status: "ready", items: data.items, updatedAt: data.updatedAt });
+        const data = await response.json() as { mode?: "handoff"; items?: RegistryItem[]; updatedAt?: string };
+        if (active && data.mode === "handoff") setRegistry({ status: "handoff", items: [], updatedAt: null });
+        else if (active) setRegistry({ status: "ready", items: data.items ?? [], updatedAt: data.updatedAt ?? null });
       } catch {
         if (active) setRegistry({ status: "error", items: [], updatedAt: null });
       }
@@ -123,7 +128,7 @@ export default function Home() {
   async function saveRSVP() {
     setRsvp((current) => ({ ...current, status: "saving", error: null }));
     try {
-      const response = await fetch(`/api/rsvp?code=${encodeURIComponent(RSVP_INVITE_CODE)}`, {
+      const response = await fetch(`/api/rsvp?slug=${encodeURIComponent(inviteSlug)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ guests: rsvp.guests.map(({ id, response }) => ({ id, response })), note: rsvp.note }),
@@ -139,7 +144,7 @@ export default function Home() {
   function downloadCalendar() {
     const calendar = [
       "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Baby Moncada//Invitation//EN", "BEGIN:VEVENT",
-      "UID:baby-moncada-20260926", "DTSTART;VALUE=DATE:20260926", "DTEND;VALUE=DATE:20260927",
+      "UID:baby-moncada-20260926", "DTSTART;TZID=America/Los_Angeles:20260926T160000",
       "SUMMARY:Baby Moncada Celebration", `LOCATION:${HOTEL_ADDRESS}`,
       "DESCRIPTION:A little boy is on the way. Join Janelle and Fernando at Hotel Centro Sonoma Wine Country.",
       "END:VEVENT", "END:VCALENDAR",
@@ -155,8 +160,8 @@ export default function Home() {
     <main className="app-page">
       <section className="phone theme-paper-blue" aria-label="Baby Moncada invitation">
         <div className="phone-content" ref={phoneContentRef}>
-          {view === "invite" && <InviteScreen countdown={countdown} onRSVP={() => changeView("rsvp")} onCalendar={downloadCalendar} />}
-          {view === "stay" && <StayScreen />}
+          {view === "invite" && <InviteScreen countdown={countdown} rsvp={rsvp} onRSVP={() => changeView("rsvp")} onCalendar={downloadCalendar} />}
+          {view === "stay" && <StayScreen bookingUrl={rsvp.event?.hotelBookingUrl ?? BOOKING_URL} />}
           {view === "registry" && <RegistryScreen category={category} setCategory={setCategory} products={visibleProducts} registry={registry} onGift={(item) => setOverlay({ type: "gift", item })} />}
           {view === "maps" && <MapsScreen />}
           {view === "rsvp" && <RSVPScreen rsvp={rsvp} setRsvp={setRsvp} onSave={saveRSVP} />}
@@ -170,21 +175,21 @@ export default function Home() {
   );
 }
 
-function InviteScreen({ countdown, onRSVP, onCalendar }: { countdown: ReturnType<typeof getCountdown>; onRSVP: () => void; onCalendar: () => void }) {
+function InviteScreen({ countdown, rsvp, onRSVP, onCalendar }: { countdown: ReturnType<typeof getCountdown>; rsvp: RSVP; onRSVP: () => void; onCalendar: () => void }) {
   return <div className="invite-screen">
     <div className="invite-art" aria-hidden="true"><i /><i /><i /><i /></div>
     <div className="invite-copy">
       <div className="paper-monogram" aria-hidden="true"><span>J</span><i>✦</i><span>F</span></div>
-      <p className="phone-eyebrow">For the Murao family</p>
+      <p className="phone-eyebrow">For {rsvp.invitationLabel || "your household"}</p>
       <h2>You&apos;re invited to</h2>
       <div className="baby-title">Baby<br />Moncada</div>
       <p className="honoring">A celebration honoring</p>
       <p className="names">Janelle &amp; Fernando</p>
       <span className="boy-pill">A little boy is on the way</span>
-      <p className="recipient-line">Elsa &amp; Jonathan · Party of two</p>
+      <p className="recipient-line">{rsvp.guests.map((guest) => guest.name).join(" & ")} · Party of {rsvp.guests.length || "—"}</p>
     </div>
     <div className="event-card">
-      <div><span><Icon name="calendar" /></span><p><strong>Saturday, September 26, 2026</strong><br />Event time to be announced</p></div>
+      <div><span><Icon name="calendar" /></span><p><strong>Saturday, September 26, 2026</strong><br />4:00 PM</p></div>
       <div><span><Icon name="pin" /></span><p><strong>Hotel Centro Sonoma Wine Country</strong><br />{HOTEL_ADDRESS}</p></div>
     </div>
     <div className="countdown" aria-label="Countdown to September 26, 2026">
@@ -198,7 +203,7 @@ function ScreenHeader({ kicker, title, mark }: { kicker: string; title: string; 
   return <header className="screen-header"><div><p className="phone-eyebrow">{kicker}</p><h2>{title}</h2></div><span>{mark}</span></header>;
 }
 
-function StayScreen() {
+function StayScreen({ bookingUrl }: { bookingUrl: string }) {
   return <div className="feature-screen">
     <ScreenHeader kicker="Baby shower + weekend stay" title="Stay on site" mark="$149 avg/night" />
     <div className="info-block venue-block"><strong>Hotel Centro Sonoma Wine Country</strong><p>Tapestry by Hilton<br />{HOTEL_ADDRESS}</p><div><span>One address</span>The baby shower and room block are both here.</div></div>
@@ -208,7 +213,7 @@ function StayScreen() {
       <Room name="2 Queen Beds" detail="Sleeps 4 · workspace · mini refrigerator" />
     </div>
     <div className="amenities"><span>Free Wi-Fi</span><span>Outdoor pool</span><span>Restaurant</span><span>Fitness center</span><span>Pet friendly</span></div>
-    <div className="booking-panel"><div><span>Official room block</span><strong>September 25–27</strong><p>Hilton will confirm current availability, the final total, and your reservation.</p></div><ExternalLink href={BOOKING_URL} primary>Check rooms &amp; book with Hilton</ExternalLink><small>Hilton currently shows King and two-Queen options at an average group rate of $149 per night. Rates and availability can change until booked.</small></div>
+    <div className="booking-panel"><div><span>Official room block</span><strong>September 25–27</strong><p>Book by September 11, 2026. Hilton will confirm current availability, the final total, and your reservation.</p></div><ExternalLink href={bookingUrl} primary>Check rooms &amp; book with Hilton</ExternalLink><small>Hilton currently shows King and two-Queen options at an average group rate of $149 per night. Rates and availability can change until booked.</small></div>
   </div>;
 }
 
@@ -231,6 +236,12 @@ function RegistryScreen({ category, setCategory, products: visible, registry, on
   if (registry.status === "error") return <div className="feature-screen">
     <ScreenHeader kicker="Babylist registry" title="Janelle’s registry" mark="Unavailable" />
     <div className="registry-empty"><strong>We couldn’t refresh the gift list.</strong><p>Nothing stale is being shown. Open Babylist to see the current registry and purchase status.</p><ExternalLink href={REGISTRY_URL} primary>Open the registry on Babylist</ExternalLink></div>
+  </div>;
+
+  if (registry.status === "handoff") return <div className="feature-screen">
+    <ScreenHeader kicker="Babylist registry" title="Janelle’s registry" mark="Live on Babylist" />
+    <div className="registry-profile"><div className="registry-monogram" aria-hidden="true">J <span>+</span> F</div><div><strong>Janelle &amp; Fernando Moncada</strong><p>Baby due November 25, 2026</p></div></div>
+    <div className="registry-empty"><strong>See the current registry directly on Babylist.</strong><p>New items, changes, fulfilled gifts, and checkout stay accurate on the live registry. This invitation will not show a stale copy.</p><ExternalLink href={REGISTRY_URL} primary>Open the registry on Babylist</ExternalLink></div>
   </div>;
 
   const stillNeeded = registry.items.filter((item) => !item.isFulfilled).length;
@@ -275,13 +286,14 @@ function RSVPScreen({ rsvp, setRsvp, onSave }: { rsvp: RSVP; setRsvp: React.Disp
   const attending = rsvp.guests.filter((guest) => guest.response === "yes").map((guest) => guest.name);
 
   if (rsvp.submitted) {
-    const responseSummary = attending.length === 2
-      ? "Elsa and Jonathan are attending."
-      : attending.length === 1
-        ? `${attending[0]} is attending. ${rsvp.guests.find((guest) => guest.response === "no")?.name} can’t make it.`
-        : "Elsa and Jonathan can’t make it.";
+    const declined = rsvp.guests.filter((guest) => guest.response === "no").map((guest) => guest.name);
+    const responseSummary = attending.length === rsvp.guests.length
+      ? `${attending.join(", ")} ${attending.length === 1 ? "is" : "are"} attending.`
+      : attending.length === 0
+        ? `${declined.join(", ")} ${declined.length === 1 ? "can’t" : "can’t"} make it.`
+        : `${attending.join(", ")} ${attending.length === 1 ? "is" : "are"} attending. ${declined.join(", ")} can’t make it.`;
     return <div className="feature-screen rsvp-screen">
-      <ScreenHeader kicker="RSVP received" title="Thank you, Murao family." mark="✓" />
+      <ScreenHeader kicker="RSVP received" title={`Thank you, ${rsvp.messageGreeting}.`} mark="✓" />
       <div className="rsvp-success">
         <div className="success-mark" aria-hidden="true">✓</div>
         <h3>{responseSummary}</h3>
@@ -294,15 +306,15 @@ function RSVPScreen({ rsvp, setRsvp, onSave }: { rsvp: RSVP; setRsvp: React.Disp
   }
 
   return <div className="feature-screen">
-    <ScreenHeader kicker="Your invitation" title="RSVP" mark="2 invited" />
+    <ScreenHeader kicker="Your invitation" title="RSVP" mark={`${rsvp.guests.length} invited`} />
     <div className="party-summary">
       <span>Invitation for</span>
-      <strong>The Murao Family</strong>
-      <p>Elsa and Jonathan · Party of two</p>
+      <strong>{rsvp.household}</strong>
+      <p>{rsvp.guests.map((guest) => guest.name).join(", ")} · Party of {rsvp.guests.length}</p>
     </div>
     <div className="rsvp-intro"><h3>Who can make it?</h3><p>Please respond for each person named on this invitation.</p></div>
     <div className="invitee-list">
-      {rsvp.guests.map((guest, index) => <article className="invitee" key={guest.name}>
+      {rsvp.guests.map((guest, index) => <article className="invitee" key={guest.id}>
         <div className="invitee-heading"><span className="guest-avatar" aria-hidden="true">{guest.name[0]}</span><div><strong>{guest.name}</strong><p>{guest.response === "yes" ? "Attending" : guest.response === "no" ? "Can’t attend" : "Response needed"}</p></div></div>
         <div className="attendance-options" role="group" aria-label={`${guest.name}'s attendance`}>
           <button aria-pressed={guest.response === "yes"} onClick={() => setRsvp({ ...rsvp, guests: rsvp.guests.map((item, itemIndex) => itemIndex === index ? { ...item, response: "yes" } : item) })}>Attending</button>
@@ -316,7 +328,8 @@ function RSVPScreen({ rsvp, setRsvp, onSave }: { rsvp: RSVP; setRsvp: React.Disp
     </div>
     {rsvp.error && <p className="form-error" role="alert">{rsvp.error}</p>}
     <button className="phone-action primary full save-rsvp" disabled={!complete || rsvp.status === "saving"} onClick={onSave}>{rsvp.status === "saving" ? "Saving response…" : rsvp.updatedAt ? "Save changes" : "Confirm RSVP"}</button>
-    {!complete && <p className="rsvp-guidance">Choose a response for Elsa and Jonathan to continue.</p>}
+    {!complete && <p className="rsvp-guidance">Choose a response for every guest to continue.</p>}
+    <div className="contact-actions"><span>Questions? Reach Janelle</span><div><a href={`mailto:${rsvp.event?.contactEmail ?? "j_elyssa05@yahoo.com"}`}>Email</a><a href={`sms:${rsvp.event?.contactPhone ?? "+17073345988"}`}>Text</a><a href={`tel:${rsvp.event?.contactPhone ?? "+17073345988"}`}>Call</a></div></div>
   </div>;
 }
 

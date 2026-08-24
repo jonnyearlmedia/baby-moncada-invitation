@@ -5,57 +5,55 @@ import test from "node:test";
 const root = new URL("../", import.meta.url);
 const read = (path) => readFile(new URL(path, root), "utf8");
 
-test("keeps the confirmed event facts consistent", async () => {
-  const page = await read("app/page.tsx");
+test("confirmed event facts are consistent in UI and database seed", async () => {
+  const [page, migration] = await Promise.all([read("app/page.tsx"), read("supabase/migrations/20260824073636_production_rsvp_pilot.sql")]);
   assert.match(page, /Saturday, September 26, 2026/);
-  assert.match(page, /5870 Labath Ave, Rohnert Park, CA 94928/);
-  assert.match(page, /arrivalDate=2026-09-25&departureDate=2026-09-27&groupCode=905/);
-  assert.match(page, /Event time to be announced/);
-  assert.doesNotMatch(page, /Saturday, October 18, 2025|The Garden Room|Houston, TX/);
+  assert.match(page, /4:00 PM/);
+  assert.match(page, /DTSTART;TZID=America\/Los_Angeles:20260926T160000/);
+  assert.match(migration, /2026-09-26 16:00:00-07/);
+  assert.match(migration, /5870 Labath Ave, Rohnert Park, CA 94928/);
+  assert.match(migration, /2026-09-11/);
+  assert.match(migration, /groupCode=905/);
 });
 
-test("opens directly as the selected blue stationery invitation", async () => {
-  const [page, css, layout] = await Promise.all([read("app/page.tsx"), read("app/globals.css"), read("app/layout.tsx")]);
-  assert.match(page, /theme-paper-blue/);
-  assert.match(page, /aria-label="Baby Moncada invitation"/);
-  assert.match(css, /--app-bg:#dce9f2/);
-  assert.match(layout, /Baby Moncada · September 26, 2026/);
-  assert.doesNotMatch(page, /Choose the invitation|Visual directions|concepts =/);
-  assert.doesNotMatch(page, /className="island"|className="status"/);
+test("the six approved pilot households and readable links are seeded", async () => {
+  const migration = await read("supabase/migrations/20260824073636_production_rsvp_pilot.sql");
+  for (const slug of ["murao", "ponticelle", "cabrera", "sainz", "morales-diaz", "castro"]) assert.match(migration, new RegExp(`'${slug}'`));
+  for (const name of ["Mom", "Jonathan Murao", "Auntie Grace Ponticelle", "Kuya Maikhi Cabrera", "Ate Michelle Cabrera", "Trish", "Tique", "Danny Sainz", "Jenna Sainz", "Angelina", "Lily", "Ava", "DJ", "Ray", "Facundo Morales", "Kelly Diaz", "Eleni", "Jose Castro", "Thalía Castro"]) assert.ok(migration.includes(`'${name}'`), `missing ${name}`);
 });
 
-test("uses live item-level registry actions instead of repeated generic buttons", async () => {
-  const [page, route] = await Promise.all([read("app/page.tsx"), read("app/api/registry/route.ts")]);
-  assert.match(route, /reg_items\/minimal\?limit=100&offset=0/);
-  assert.match(route, /quantityNeeded/);
-  assert.match(route, /isFulfilled/);
-  assert.match(route, /reservedCount/);
-  assert.match(page, /Buy through Babylist/);
-  assert.match(page, /View at \$\{offer\.store\}/);
-  assert.match(page, /mark this gift as purchased/);
-  assert.doesNotMatch(page, />View on Babylist</);
+test("RSVP writes validate complete named responses inside one database transaction", async () => {
+  const [route, migration] = await Promise.all([read("app/api/rsvp/route.ts"), read("supabase/migrations/20260824073636_production_rsvp_pilot.sql")]);
+  assert.match(route, /submit_household_rsvp/);
+  assert.match(route, /z\.enum\(\["yes", "no"\]\)/);
+  assert.match(migration, /v_received_count <> v_invited_count/);
+  assert.match(migration, /delete from public\.rsvp_guest_responses/);
+  assert.match(migration, /insert into public\.rsvp_guest_responses/);
+  assert.doesNotMatch(route, /D1|drizzle|Cloudflare/);
 });
 
-test("persists named household RSVPs in D1 with complete-response validation", async () => {
-  const [page, route, schema, hosting] = await Promise.all([
-    read("app/page.tsx"),
-    read("app/api/rsvp/route.ts"),
-    read("db/schema.ts"),
-    read(".openai/hosting.json"),
-  ]);
-  assert.match(route, /The Murao Family/);
-  assert.match(route, /\["Elsa", "Jonathan"\]/);
-  assert.match(route, /Please answer for every person named on this invitation/);
-  assert.match(schema, /rsvp_responses/);
-  assert.match(hosting, /"d1": "DB"/);
-  assert.match(page, /Your response is saved/);
-  assert.doesNotMatch(page, /saved on this device|has not notified the hosts/);
+test("database tables are RLS-protected and old readable links survive renames", async () => {
+  const migration = await read("supabase/migrations/20260824073636_production_rsvp_pilot.sql");
+  for (const table of ["event_settings", "households", "household_slug_aliases", "guests", "rsvp_submissions", "rsvp_guest_responses", "registry_items", "registry_offers", "admin_login_attempts", "admin_audit_log"]) assert.match(migration, new RegExp(`alter table public\\.${table} enable row level security`));
+  assert.match(migration, /insert into public\.household_slug_aliases\(slug, household_id\) values\(v_old_slug/);
 });
 
-test("provides real map handoffs and an embedded destination map", async () => {
-  const page = await read("app/page.tsx");
-  assert.match(page, /openstreetmap\.org\/export\/embed/);
-  assert.match(page, /Open in Apple Maps/);
-  assert.match(page, /Open in Google Maps/);
-  assert.match(page, /The shower and guest rooms are at the same address/);
+test("host dashboard uses a hashed passcode, signed cookie, rate limits, and audit log", async () => {
+  const [session, login, dashboard, migration] = await Promise.all([read("lib/admin-session.ts"), read("app/api/admin/session/route.ts"), read("app/dashboard/dashboard-client.tsx"), read("supabase/migrations/20260824074255_admin_edit_functions.sql")]);
+  assert.match(session, /scryptSync/);
+  assert.match(session, /createHmac\("sha256"/);
+  assert.match(session, /httpOnly: true/);
+  assert.match(login, /Too many attempts/);
+  assert.match(dashboard, /Copy link/);
+  assert.match(dashboard, /Copy message/);
+  assert.match(dashboard, /household\.submission\.note/);
+  assert.match(migration, /admin_audit_log/);
+});
+
+test("registry does not claim stale mirrored data when no authorized integration exists", async () => {
+  const [route, page] = await Promise.all([read("app/api/registry/route.ts"), read("app/page.tsx")]);
+  assert.match(route, /Automated mirroring is disabled until Babylist authorizes/);
+  assert.match(route, /mode: "handoff"/);
+  assert.match(page, /Open the registry on Babylist/);
+  assert.match(page, /Nothing stale is being shown/);
 });

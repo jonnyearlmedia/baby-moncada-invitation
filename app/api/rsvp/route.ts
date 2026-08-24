@@ -1,93 +1,68 @@
-import { asc, eq } from "drizzle-orm";
-import { getDb } from "../../../db";
-import { guests, households, rsvpResponses } from "../../../db/schema";
+import { z } from "zod";
+import type { InvitationPayload } from "@/lib/invitation-types";
+import { createPublicServerClient } from "@/lib/supabase-server";
 
-const PREVIEW_INVITE = {
-  code: "murao-family-2-f7c4a9",
-  displayName: "The Murao Family",
-  guests: ["Elsa", "Jonathan"],
-};
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-type Attendance = "yes" | "no";
+const slugSchema = z.string().trim().toLowerCase().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(80);
+const submissionSchema = z.object({
+  guests: z.array(z.object({ id: z.string().uuid(), response: z.enum(["yes", "no"]) })).min(1).max(20),
+  note: z.string().max(180).default(""),
+});
 
-async function hash(value: string) {
-  const encoded = new TextEncoder().encode(value);
-  const digest = await crypto.subtle.digest("SHA-256", encoded);
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+function readSlug(request: Request) {
+  return slugSchema.safeParse(new URL(request.url).searchParams.get("slug") ?? "");
 }
 
-function readCode(request: Request) {
-  return new URL(request.url).searchParams.get("code")?.trim() ?? "";
-}
-
-async function findOrCreateHousehold(code: string) {
-  if (code !== PREVIEW_INVITE.code) return null;
-  const tokenHash = await hash(code);
-  const db = getDb();
-  let household = await db.query.households.findFirst({ where: eq(households.tokenHash, tokenHash) });
-
-  if (!household) {
-    const [created] = await db.insert(households).values({ tokenHash, displayName: PREVIEW_INVITE.displayName }).onConflictDoNothing().returning();
-    household = created ?? await db.query.households.findFirst({ where: eq(households.tokenHash, tokenHash) });
-  }
-  if (!household) throw new Error("The invitation could not be created");
-
-  const existingGuests = await db.select().from(guests).where(eq(guests.householdId, household.id));
-  if (existingGuests.length === 0) {
-    await db.insert(guests).values(PREVIEW_INVITE.guests.map((displayName, sortOrder) => ({ householdId: household!.id, displayName, sortOrder }))).onConflictDoNothing();
-  }
-  return household;
-}
-
-async function invitationPayload(code: string) {
-  const household = await findOrCreateHousehold(code);
-  if (!household) return null;
-  const db = getDb();
-  const invitedGuests = await db.select().from(guests).where(eq(guests.householdId, household.id)).orderBy(asc(guests.sortOrder), asc(guests.id));
-  const response = await db.query.rsvpResponses.findFirst({ where: eq(rsvpResponses.householdId, household.id) });
-  const saved = response ? JSON.parse(response.attendanceJson) as Record<string, Attendance> : {};
-  return {
-    household: household.displayName,
-    guests: invitedGuests.map((guest) => ({ id: guest.id, name: guest.displayName, response: saved[String(guest.id)] ?? null })),
-    note: response?.note ?? "",
-    submitted: Boolean(response),
-    updatedAt: response?.updatedAt?.toISOString() ?? null,
-  };
+async function getInvitation(slug: string) {
+  const client = createPublicServerClient();
+  const { data, error } = await client.rpc("get_invitation", { p_slug: slug });
+  if (error) throw error;
+  return data as InvitationPayload | null;
 }
 
 export async function GET(request: Request) {
+  const parsed = readSlug(request);
+  if (!parsed.success) return Response.json({ error: "This invitation link is not valid." }, { status: 404 });
   try {
-    const code = readCode(request);
-    const invitation = await invitationPayload(code);
+    const invitation = await getInvitation(parsed.data);
     if (!invitation) return Response.json({ error: "This invitation link is not valid." }, { status: 404 });
-    return Response.json(invitation, { headers: { "Cache-Control": "no-store" } });
+    return Response.json(invitation, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
-    return Response.json({ error: "We couldn’t load this RSVP.", detail: error instanceof Error ? error.message : "Unknown RSVP error" }, { status: 500 });
+    console.error("rsvp_load_failed", { slug: parsed.data, error });
+    return Response.json({ error: "We couldn’t load this RSVP." }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
+  const parsedSlug = readSlug(request);
+  if (!parsedSlug.success) return Response.json({ error: "This invitation link is not valid." }, { status: 404 });
+  if (Number(request.headers.get("content-length") ?? 0) > 16_384) {
+    return Response.json({ error: "The RSVP request is too large." }, { status: 413 });
+  }
   try {
-    const code = readCode(request);
-    const household = await findOrCreateHousehold(code);
-    if (!household) return Response.json({ error: "This invitation link is not valid." }, { status: 404 });
-    const body = await request.json() as { guests?: { id?: number; response?: Attendance }[]; note?: string };
-    const note = (body.note ?? "").trim().slice(0, 180);
-    const db = getDb();
-    const invitedGuests = await db.select().from(guests).where(eq(guests.householdId, household.id));
-    const invitedIds = new Set(invitedGuests.map((guest) => guest.id));
-    const received = body.guests ?? [];
-
-    if (received.length !== invitedGuests.length || received.some((guest) => !guest.id || !invitedIds.has(guest.id) || !["yes", "no"].includes(guest.response ?? ""))) {
+    const parsedBody = submissionSchema.safeParse(await request.json());
+    if (!parsedBody.success) {
       return Response.json({ error: "Please answer for every person named on this invitation." }, { status: 400 });
     }
-
-    const attendance = Object.fromEntries(received.map((guest) => [String(guest.id), guest.response]));
-    await db.insert(rsvpResponses).values({ householdId: household.id, attendanceJson: JSON.stringify(attendance), note })
-      .onConflictDoUpdate({ target: rsvpResponses.householdId, set: { attendanceJson: JSON.stringify(attendance), note, updatedAt: new Date() } });
-    const invitation = await invitationPayload(code);
-    return Response.json(invitation, { headers: { "Cache-Control": "no-store" } });
+    const client = createPublicServerClient();
+    const { error } = await client.rpc("submit_household_rsvp", {
+      p_slug: parsedSlug.data,
+      p_responses: parsedBody.data.guests.map((guest) => ({ guestId: guest.id, response: guest.response })),
+      p_note: parsedBody.data.note.trim(),
+    });
+    if (error) {
+      if (error.message.includes("Please answer for every person")) {
+        return Response.json({ error: "Please answer for every person named on this invitation." }, { status: 400 });
+      }
+      throw error;
+    }
+    const invitation = await getInvitation(parsedSlug.data);
+    if (!invitation) throw new Error("Invitation disappeared after RSVP save");
+    return Response.json(invitation, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
-    return Response.json({ error: "Your RSVP was not saved. Please try again.", detail: error instanceof Error ? error.message : "Unknown RSVP error" }, { status: 500 });
+    console.error("rsvp_save_failed", { slug: parsedSlug.data, error });
+    return Response.json({ error: "Your RSVP was not saved. Please try again." }, { status: 500 });
   }
 }

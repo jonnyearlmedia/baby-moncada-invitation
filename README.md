@@ -1,48 +1,60 @@
-# Baby Moncada Invitation
+# Baby Moncada invitation
 
-A mobile-first digital invitation for Janelle and Fernando Moncada’s baby shower on September 26, 2026. The selected design direction is blue luxe stationery, inspired by the polished physical-card feeling of Paperless Post.
+Production-oriented, mobile-first invitation and RSVP system for Janelle and Fernando Moncada’s baby shower on September 26, 2026 at 4:00 PM.
 
-## Guest experience
+## Pilot scope
 
-- personalized invitation for the Murao family, party of two: Elsa and Jonathan
-- live countdown to September 26
-- named, per-person RSVP with durable Cloudflare D1 storage and editable confirmations
-- Hotel Centro room-block summary with dates, verified room types, group code, average rate, and an official Hilton booking handoff
-- current Babylist registry items, images, categories, quantities, fulfillment state, and exact item-level retailer offers
-- an embedded destination map plus Apple Maps and Google Maps directions
-- an all-day calendar file until the hosts confirm the event time
+The pilot contains six deliberately varied households:
 
-## Source-of-truth boundaries
+- `/invite/murao`
+- `/invite/ponticelle`
+- `/invite/cabrera`
+- `/invite/sainz`
+- `/invite/morales-diaz`
+- `/invite/castro`
 
-The invitation does not pretend to complete transactions it cannot own:
+The remaining households are intentionally not seeded until the pilot has been reviewed and battle-tested.
 
-- Babylist remains responsible for checkout, outside-retailer purchase marking, returns, and thank-you tracking. The app reads the public registry feed and opens each gift’s exact offer URL.
-- Hilton remains responsible for current availability, guest details, payment, and reservation confirmation. The app uses the official group deep link for September 25–27 with group code 905.
-- This app owns household invitations and RSVP responses in D1.
+## Architecture
 
-If the Babylist feed cannot be refreshed, the app shows an explicit unavailable state instead of stale gift cards. If an RSVP save fails, the guest remains on the form with a retryable error instead of seeing a false confirmation.
+- Next.js App Router deployed to Vercel
+- dedicated Supabase Postgres project (`baby-moncada`)
+- household-scoped readable links backed by permanent UUIDs
+- alias preservation when a host renames an already-sent link
+- atomic, per-guest RSVP submissions with optional notes
+- passcode-protected host dashboard with rate-limited login attempts
+- dashboard editing for event details, household labels, guest names, and short links
+- copy-link and copy-ready-message controls for every household
+- RLS on every public-schema table; no direct browser table access
 
-## Run and verify
+Babylist remains the checkout and fulfillment source of truth. Automated product mirroring is disabled until Babylist authorizes a production integration; the invitation opens the exact live registry instead of showing potentially stale cards.
 
-Requires Node.js 22.13 or newer.
+## Local setup
+
+Copy `.env.example` to `.env.local` and configure the values. Never commit `.env.local`.
 
 ```bash
 npm install
-npm run db:generate
-npm test
+npm run verify
+npm run test:e2e
 npm run dev
 ```
 
-`npm test` performs a production build and verifies the event facts, item-level registry integration, durable RSVP contract, and map handoffs. `npm run lint` performs the static code audit.
+Generate a passcode hash with:
 
-## Data model
+```bash
+npm run passcode:hash
+```
 
-- `households`: one private invitation token hash and display name per invited household
-- `guests`: the named people included in that household’s invitation
-- `rsvp_responses`: the household’s current per-guest attendance choices, note, and timestamps
+## Required Vercel environment variables
 
-The current test link seeds the Murao sample invitation. Additional guest households require the final guest roster and unique invitation links before general distribution.
+- `SUPABASE_URL`
+- `SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_SECRET_KEY` (server-only; never prefix with `NEXT_PUBLIC_`)
+- `HOST_PASSCODE_HASH`
+- `HOST_SESSION_SECRET`
+- `NEXT_PUBLIC_SITE_URL=https://moncada-baby-shower.vercel.app`
 
-## Confirm before final guest launch
+## Verification contract
 
-The hosts have not yet supplied an event start/end time or RSVP deadline. The interface says “Event time to be announced,” the countdown ends at the start of September 26, and the calendar download is intentionally all-day. Do not invent those values; update them after the hosts confirm them.
+`npm run verify` runs lint, integrity/security tests, and a production build. `npm run test:e2e` launches the real app and validates both desktop and iPhone-sized experiences, all six pilot rosters, exact external handoffs, and a real RSVP submit/reload/change cycle against Supabase. Automated test submissions must be deleted after verification so pilot households return to a clean state.

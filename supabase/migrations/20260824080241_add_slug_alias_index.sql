@@ -1,0 +1,1 @@
+create index household_slug_aliases_household_idx on public.household_slug_aliases(household_id);
