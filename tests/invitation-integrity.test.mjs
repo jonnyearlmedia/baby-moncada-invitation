@@ -16,10 +16,12 @@ test("confirmed event facts are consistent in UI and database seed", async () =>
   assert.match(migration, /groupCode=905/);
 });
 
-test("the six approved pilot households and readable links are seeded", async () => {
+test("all 58 households and readable links are seeded", async () => {
   const migration = await read("supabase/migrations/20260824073636_production_rsvp_pilot.sql");
-  for (const slug of ["murao", "ponticelle", "cabrera", "sainz", "morales-diaz", "castro"]) assert.match(migration, new RegExp(`'${slug}'`));
-  for (const name of ["Mom", "Jonathan Murao", "Auntie Grace Ponticelle", "Kuya Maikhi Cabrera", "Ate Michelle Cabrera", "Trish", "Tique", "Danny Sainz", "Jenna Sainz", "Angelina", "Lily", "Ava", "DJ", "Ray", "Facundo Morales", "Kelly Diaz", "Eleni", "Jose Castro", "Thalía Castro"]) assert.ok(migration.includes(`'${name}'`), `missing ${name}`);
+  const expansion = await read("supabase/migrations/20260824090509_seed_remaining_guest_households.sql");
+  for (const slug of ["murao", "ponticelle", "cabrera", "sainz", "morales-diaz", "castro", "murao-jeff-joyce", "murao-jerome", "murao-juliet-ferdie", "wilder-hernani", "tania-doukas", "gamez-burner"]) assert.ok(migration.includes(`'${slug}'`) || expansion.includes(`"slug":"${slug}"`), `missing ${slug}`);
+  assert.equal((expansion.match(/"id":"10000000-/g) ?? []).length, 52);
+  for (const name of ["Mom", "Jonathan Murao", "Auntie Grace Ponticelle", "Kuya Maikhi Cabrera", "Ate Michelle Cabrera", "Trish", "Tique", "Danny Sainz", "Jenna Sainz", "Angelina", "Lily", "Ava", "DJ", "Ray", "Facundo Morales", "Kelly Diaz", "Eleni", "Jose Castro", "Thalía Castro", "Uncle Jeff Murao", "Auntie Joyce Murao", "Justine", "Jade", "Frankie Gamez", "Shaun Burner"]) assert.ok(migration.includes(`'${name}'`) || expansion.includes(`"${name}"`), `missing ${name}`);
 });
 
 test("RSVP writes validate complete named responses inside one database transaction", async () => {
@@ -47,6 +49,9 @@ test("host dashboard uses a hashed passcode, signed cookie, rate limits, and aud
   assert.match(dashboard, /Copy link/);
   assert.match(dashboard, /Copy message/);
   assert.match(dashboard, /household\.submission\.note/);
+  assert.match(dashboard, /Every RSVP, at a glance/);
+  assert.match(dashboard, /Search guests or households/);
+  assert.match(dashboard, /responseFilter/);
   assert.match(migration, /admin_audit_log/);
 });
 

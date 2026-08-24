@@ -20,6 +20,10 @@ const pilots = [
   ["castro", "Jose Castro & Thalía Castro", ["Jose Castro", "Thalía Castro"]],
 ] as const;
 
+const allHouseholdSlugs = [
+  "murao", "wilder-hernani", "tania-doukas", "ponticelle", "diasanta", "cabrera", "murao-jeff-joyce", "armada-larry-babette", "armada-renz-queenie", "armada-jd-georgia", "francisco-judy", "francisco-jasmin", "francisco-jamie", "jeannie-viray", "viray", "murao-jerome", "murao-juliet-ferdie", "stallard", "sainz", "smith", "drelick", "jones", "david-hiu", "nobleza", "morales-diaz", "phommasouk", "phanthavong", "elliott-hernandez", "hanks", "stevens", "martinez", "pietrobon", "pun", "proffitt-tan", "ruiz-charbonneau", "fagundes", "lee", "pereira", "thore", "clark", "aguilera", "chavez", "fiore", "gong", "hernandez", "kremesec", "rawlings", "salcedo", "spencer", "letasi", "robinson", "silva", "thompson", "wang", "wicker-wolfe", "louie-rodriguez", "castro", "gamez-burner",
+] as const;
+
 async function openRsvpForm(page: import("@playwright/test").Page, guestCount: number) {
   await page.getByRole("button", { name: "RSVP", exact: true }).first().click();
   const change = page.getByRole("button", { name: "Change response" });
@@ -40,6 +44,16 @@ for (const [slug, label, guests] of pilots) {
     for (const guest of guests) await expect(page.getByText(guest, { exact: true }).first()).toBeVisible();
   });
 }
+
+test("every household shortlink resolves to a populated invitation", async ({ page }) => {
+  test.setTimeout(120_000);
+  for (const slug of allHouseholdSlugs) {
+    await page.goto(`/invite/${slug}`);
+    await expect(page.locator(".invite-screen")).toBeVisible();
+    await expect(page.getByText("You're invited to", { exact: true })).toBeVisible();
+    await expect(page.locator(".recipient-line")).not.toContainText("Party of —");
+  }
+});
 
 test("a real RSVP survives reload and can be changed", async ({ page }) => {
   await page.goto("/invite/ponticelle");
