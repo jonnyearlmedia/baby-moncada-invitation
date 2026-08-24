@@ -9,6 +9,7 @@ const EVENT_APPLE_MAPS = "https://maps.apple.com/?q=Private%20Residence%2C%20Roh
 const EVENT_GOOGLE_MAPS = "https://www.google.com/maps/search/?api=1&query=Rohnert%20Park%2C%20CA";
 const HOTEL_APPLE_MAPS = "https://maps.apple.com/?daddr=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&dirflg=d";
 const HOTEL_GOOGLE_MAPS = "https://www.google.com/maps/dir/?api=1&destination=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&travelmode=driving&dir_action=navigate";
+const RSVP_STORAGE_KEY = "moncada-rsvp-murao-v1";
 
 const concepts = [
   { id: "glass", name: "Apple Invites / Cinematic Glass", short: "Cinematic Glass" },
@@ -21,9 +22,9 @@ const concepts = [
 
 const nav = [
   ["invite", "⌂", "Invite"],
-  ["stay", "▤", "Stay"],
+  ["stay", "▤", "Hotel"],
   ["registry", "♧", "Gifts"],
-  ["maps", "⌖", "Maps"],
+  ["maps", "⌖", "Travel"],
   ["rsvp", "✓", "RSVP"],
 ] as const;
 
@@ -71,7 +72,7 @@ export default function Home() {
   const [category, setCategory] = useState("All");
   const [overlay, setOverlay] = useState<Overlay>(null);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-  const [rsvp, setRsvp] = useState<RSVP>({ name: "", response: "yes", guests: 1 });
+  const [rsvp, setRsvp] = useState<RSVP>({ name: "Elsa & Jonathan", response: "yes", guests: 2 });
   const [saveMessage, setSaveMessage] = useState("");
   const concept = concepts[style];
 
@@ -79,7 +80,7 @@ export default function Home() {
     try {
       setFavorites(JSON.parse(localStorage.getItem("moncada-favorites") || "[]"));
       setChosen(localStorage.getItem("moncada-chosen") || "");
-      setRsvp((current) => ({ ...current, ...JSON.parse(localStorage.getItem("moncada-rsvp") || "{}") }));
+      setRsvp((current) => ({ ...current, ...JSON.parse(localStorage.getItem(RSVP_STORAGE_KEY) || "{}") }));
     } catch {}
     setCountdown(getCountdown());
     const timer = window.setInterval(() => setCountdown(getCountdown()), 1000);
@@ -114,8 +115,8 @@ export default function Home() {
   }
 
   function saveRSVP() {
-    try { localStorage.setItem("moncada-rsvp", JSON.stringify(rsvp)); } catch {}
-    setSaveMessage(rsvp.name.trim() ? `Saved for ${rsvp.name.trim()}.` : "Demo RSVP saved on this phone.");
+    try { localStorage.setItem(RSVP_STORAGE_KEY, JSON.stringify(rsvp)); } catch {}
+    setSaveMessage(rsvp.name.trim() ? `Response saved for ${rsvp.name.trim()}.` : "Response saved on this device.");
   }
 
   function downloadCalendar() {
@@ -136,8 +137,8 @@ export default function Home() {
   return (
     <main className="picker-page">
       <header className="picker-header">
-        <div><p className="outer-eyebrow">Baby Moncada · September 26, 2026</p><h1>Six invitations. Every one works.</h1></div>
-        <div className="picker-summary"><span>{favorites.length} favorite{favorites.length === 1 ? "" : "s"}</span><strong>{chosenConcept ? `${chosenConcept.short} chosen` : "No final pick"}</strong></div>
+        <div><p className="outer-eyebrow">Baby Moncada · September 26, 2026</p><h1>Choose the invitation that feels like them.</h1></div>
+        <div className="picker-summary"><span>{favorites.length} favorite{favorites.length === 1 ? "" : "s"}</span><strong>{chosenConcept ? `${chosenConcept.short} selected` : "Still deciding"}</strong></div>
       </header>
 
       <div className="picker-layout">
@@ -154,12 +155,12 @@ export default function Home() {
           </nav>
           <div className="choice-actions">
             <button onClick={() => toggleFavorite(concept.id)}>{favorites.includes(concept.id) ? "Favorited ♥" : "Favorite"}</button>
-            <button className="choose" onClick={chooseStyle}>{chosen === concept.id ? "Chosen ✓" : "Choose this style"}</button>
+            <button className="choose" onClick={chooseStyle}>{chosen === concept.id ? "Selected ✓" : "Select this direction"}</button>
           </div>
         </aside>
 
         <section className="phone-column" aria-label={`${concept.name} interactive invitation`}>
-          <div className="phone-label"><span>{concept.name}</span><span>Use the controls inside</span></div>
+          <div className="phone-label"><span>{concept.name}</span><span>Tap through the full invitation</span></div>
           <div className="device">
             <div className={`phone theme-${concept.id}`}>
               <div className="island" />
@@ -187,12 +188,13 @@ function InviteScreen({ countdown, onRSVP, onCalendar }: { countdown: ReturnType
   return <div className="invite-screen">
     <div className="invite-art" aria-hidden="true"><i /><i /><i /><i /></div>
     <div className="invite-copy">
-      <p className="phone-eyebrow">For the Moncada family</p>
+      <p className="phone-eyebrow">For the Murao family</p>
       <h2>You&apos;re invited to</h2>
       <div className="baby-title">Baby<br />Moncada</div>
       <p className="honoring">A celebration honoring</p>
       <p className="names">Janelle &amp; Fernando</p>
       <span className="boy-pill">A little boy is on the way</span>
+      <p className="recipient-line">Elsa &amp; Jonathan · Party of two</p>
     </div>
     <div className="event-card">
       <div><span>▣</span><p><strong>Saturday, September 26, 2026</strong><br />Rohnert Park, California</p></div>
@@ -201,7 +203,7 @@ function InviteScreen({ countdown, onRSVP, onCalendar }: { countdown: ReturnType
     <div className="countdown" aria-label="Countdown to September 26, 2026">
       {Object.entries(countdown).map(([label, value]) => <div key={label}><strong>{label === "days" ? value : String(value).padStart(2, "0")}</strong><span>{label}</span></div>)}
     </div>
-    <div className="home-actions"><button className="phone-action primary" onClick={onRSVP}>RSVP inside</button><button className="phone-action" onClick={onCalendar}>Add calendar</button></div>
+    <div className="home-actions"><button className="phone-action primary" onClick={onRSVP}>RSVP</button><button className="phone-action" onClick={onCalendar}>Add to calendar</button></div>
   </div>;
 }
 
@@ -211,9 +213,9 @@ function ScreenHeader({ kicker, title, mark }: { kicker: string; title: string; 
 
 function StayScreen({ onRoom }: { onRoom: (label: string) => void }) {
   return <div className="feature-screen">
-    <ScreenHeader kicker="Hilton group code 905" title="Stay nearby" mark="HILTON" />
-    <div className="info-block"><strong>Hotel Centro Sonoma Wine Country</strong><p>Tapestry by Hilton · {HOTEL_ADDRESS}</p></div>
-    <div className="stay-facts"><div><span>Arrival</span><strong>Sep 25</strong></div><div><span>Departure</span><strong>Sep 27</strong></div><div><span>Stay</span><strong>2 nights</strong></div></div>
+    <ScreenHeader kicker="A room block for the weekend" title="Your stay" mark="HILTON" />
+    <div className="info-block"><strong>Hotel Centro Sonoma Wine Country</strong><p>Tapestry by Hilton · Rohnert Park</p></div>
+    <div className="stay-facts"><div><span>Check in</span><strong>Fri, Sep 25</strong></div><div><span>Check out</span><strong>Sun, Sep 27</strong></div><div><span>Group rate</span><strong>Code 905</strong></div></div>
     <div className="room-list">
       <Room name="1 King Bed" detail="Sleeps 2 · workspace · mini refrigerator" onChoose={onRoom} />
       <Room name="2 Queen Beds" detail="Sleeps 4 · workspace · mini refrigerator" onChoose={onRoom} />
@@ -223,43 +225,43 @@ function StayScreen({ onRoom }: { onRoom: (label: string) => void }) {
 }
 
 function Room({ name, detail, onChoose }: { name: string; detail: string; onChoose: (label: string) => void }) {
-  return <article className="room"><div className="room-top"><h3>{name}</h3><div className="room-price">$149<span>average / night</span></div></div><p>{detail}</p><button className="phone-action primary full" onClick={() => onChoose(name)}>Choose room</button></article>;
+  return <article className="room"><div className="room-top"><h3>{name}</h3><div className="room-price">$149<span>per night</span></div></div><p>{detail}</p><button className="phone-action primary full" onClick={() => onChoose(name)}>View this room</button></article>;
 }
 
 function RegistryScreen({ category, setCategory, products: visible, onProduct }: { category: string; setCategory: (value: string) => void; products: readonly (typeof products)[number][]; onProduct: (index: number) => void }) {
   return <div className="feature-screen">
-    <ScreenHeader kicker="32 live Babylist items" title="For baby boy" mark="J + F" />
+    <ScreenHeader kicker="Janelle & Fernando’s Babylist" title="Gifts for baby" mark="J + F" />
     <div className="category-row" aria-label="Registry categories">{categories.map(([name, count]) => <button key={name} aria-pressed={category === name} onClick={() => setCategory(name)}>{name} {count}</button>)}</div>
     <div className="products">{visible.map((product) => {
       const index = products.indexOf(product);
-      return <article className="product" key={product.name}><div className="product-art" aria-hidden="true">{product.icon}</div><div className="product-body"><h3>{product.name}</h3><strong>{product.price}</strong><button className="phone-action full" onClick={() => onProduct(index)}>Buying options</button></div></article>;
+      return <article className="product" key={product.name}><div className="product-art" aria-hidden="true">{product.icon}</div><div className="product-body"><h3>{product.name}</h3><strong>{product.price}</strong><button className="phone-action full" onClick={() => onProduct(index)}>View gift</button></div></article>;
     })}</div>
-    {visible.length === 0 && <div className="info-block"><strong>More on Babylist</strong><p>Open the full registry to see every item in this category.</p><ExternalLink href={REGISTRY_URL} primary>Open full registry</ExternalLink></div>}
+    {visible.length === 0 && <div className="info-block"><strong>See all gifts</strong><p>This category continues on Janelle and Fernando’s Babylist.</p><ExternalLink href={REGISTRY_URL} primary>View full registry</ExternalLink></div>}
   </div>;
 }
 
 function MapsScreen() {
   return <div className="feature-screen">
-    <ScreenHeader kicker="Choose your map app" title="Directions" mark="⌖" />
+    <ScreenHeader kicker="Celebration and hotel" title="Plan your route" mark="⌖" />
     <div className="map-visual" role="img" aria-label="Stylized preview of the event area and hotel"><div className="map-pin event"><span>⌂</span></div><div className="map-pin hotel"><span>H</span></div><b>Rohnert Park</b></div>
     <div className="place-list">
-      <article className="place"><h3>Baby Moncada celebration</h3><p>Private residence · Rohnert Park, CA<br />Exact street address is still pending.</p><div><ExternalLink href={EVENT_APPLE_MAPS}>Apple Maps</ExternalLink><ExternalLink href={EVENT_GOOGLE_MAPS}>Google Maps</ExternalLink></div></article>
-      <article className="place"><h3>Room-block hotel</h3><p>Hotel Centro · {HOTEL_ADDRESS}</p><div><ExternalLink href={HOTEL_APPLE_MAPS}>Apple Maps</ExternalLink><ExternalLink href={HOTEL_GOOGLE_MAPS}>Google Maps</ExternalLink></div></article>
+      <article className="place"><h3>The celebration</h3><p>Private residence · Rohnert Park, CA<br />The street address will appear here once it is confirmed.</p><div><ExternalLink href={EVENT_APPLE_MAPS}>Open Apple Maps</ExternalLink><ExternalLink href={EVENT_GOOGLE_MAPS}>Open Google Maps</ExternalLink></div></article>
+      <article className="place"><h3>Your hotel</h3><p>Hotel Centro Sonoma Wine Country<br />{HOTEL_ADDRESS}</p><div><ExternalLink href={HOTEL_APPLE_MAPS}>Open Apple Maps</ExternalLink><ExternalLink href={HOTEL_GOOGLE_MAPS}>Open Google Maps</ExternalLink></div></article>
     </div>
   </div>;
 }
 
 function RSVPScreen({ rsvp, setRsvp, saveMessage, onSave }: { rsvp: RSVP; setRsvp: React.Dispatch<React.SetStateAction<RSVP>>; saveMessage: string; onSave: () => void }) {
   return <div className="feature-screen">
-    <ScreenHeader kicker="Prototype RSVP · saved locally" title="Will you join us?" mark="♡" />
+    <ScreenHeader kicker="Your response" title="Elsa & Jonathan, will you join us?" mark="♡" />
     <div className="rsvp-card">
-      <label htmlFor="guest-name">Guest name</label><input id="guest-name" value={rsvp.name} onChange={(event) => setRsvp({ ...rsvp, name: event.target.value })} placeholder="Your name" autoComplete="name" />
+      <label htmlFor="guest-name">Names on the invitation</label><input id="guest-name" value={rsvp.name} onChange={(event) => setRsvp({ ...rsvp, name: event.target.value })} placeholder="Guest names" autoComplete="name" />
       <span className="field-label">Response</span>
       <div className="rsvp-options">
-        {(["yes", "maybe", "no"] as const).map((response) => <button key={response} className="phone-action" aria-pressed={rsvp.response === response} onClick={() => setRsvp({ ...rsvp, response })}>{response === "yes" ? "Joyfully attending" : response === "maybe" ? "Maybe — let me confirm" : "Celebrating from afar"}</button>)}
+        {(["yes", "maybe", "no"] as const).map((response) => <button key={response} className="phone-action" aria-pressed={rsvp.response === response} onClick={() => setRsvp({ ...rsvp, response })}>{response === "yes" ? "Yes, we’ll be there" : response === "maybe" ? "We’re not sure yet" : "We’ll celebrate from afar"}</button>)}
       </div>
-      <div className="guest-row"><div><strong>Party size</strong><p>Including you</p></div><div className="stepper"><button aria-label="Decrease guest count" onClick={() => setRsvp({ ...rsvp, guests: Math.max(1, rsvp.guests - 1) })}>−</button><strong>{rsvp.guests}</strong><button aria-label="Increase guest count" onClick={() => setRsvp({ ...rsvp, guests: Math.min(8, rsvp.guests + 1) })}>+</button></div></div>
-      <button className="phone-action primary full save-rsvp" onClick={onSave}>Save demo RSVP</button>
+      <div className="guest-row"><div><strong>Guests attending</strong><p>This invitation is for two</p></div><div className="stepper"><button aria-label="Decrease guest count" onClick={() => setRsvp({ ...rsvp, guests: Math.max(1, rsvp.guests - 1) })}>−</button><strong>{rsvp.guests}</strong><button aria-label="Increase guest count" onClick={() => setRsvp({ ...rsvp, guests: Math.min(2, rsvp.guests + 1) })}>+</button></div></div>
+      <button className="phone-action primary full save-rsvp" onClick={onSave}>Save response</button>
       <p className="save-message" aria-live="polite">{saveMessage}</p>
     </div>
   </div>;
@@ -270,7 +272,7 @@ function HandoffSheet({ overlay, onClose }: { overlay: Exclude<Overlay, null>; o
   const product = !isRoom ? products[overlay.index] : null;
   return <div className="handoff-overlay" role="dialog" aria-modal="true" aria-labelledby="handoff-title"><div className="handoff-sheet"><div className="sheet-handle" />
     <h3 id="handoff-title">{isRoom ? overlay.label : product?.name}</h3>
-    <p>{isRoom ? "Your September 25–27 dates and group code 905 are already attached. Hilton opens only for guest details, taxes, and final confirmation." : `${product?.price} on the live registry. Babylist handles retailer options, cart status, and purchase marking.`}</p>
-    <div><button className="phone-action" onClick={onClose}>Keep browsing</button><ExternalLink href={isRoom ? BOOKING_URL : REGISTRY_URL} primary>{isRoom ? "Continue to Hilton" : "Open on Babylist"}</ExternalLink></div>
+    <p>{isRoom ? "The September 25–27 stay and group code 905 are ready. Hilton will open to collect guest details and confirm the reservation." : `${product?.price}. Babylist will open this gift with current retailer options and availability.`}</p>
+    <div><button className="phone-action" onClick={onClose}>{isRoom ? "Back to rooms" : "Back to gifts"}</button><ExternalLink href={isRoom ? BOOKING_URL : REGISTRY_URL} primary>{isRoom ? "Continue with Hilton" : "View on Babylist"}</ExternalLink></div>
   </div></div>;
 }

@@ -58,6 +58,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .names { margin:8px 0 0;font-family:"Snell Roundhand","Bradley Hand",cursive;font-size:22px;line-height:1; }
 .boy-pill { display:inline-block;margin-top:12px;padding:6px 9px;border:1px solid currentColor;border-radius:99px;font-size:8px;text-transform:uppercase;letter-spacing:.12em; }
 .event-card { position:relative;z-index:2;margin-top:19px;padding:11px 13px;border:1px solid var(--app-line);border-radius:17px;background:var(--app-surface);backdrop-filter:blur(15px); }
+.recipient-line { position:relative;z-index:2;margin:10px 0 -8px;color:var(--app-muted);font-size:9px;font-weight:650;letter-spacing:.04em;text-align:center; }
 .event-card>div { display:grid;grid-template-columns:22px 1fr;gap:7px;align-items:start;padding:6px 0; }
 .event-card>div+div { border-top:1px solid var(--app-line); }
 .event-card span { font-size:14px; }
