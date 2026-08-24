@@ -9,7 +9,7 @@ const EVENT_APPLE_MAPS = "https://maps.apple.com/?q=Private%20Residence%2C%20Roh
 const EVENT_GOOGLE_MAPS = "https://www.google.com/maps/search/?api=1&query=Rohnert%20Park%2C%20CA";
 const HOTEL_APPLE_MAPS = "https://maps.apple.com/?daddr=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&dirflg=d";
 const HOTEL_GOOGLE_MAPS = "https://www.google.com/maps/dir/?api=1&destination=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&travelmode=driving&dir_action=navigate";
-const RSVP_STORAGE_KEY = "moncada-rsvp-murao-v1";
+const RSVP_STORAGE_KEY = "moncada-rsvp-murao-v2";
 
 const concepts = [
   { id: "glass", name: "Apple Invites / Cinematic Glass", short: "Cinematic Glass" },
@@ -29,25 +29,30 @@ const nav = [
 ] as const;
 
 const products = [
-  { category: "Feeding", icon: "🍼", name: "Philips Avent Natural Bottles · 9 oz", price: "$29.95" },
-  { category: "Feeding", icon: "◌", name: "Comfy Cubs Muslin Burp Cloths · 10 pack", price: "$24.99" },
-  { category: "Feeding", icon: "♨", name: "Momcozy Portable Bottle Warmer", price: "$79.99" },
-  { category: "Feeding", icon: "⚙", name: "Baby Brezza Formula Pro Advanced", price: "$229.99" },
-  { category: "Baby gear", icon: "♧", name: "Graco Slim Snacker High Chair", price: "$99.99" },
-  { category: "Baby gear", icon: "⌁", name: "Chicco Bravo Primo Travel System", price: "$558.63" },
-  { category: "Sleeping", icon: "◉", name: "Dr.Care VistaView Baby Monitor", price: "$129.99" },
-  { category: "Diapering", icon: "▱", name: "Diaper Genie Platinum Pail", price: "$77.25" },
-  { category: "Bathing", icon: "≈", name: "Frida Baby Grow-with-Me Bathtub", price: "$49.42" },
+  { category: "Feeding", name: "Philips Avent Natural Bottles · 9 oz, 4-Pack", detail: "Medium flow · BPA-free · anti-colic valve", price: "$29.95", stores: ["Babylist", "Amazon"], image: "https://images.babylist.com/image/upload/f_auto,q_auto:best,t_app_500px_square/snr07p97bdojpcdu84ll.jpg" },
+  { category: "Feeding", name: "Comfy Cubs Muslin Burp Cloths · 10-Pack", detail: "Six-layer cotton · multicolor · 20 × 10 in", price: "from $19.99", stores: ["Babylist", "Amazon", "Target", "+1"], image: "https://images.babylist.com/image/upload/f_auto,q_auto:best,t_app_500px_square/pd5gsqdciqdtgluetsid.jpg" },
+  { category: "Feeding", name: "Momcozy Portable Bottle Warmer", detail: "17 oz · precise temperature control · travel-ready", price: "$79.99", stores: ["Babylist", "Amazon", "Target", "+1"], image: "https://images.babylist.com/image/upload/f_auto,q_auto:best,t_app_500px_square/ho9kbihjwhrkjzhxiu5j.jpg" },
+  { category: "Feeding", name: "Baby Brezza Formula Pro Advanced", detail: "Automatic formula dispenser and bottle maker", price: "$229.99", stores: ["Babylist", "Amazon", "Target", "Nordstrom"], image: "https://images.babylist.com/image/upload/f_auto,q_auto:best,t_app_500px_square/nb7zmntehv1u1pj7btxa.jpg" },
+  { category: "Baby gear", name: "Graco Slim Snacker High Chair", detail: "Ultra-slim fold · multiple recline positions", price: "$99.99", stores: ["Babylist", "Amazon", "Target", "Walmart"], image: "https://images.babylist.com/image/upload/f_auto,q_auto:best,t_app_500px_square/u6v0cqiepgy6px8xsbph.jpg" },
+  { category: "Baby gear", name: "Chicco Bravo Primo Travel System", detail: "Stroller and KeyFit Max infant car seat", price: "from $499.99", stores: ["Babylist", "Amazon", "Target", "Walmart"], image: "https://images.babylist.com/image/upload/f_auto,q_auto:best,t_app_500px_square/x6lscafg7clahey72jhn.jpg" },
+  { category: "Baby gear", name: "Baby Tula Explore Linen Carrier", detail: "Newborn to toddler · front and back carry", price: "$219.00", stores: ["Babylist", "Amazon"], image: "https://images.babylist.com/image/upload/f_auto,q_auto:best,t_app_500px_square/qkukx5ha8tko9g7yxgof.jpg" },
+  { category: "Sleeping", name: "Dr.Care VistaView Baby Monitor", detail: "5-inch display · app control · night vision", price: "$129.99", stores: ["Amazon"], image: "https://images.babylist.com/image/upload/f_auto,q_auto:best,t_app_500px_square/lb902x6m8x7d6tjy8zkz.jpg" },
+  { category: "Diapering", name: "Diaper Genie Platinum Pail", detail: "Hands-free · odor-locking · Easy Roll bags", price: "from $75.00", stores: ["Babylist", "Amazon", "Target", "Walmart"], image: "https://images.babylist.com/image/upload/f_auto,q_auto:best,t_app_500px_square/s5zzlkdn11z4cvw1enxu.jpg" },
+  { category: "Bathing", name: "Frida Baby 4-in-1 Grow-with-Me Bathtub", detail: "Newborn to toddler · removable bath seat", price: "from $39.49", stores: ["Babylist", "Amazon", "Target", "Walmart"], image: "https://images.babylist.com/image/upload/f_auto,q_auto:best,t_app_500px_square/ro9s1prgmbxzoyrz7eb9.jpg" },
+  { category: "Playing", name: "I Love to Sing in Tagalog", detail: "Filipino animal-song book for children", price: "$27.00", stores: ["Amazon"], image: "https://images.babylist.com/image/upload/f_auto,q_auto:best,t_app_500px_square/fcdetrnmsrwii48eikz3.jpg" },
+  { category: "Cash & gift cards", name: "Babylist Shop Gift Card", detail: "Let Janelle and Fernando choose what they need", price: "$25–$1,000", stores: ["Babylist"], image: "https://images.babylist.com/image/upload/f_auto,q_auto:best,t_app_500px_square/nflyuwmcjwk1pygyameq.jpg" },
 ] as const;
 
 const categories = [
-  ["All", 32], ["Feeding", 13], ["Baby gear", 4], ["Sleeping", 1],
-  ["Diapering", 1], ["Bathing", 3], ["Playing", 6],
+  ["All", 32], ["Feeding", 13], ["Sleeping", 1], ["Diapering", 1],
+  ["Baby gear", 4], ["Health & safety", 2], ["Bathing", 3], ["Playing", 6],
+  ["General", 1], ["Cash & gift cards", 1],
 ] as const;
 
 type View = (typeof nav)[number][0];
 type Overlay = { type: "room"; label: string } | { type: "product"; index: number } | null;
-type RSVP = { name: string; response: "yes" | "maybe" | "no"; guests: number };
+type Attendance = "yes" | "no" | null;
+type RSVP = { guests: { name: string; response: Attendance }[]; note: string; submitted: boolean };
 
 function getCountdown() {
   const target = new Date(2026, 8, 26, 0, 0, 0).getTime();
@@ -72,15 +77,15 @@ export default function Home() {
   const [category, setCategory] = useState("All");
   const [overlay, setOverlay] = useState<Overlay>(null);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-  const [rsvp, setRsvp] = useState<RSVP>({ name: "Elsa & Jonathan", response: "yes", guests: 2 });
-  const [saveMessage, setSaveMessage] = useState("");
+  const [rsvp, setRsvp] = useState<RSVP>({ guests: [{ name: "Elsa", response: null }, { name: "Jonathan", response: null }], note: "", submitted: false });
   const concept = concepts[style];
 
   useEffect(() => {
     try {
       setFavorites(JSON.parse(localStorage.getItem("moncada-favorites") || "[]"));
       setChosen(localStorage.getItem("moncada-chosen") || "");
-      setRsvp((current) => ({ ...current, ...JSON.parse(localStorage.getItem(RSVP_STORAGE_KEY) || "{}") }));
+      const savedRSVP = JSON.parse(localStorage.getItem(RSVP_STORAGE_KEY) || "null");
+      if (savedRSVP?.guests?.length === 2) setRsvp(savedRSVP);
     } catch {}
     setCountdown(getCountdown());
     const timer = window.setInterval(() => setCountdown(getCountdown()), 1000);
@@ -111,12 +116,12 @@ export default function Home() {
   function changeView(next: View) {
     setView(next);
     setOverlay(null);
-    setSaveMessage("");
   }
 
   function saveRSVP() {
-    try { localStorage.setItem(RSVP_STORAGE_KEY, JSON.stringify(rsvp)); } catch {}
-    setSaveMessage(rsvp.name.trim() ? `Response saved for ${rsvp.name.trim()}.` : "Response saved on this device.");
+    const submitted = { ...rsvp, submitted: true };
+    setRsvp(submitted);
+    try { localStorage.setItem(RSVP_STORAGE_KEY, JSON.stringify(submitted)); } catch {}
   }
 
   function downloadCalendar() {
@@ -170,7 +175,7 @@ export default function Home() {
                 {view === "stay" && <StayScreen onRoom={(label) => setOverlay({ type: "room", label })} />}
                 {view === "registry" && <RegistryScreen category={category} setCategory={setCategory} products={visibleProducts} onProduct={(index) => setOverlay({ type: "product", index })} />}
                 {view === "maps" && <MapsScreen />}
-                {view === "rsvp" && <RSVPScreen rsvp={rsvp} setRsvp={setRsvp} saveMessage={saveMessage} onSave={saveRSVP} />}
+                {view === "rsvp" && <RSVPScreen rsvp={rsvp} setRsvp={setRsvp} onSave={saveRSVP} />}
               </div>
               <nav className="phone-nav" aria-label="Invitation features">
                 {nav.map((item) => <button key={item[0]} className={view === item[0] ? "selected" : ""} aria-current={view === item[0] ? "page" : undefined} onClick={() => changeView(item[0])}><span>{item[1]}</span>{item[2]}</button>)}
@@ -230,13 +235,28 @@ function Room({ name, detail, onChoose }: { name: string; detail: string; onChoo
 
 function RegistryScreen({ category, setCategory, products: visible, onProduct }: { category: string; setCategory: (value: string) => void; products: readonly (typeof products)[number][]; onProduct: (index: number) => void }) {
   return <div className="feature-screen">
-    <ScreenHeader kicker="Janelle & Fernando’s Babylist" title="Gifts for baby" mark="J + F" />
+    <ScreenHeader kicker="Babylist registry" title="Janelle’s registry" mark="32 gifts" />
+    <div className="registry-profile">
+      <div className="registry-monogram" aria-hidden="true">J <span>+</span> F</div>
+      <div><strong>Janelle &amp; Fernando Moncada</strong><p>Rohnert Park, CA · Baby due November 25, 2026</p></div>
+    </div>
+    <div className="registry-summary"><span><strong>32</strong> gifts</span><span><strong>10</strong> categories</span><ExternalLink href={REGISTRY_URL}>Open all</ExternalLink></div>
     <div className="category-row" aria-label="Registry categories">{categories.map(([name, count]) => <button key={name} aria-pressed={category === name} onClick={() => setCategory(name)}>{name} {count}</button>)}</div>
     <div className="products">{visible.map((product) => {
       const index = products.indexOf(product);
-      return <article className="product" key={product.name}><div className="product-art" aria-hidden="true">{product.icon}</div><div className="product-body"><h3>{product.name}</h3><strong>{product.price}</strong><button className="phone-action full" onClick={() => onProduct(index)}>View gift</button></div></article>;
+      return <article className="product" key={product.name}>
+        <img className="product-art" src={product.image} alt="" loading="lazy" />
+        <div className="product-body">
+          <span className="product-category">{product.category}</span>
+          <h3>{product.name}</h3>
+          <p>{product.detail}</p>
+          <div className="product-meta"><strong>{product.price}</strong><div className="store-list" aria-label={`Available from ${product.stores.join(", ")}`}>{product.stores.slice(0, 3).map((store) => <span key={store}>{store}</span>)}</div></div>
+          <button className="phone-action full" onClick={() => onProduct(index)}>See buying options</button>
+        </div>
+      </article>;
     })}</div>
-    {visible.length === 0 && <div className="info-block"><strong>See all gifts</strong><p>This category continues on Janelle and Fernando’s Babylist.</p><ExternalLink href={REGISTRY_URL} primary>View full registry</ExternalLink></div>}
+    {visible.length === 0 && <div className="registry-empty"><strong>More gifts in this category</strong><p>The complete selection and current availability are on Janelle and Fernando’s Babylist.</p><ExternalLink href={REGISTRY_URL} primary>View this category on Babylist</ExternalLink></div>}
+    {category === "All" && <div className="registry-footer"><p>Showing 12 of 32 gifts</p><ExternalLink href={REGISTRY_URL} primary>Continue through the full registry</ExternalLink></div>}
   </div>;
 }
 
@@ -251,19 +271,51 @@ function MapsScreen() {
   </div>;
 }
 
-function RSVPScreen({ rsvp, setRsvp, saveMessage, onSave }: { rsvp: RSVP; setRsvp: React.Dispatch<React.SetStateAction<RSVP>>; saveMessage: string; onSave: () => void }) {
-  return <div className="feature-screen">
-    <ScreenHeader kicker="Your response" title="Elsa & Jonathan, will you join us?" mark="♡" />
-    <div className="rsvp-card">
-      <label htmlFor="guest-name">Names on the invitation</label><input id="guest-name" value={rsvp.name} onChange={(event) => setRsvp({ ...rsvp, name: event.target.value })} placeholder="Guest names" autoComplete="name" />
-      <span className="field-label">Response</span>
-      <div className="rsvp-options">
-        {(["yes", "maybe", "no"] as const).map((response) => <button key={response} className="phone-action" aria-pressed={rsvp.response === response} onClick={() => setRsvp({ ...rsvp, response })}>{response === "yes" ? "Yes, we’ll be there" : response === "maybe" ? "We’re not sure yet" : "We’ll celebrate from afar"}</button>)}
+function RSVPScreen({ rsvp, setRsvp, onSave }: { rsvp: RSVP; setRsvp: React.Dispatch<React.SetStateAction<RSVP>>; onSave: () => void }) {
+  const complete = rsvp.guests.every((guest) => guest.response !== null);
+  const attending = rsvp.guests.filter((guest) => guest.response === "yes").map((guest) => guest.name);
+
+  if (rsvp.submitted) {
+    const responseSummary = attending.length === 2
+      ? "Elsa and Jonathan are attending."
+      : attending.length === 1
+        ? `${attending[0]} is attending. ${rsvp.guests.find((guest) => guest.response === "no")?.name} can’t make it.`
+        : "Elsa and Jonathan can’t make it.";
+    return <div className="feature-screen rsvp-screen">
+      <ScreenHeader kicker="RSVP received" title="Thank you, Murao family." mark="✓" />
+      <div className="rsvp-success">
+        <div className="success-mark" aria-hidden="true">✓</div>
+        <h3>{responseSummary}</h3>
+        {rsvp.note && <blockquote>“{rsvp.note}”</blockquote>}
+        <p>This preview is saved on this device and has not notified the hosts.</p>
+        <button className="phone-action full" onClick={() => setRsvp({ ...rsvp, submitted: false })}>Change response</button>
       </div>
-      <div className="guest-row"><div><strong>Guests attending</strong><p>This invitation is for two</p></div><div className="stepper"><button aria-label="Decrease guest count" onClick={() => setRsvp({ ...rsvp, guests: Math.max(1, rsvp.guests - 1) })}>−</button><strong>{rsvp.guests}</strong><button aria-label="Increase guest count" onClick={() => setRsvp({ ...rsvp, guests: Math.min(2, rsvp.guests + 1) })}>+</button></div></div>
-      <button className="phone-action primary full save-rsvp" onClick={onSave}>Save response</button>
-      <p className="save-message" aria-live="polite">{saveMessage}</p>
+    </div>;
+  }
+
+  return <div className="feature-screen">
+    <ScreenHeader kicker="Your invitation" title="RSVP" mark="2 invited" />
+    <div className="party-summary">
+      <span>Invitation for</span>
+      <strong>The Murao Family</strong>
+      <p>Elsa and Jonathan · Party of two</p>
     </div>
+    <div className="rsvp-intro"><h3>Who can make it?</h3><p>Please respond for each person named on this invitation.</p></div>
+    <div className="invitee-list">
+      {rsvp.guests.map((guest, index) => <article className="invitee" key={guest.name}>
+        <div className="invitee-heading"><span className="guest-avatar" aria-hidden="true">{guest.name[0]}</span><div><strong>{guest.name}</strong><p>{guest.response === "yes" ? "Attending" : guest.response === "no" ? "Can’t attend" : "Response needed"}</p></div></div>
+        <div className="attendance-options" role="group" aria-label={`${guest.name}'s attendance`}>
+          <button aria-pressed={guest.response === "yes"} onClick={() => setRsvp({ ...rsvp, guests: rsvp.guests.map((item, itemIndex) => itemIndex === index ? { ...item, response: "yes" } : item) })}>Attending</button>
+          <button aria-pressed={guest.response === "no"} onClick={() => setRsvp({ ...rsvp, guests: rsvp.guests.map((item, itemIndex) => itemIndex === index ? { ...item, response: "no" } : item) })}>Can’t make it</button>
+        </div>
+      </article>)}
+    </div>
+    <div className="rsvp-note">
+      <label htmlFor="rsvp-note">Note for Janelle &amp; Fernando <span>Optional</span></label>
+      <textarea id="rsvp-note" value={rsvp.note} onChange={(event) => setRsvp({ ...rsvp, note: event.target.value })} placeholder="Share a quick note" maxLength={180} />
+    </div>
+    <button className="phone-action primary full save-rsvp" disabled={!complete} onClick={onSave}>Confirm RSVP</button>
+    {!complete && <p className="rsvp-guidance">Choose a response for Elsa and Jonathan to continue.</p>}
   </div>;
 }
 
@@ -271,8 +323,9 @@ function HandoffSheet({ overlay, onClose }: { overlay: Exclude<Overlay, null>; o
   const isRoom = overlay.type === "room";
   const product = !isRoom ? products[overlay.index] : null;
   return <div className="handoff-overlay" role="dialog" aria-modal="true" aria-labelledby="handoff-title"><div className="handoff-sheet"><div className="sheet-handle" />
+    {!isRoom && product && <div className="sheet-product"><img src={product.image} alt="" /><div><span>{product.category}</span><strong>{product.price}</strong></div></div>}
     <h3 id="handoff-title">{isRoom ? overlay.label : product?.name}</h3>
-    <p>{isRoom ? "The September 25–27 stay and group code 905 are ready. Hilton will open to collect guest details and confirm the reservation." : `${product?.price}. Babylist will open this gift with current retailer options and availability.`}</p>
+    <p>{isRoom ? "The September 25–27 stay and group code 905 are ready. Hilton will open to collect guest details and confirm the reservation." : "Babylist will show current prices and retailer availability for this gift. Open the registry there to purchase it and prevent duplicate gifts."}</p>
     <div><button className="phone-action" onClick={onClose}>{isRoom ? "Back to rooms" : "Back to gifts"}</button><ExternalLink href={isRoom ? BOOKING_URL : REGISTRY_URL} primary>{isRoom ? "Continue with Hilton" : "View on Babylist"}</ExternalLink></div>
   </div></div>;
 }
