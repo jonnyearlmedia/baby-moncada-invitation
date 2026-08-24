@@ -5,8 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 const BOOKING_URL = "https://www.hilton.com/en/book/reservation/rooms/?ctyhocn=STSRHUP&arrivalDate=2026-09-25&departureDate=2026-09-27&groupCode=905&room1NumAdults=1&cid=OM%2CWW%2CHILTONLINK%2CEN%2CDirectLink";
 const REGISTRY_URL = "https://my.babylist.com/janelle-fernando?session_synced=true";
 const HOTEL_ADDRESS = "5870 Labath Ave, Rohnert Park, CA 94928";
-const EVENT_APPLE_MAPS = "https://maps.apple.com/?q=Private%20Residence%2C%20Rohnert%20Park%2C%20CA";
-const EVENT_GOOGLE_MAPS = "https://www.google.com/maps/search/?api=1&query=Rohnert%20Park%2C%20CA";
 const HOTEL_APPLE_MAPS = "https://maps.apple.com/?daddr=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&dirflg=d";
 const HOTEL_GOOGLE_MAPS = "https://www.google.com/maps/dir/?api=1&destination=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&travelmode=driving&dir_action=navigate";
 const RSVP_STORAGE_KEY = "moncada-rsvp-murao-v2";
@@ -128,8 +126,8 @@ export default function Home() {
     const calendar = [
       "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Baby Moncada//Invitation//EN", "BEGIN:VEVENT",
       "UID:baby-moncada-20260926", "DTSTART;VALUE=DATE:20260926", "DTEND;VALUE=DATE:20260927",
-      "SUMMARY:Baby Moncada Celebration", "LOCATION:Rohnert Park, CA",
-      "DESCRIPTION:A little boy is on the way. Celebration honoring Janelle and Fernando Moncada.",
+      "SUMMARY:Baby Moncada Celebration", `LOCATION:${HOTEL_ADDRESS}`,
+      "DESCRIPTION:A little boy is on the way. Join Janelle and Fernando at Hotel Centro Sonoma Wine Country.",
       "END:VEVENT", "END:VCALENDAR",
     ].join("\r\n");
     const link = document.createElement("a");
@@ -203,7 +201,7 @@ function InviteScreen({ countdown, onRSVP, onCalendar }: { countdown: ReturnType
     </div>
     <div className="event-card">
       <div><span>▣</span><p><strong>Saturday, September 26, 2026</strong><br />Rohnert Park, California</p></div>
-      <div><span>⌂</span><p><strong>Private residence</strong><br />Exact street address will be added</p></div>
+      <div><span>⌂</span><p><strong>Hotel Centro Sonoma Wine Country</strong><br />{HOTEL_ADDRESS}</p></div>
     </div>
     <div className="countdown" aria-label="Countdown to September 26, 2026">
       {Object.entries(countdown).map(([label, value]) => <div key={label}><strong>{label === "days" ? value : String(value).padStart(2, "0")}</strong><span>{label}</span></div>)}
@@ -218,8 +216,8 @@ function ScreenHeader({ kicker, title, mark }: { kicker: string; title: string; 
 
 function StayScreen({ onRoom }: { onRoom: (label: string) => void }) {
   return <div className="feature-screen">
-    <ScreenHeader kicker="A room block for the weekend" title="Your stay" mark="HILTON" />
-    <div className="info-block"><strong>Hotel Centro Sonoma Wine Country</strong><p>Tapestry by Hilton · Rohnert Park</p></div>
+    <ScreenHeader kicker="Baby shower + weekend stay" title="Stay on site" mark="HILTON" />
+    <div className="info-block venue-block"><strong>Hotel Centro Sonoma Wine Country</strong><p>Tapestry by Hilton<br />{HOTEL_ADDRESS}</p><div><span>One address</span>The baby shower and room block are both here.</div></div>
     <div className="stay-facts"><div><span>Check in</span><strong>Fri, Sep 25</strong></div><div><span>Check out</span><strong>Sun, Sep 27</strong></div><div><span>Group rate</span><strong>Code 905</strong></div></div>
     <div className="room-list">
       <Room name="1 King Bed" detail="Sleeps 2 · workspace · mini refrigerator" onChoose={onRoom} />
@@ -262,11 +260,11 @@ function RegistryScreen({ category, setCategory, products: visible, onProduct }:
 
 function MapsScreen() {
   return <div className="feature-screen">
-    <ScreenHeader kicker="Celebration and hotel" title="Plan your route" mark="⌖" />
-    <div className="map-visual" role="img" aria-label="Stylized preview of the event area and hotel"><div className="map-pin event"><span>⌂</span></div><div className="map-pin hotel"><span>H</span></div><b>Rohnert Park</b></div>
+    <ScreenHeader kicker="One destination" title="Shower & stay" mark="⌖" />
+    <div className="map-visual" role="img" aria-label="Hotel Centro Sonoma Wine Country location map"><div className="map-pin venue"><span>H</span></div><b>Rohnert Park</b></div>
     <div className="place-list">
-      <article className="place"><h3>The celebration</h3><p>Private residence · Rohnert Park, CA<br />The street address will appear here once it is confirmed.</p><div><ExternalLink href={EVENT_APPLE_MAPS}>Open Apple Maps</ExternalLink><ExternalLink href={EVENT_GOOGLE_MAPS}>Open Google Maps</ExternalLink></div></article>
-      <article className="place"><h3>Your hotel</h3><p>Hotel Centro Sonoma Wine Country<br />{HOTEL_ADDRESS}</p><div><ExternalLink href={HOTEL_APPLE_MAPS}>Open Apple Maps</ExternalLink><ExternalLink href={HOTEL_GOOGLE_MAPS}>Open Google Maps</ExternalLink></div></article>
+      <article className="place venue-place"><span>Baby shower and room block</span><h3>Hotel Centro Sonoma Wine Country</h3><p>{HOTEL_ADDRESS}</p><div><ExternalLink href={HOTEL_APPLE_MAPS}>Directions in Apple Maps</ExternalLink><ExternalLink href={HOTEL_GOOGLE_MAPS}>Directions in Google Maps</ExternalLink></div></article>
+      <p className="travel-note">Guests staying at Hotel Centro will already be at the shower venue.</p>
     </div>
   </div>;
 }
@@ -325,7 +323,7 @@ function HandoffSheet({ overlay, onClose }: { overlay: Exclude<Overlay, null>; o
   return <div className="handoff-overlay" role="dialog" aria-modal="true" aria-labelledby="handoff-title"><div className="handoff-sheet"><div className="sheet-handle" />
     {!isRoom && product && <div className="sheet-product"><img src={product.image} alt="" /><div><span>{product.category}</span><strong>{product.price}</strong></div></div>}
     <h3 id="handoff-title">{isRoom ? overlay.label : product?.name}</h3>
-    <p>{isRoom ? "The September 25–27 stay and group code 905 are ready. Hilton will open to collect guest details and confirm the reservation." : "Babylist will show current prices and retailer availability for this gift. Open the registry there to purchase it and prevent duplicate gifts."}</p>
+    <p>{isRoom ? "The September 25–27 stay is at the baby shower venue. Group code 905 is ready; Hilton will open to collect guest details and confirm the reservation." : "Babylist will show current prices and retailer availability for this gift. Open the registry there to purchase it and prevent duplicate gifts."}</p>
     <div><button className="phone-action" onClick={onClose}>{isRoom ? "Back to rooms" : "Back to gifts"}</button><ExternalLink href={isRoom ? BOOKING_URL : REGISTRY_URL} primary>{isRoom ? "Continue with Hilton" : "View on Babylist"}</ExternalLink></div>
   </div></div>;
 }
