@@ -250,7 +250,7 @@ function InviteScreen({ countdown, rsvp, onRSVP, onCalendar }: { countdown: Retu
     <div className="diaper-raffle"><strong>✈ Diaper Raffle</strong><span>Bring a pack, any size, for a chance to win a prize</span></div>
     <RSVPDeadline value={rsvp.event?.rsvpDeadline ?? "2026-09-11"} />
     <div className="home-actions"><button className="phone-action primary" onClick={onRSVP}>RSVP</button><button className="phone-action" onClick={onCalendar}>Add to calendar</button></div>
-    <div className="save-invite"><strong>📌 Save this invite</strong><p>You&apos;ll want this exact link again for the registry and directions. Keep the original text message, or open this invitation in Safari and choose More → Add Bookmark to. On desktop: Ctrl/Cmd + D.</p><button onClick={shareInvite}>{shareLabel}</button></div>
+    <div className="save-invite"><strong>📌 Save this invite</strong><p>You&apos;ll want this exact link again for the registry and directions. Keep the original text message, or bookmark this invitation: Safari — More → Add Bookmark to. Chrome — More → Add to Bookmarks. Desktop — Ctrl/Cmd + D.</p><button onClick={shareInvite}>{shareLabel}</button></div>
   </div>;
 }
 

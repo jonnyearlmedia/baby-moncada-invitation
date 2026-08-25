@@ -100,5 +100,6 @@ test("save instructions preserve the household-specific invitation link", async 
   const page = await read("app/page.tsx");
   assert.match(page, /Keep the original text message/);
   assert.match(page, /Add Bookmark to/);
+  assert.match(page, /Add to Bookmarks/);
   assert.doesNotMatch(page, /Add to Home Screen/);
 });
