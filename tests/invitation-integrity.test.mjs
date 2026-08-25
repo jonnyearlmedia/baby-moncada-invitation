@@ -112,9 +112,19 @@ test("mobile invitation tracks the visible browser viewport and reserves the saf
 });
 
 test("save instructions preserve the household-specific invitation link", async () => {
-  const page = await read("app/page.tsx");
-  assert.match(page, /Keep the original text message/);
-  assert.match(page, /Add Bookmark to/);
+  const [page, invitePage, inviteManifest, dashboardLayout, dashboardManifest] = await Promise.all([
+    read("app/page.tsx"),
+    read("app/invite/[slug]/page.tsx"),
+    read("app/invite/[slug]/manifest.webmanifest/route.ts"),
+    read("app/dashboard/layout.tsx"),
+    read("app/dashboard/manifest.webmanifest/route.ts"),
+  ]);
+  assert.match(page, /Save this specific invite/);
+  assert.match(page, /Add to Home Screen/);
+  assert.match(page, /Add Bookmark/);
   assert.match(page, /Add to Bookmarks/);
-  assert.doesNotMatch(page, /Add to Home Screen/);
+  assert.match(invitePage, /manifest: `\$\{invitationPath\}\/manifest\.webmanifest`/);
+  assert.match(inviteManifest, /invitationManifest\(slug\)/);
+  assert.match(dashboardLayout, /manifest: "\/dashboard\/manifest\.webmanifest"/);
+  assert.match(dashboardManifest, /dashboardManifest\(\)/);
 });
