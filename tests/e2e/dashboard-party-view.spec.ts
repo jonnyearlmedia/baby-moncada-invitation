@@ -45,10 +45,17 @@ function dashboardFixture() {
 }
 
 test.beforeEach(async ({ context, page }) => {
+  const fixture = dashboardFixture();
   await context.addCookies([{ name: "baby_moncada_host", value: sessionCookie(), url: "http://127.0.0.1:3000" }]);
   await page.route("**/api/admin/dashboard", async (route) => {
-    if (route.request().method() === "GET") await route.fulfill({ json: dashboardFixture() });
-    else await route.fulfill({ json: { ok: true } });
+    if (route.request().method() === "GET") { await route.fulfill({ json: fixture }); return; }
+    if (route.request().method() === "POST") {
+      const request = route.request().postDataJSON() as { slugBase: string; displayName: string; invitationLabel: string; messageGreeting: string; guests: string[] };
+      const household = { id: "household-created", slug: request.slugBase, displayName: request.displayName, invitationLabel: request.invitationLabel, messageGreeting: request.messageGreeting, guests: request.guests };
+      fixture.households.push({ id: household.id, slug: household.slug, display_name: household.displayName, invitation_label: household.invitationLabel, message_greeting: household.messageGreeting, guests: household.guests.map((name, index) => ({ id: `created-guest-${index}`, display_name: name, response: null, response_updated_at: null })), submission: null });
+      await route.fulfill({ status: 201, json: { household } }); return;
+    }
+    await route.fulfill({ json: { ok: true } });
   });
 });
 
@@ -82,4 +89,21 @@ test("dashboard defaults to invitation parties and preserves the individual gues
   await page.getByRole("button", { name: "Yes", exact: true }).last().click();
   await expect(page.locator(".party-directory-card")).toHaveCount(1);
   await expect(page.locator(".party-directory-card")).toContainText("1 yes");
+});
+
+test("host can paste a mixed-last-name party and receive a ready-to-send invitation", async ({ page }) => {
+  await page.goto("/dashboard");
+  const builder = page.locator(".invitation-builder-card");
+  await expect(builder.getByRole("heading", { name: "Type the names. The link builds itself." })).toBeVisible();
+  await builder.getByRole("textbox", { name: "Who is this invitation for?" }).fill("Maria Lopez, David Smith, Sofia, & Mateo");
+  await expect(builder.locator(".builder-guest-list i")).toHaveCount(4);
+  await expect(builder.locator(".builder-preview")).toContainText("/invite/lopez-smith");
+  await expect(builder.locator(".builder-preview")).toContainText("Maria Lopez, David Smith, Sofia, & Mateo");
+  await builder.getByRole("button", { name: "Create invitation" }).click();
+  await expect(builder.getByText("Ready to send")).toBeVisible();
+  await expect(builder.locator(".created-invitation code")).toContainText("/invite/lopez-smith");
+  await expect(page.locator(".party-directory-card")).toHaveCount(59);
+  await builder.getByRole("button", { name: "Copy link" }).click();
+  await expect(builder.getByRole("button", { name: "✓ Copied!" })).toBeVisible();
+  await expect(builder.getByRole("link", { name: "Preview invitation" })).toHaveAttribute("href", "/invite/lopez-smith");
 });

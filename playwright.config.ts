@@ -12,5 +12,5 @@ export default defineConfig({
     { name: "desktop-chrome", use: { ...devices["Desktop Chrome"], channel: "chrome" } },
     { name: "mobile-iphone", use: { ...devices["iPhone 13"], browserName: "chromium", channel: "chrome" } },
   ],
-  webServer: remoteBaseUrl ? undefined : { command: "npm run dev -- --hostname 127.0.0.1 --port 3000", url: "http://127.0.0.1:3000/invite/murao", reuseExistingServer: true, timeout: 120_000 },
+  webServer: remoteBaseUrl ? undefined : { command: "npm run dev -- --hostname 127.0.0.1 --port 3000", url: "http://127.0.0.1:3000/invite/murao", reuseExistingServer: true, timeout: 120_000, env: { HOST_SESSION_SECRET: "local-release-gate-secret-1234567890" } },
 });

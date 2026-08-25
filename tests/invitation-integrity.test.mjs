@@ -62,6 +62,21 @@ test("host dashboard uses a hashed passcode, signed cookie, rate limits, and aud
   assert.match(migration, /admin_audit_log/);
 });
 
+test("host-created invitations are validated and committed through one protected database function", async () => {
+  const [route, dashboard, migration] = await Promise.all([read("app/api/admin/dashboard/route.ts"), read("app/dashboard/dashboard-client.tsx"), read("supabase/migrations/20260825030159_create_admin_invitation.sql")]);
+  assert.match(route, /export async function POST/);
+  assert.match(route, /admin_create_household/);
+  assert.match(route, /hasHostSession/);
+  assert.match(dashboard, /Type the names\. The link builds itself\./);
+  assert.match(dashboard, /parseGuestNames/);
+  assert.match(migration, /where id for update/);
+  assert.match(migration, /insert into public\.households/);
+  assert.match(migration, /insert into public\.guests/);
+  assert.match(migration, /admin_audit_log/);
+  assert.match(migration, /revoke execute .* from public, anon, authenticated/);
+  assert.match(migration, /grant execute .* to service_role/);
+});
+
 test("registry refreshes current Babylist items without caching or generic item fallbacks", async () => {
   const [route, page] = await Promise.all([read("app/api/registry/route.ts"), read("app/page.tsx")]);
   assert.match(route, /reg_items\/minimal\?offset=0&limit=100/);

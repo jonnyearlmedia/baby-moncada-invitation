@@ -51,6 +51,12 @@ test("all five Claude-designed screens fit and retain their exact labels", async
 
   for (const [tab, heading] of expected) {
     await page.getByRole("navigation", { name: "Invitation features" }).getByRole("button", { name: tab, exact: true }).click();
+    if (tab === "RSVP") {
+      const changeResponse = page.getByRole("button", { name: "Change response" });
+      const rsvpHeading = page.getByRole("heading", { name: heading });
+      await Promise.any([changeResponse.waitFor({ state: "visible", timeout: 5_000 }), rsvpHeading.waitFor({ state: "visible", timeout: 5_000 })]);
+      if (await changeResponse.isVisible()) await changeResponse.click();
+    }
     await expect(page.getByRole("heading", { name: heading })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   }

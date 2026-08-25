@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { joinGuestNames, parseGuestNames, suggestMessageGreeting, suggestSlug } from "@/lib/invitation-builder";
 
 type EventRow = {
   event_title: string; hosts_display: string; event_starts_at: string; rsvp_deadline: string; venue_name: string; venue_address: string;
@@ -16,6 +17,8 @@ type HouseholdRow = {
 type DashboardData = { event: EventRow; households: HouseholdRow[]; registrySync: { status: string; finished_at: string | null } | null };
 type ResponseFilter = "all" | "yes" | "no" | "pending";
 type DashboardView = "parties" | "guests";
+type InvitationDraft = { slugBase: string; displayName: string; invitationLabel: string; messageGreeting: string };
+type CreatedInvitation = InvitationDraft & { id: string; slug: string; guests: string[] };
 
 function formatDateTime(value: string | null) {
   if (!value) return "Not replied yet";
@@ -44,6 +47,9 @@ export default function DashboardClient() {
   const [responseFilter, setResponseFilter] = useState<ResponseFilter>("all");
   const [dashboardView, setDashboardView] = useState<DashboardView>("parties");
   const [search, setSearch] = useState("");
+  const [namesInput, setNamesInput] = useState("");
+  const [customDraft, setCustomDraft] = useState<InvitationDraft | null>(null);
+  const [createdInvitation, setCreatedInvitation] = useState<CreatedInvitation | null>(null);
 
   const load = useCallback(async () => {
     const response = await fetch("/api/admin/dashboard", { cache: "no-store" });
@@ -86,12 +92,39 @@ export default function DashboardClient() {
     }) ?? [];
   }, [data, responseFilter, search]);
 
+  const parsedNames = useMemo(() => parseGuestNames(namesInput), [namesInput]);
+  const suggestedDraft = useMemo<InvitationDraft>(() => ({
+    slugBase: suggestSlug(parsedNames),
+    displayName: joinGuestNames(parsedNames),
+    invitationLabel: joinGuestNames(parsedNames),
+    messageGreeting: suggestMessageGreeting(parsedNames),
+  }), [parsedNames]);
+  const invitationDraft = customDraft ?? suggestedDraft;
+
   async function save(body: Record<string, unknown>, key: string) {
     setBusy(key); setError(""); setNotice("");
     const response = await fetch("/api/admin/dashboard", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const result = await response.json() as { error?: string };
     if (!response.ok) setError(result.error ?? "Changes were not saved.");
     else { setNotice("Changes saved."); await load(); }
+    setBusy("");
+  }
+
+  async function createInvitation() {
+    setBusy("create"); setError(""); setNotice(""); setCreatedInvitation(null);
+    const response = await fetch("/api/admin/dashboard", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...invitationDraft, guests: parsedNames }),
+    });
+    if (response.status === 401) { router.replace("/dashboard/login"); return; }
+    const result = await response.json() as { household?: CreatedInvitation; error?: string };
+    if (!response.ok || !result.household) setError(result.error ?? "The invitation was not created.");
+    else {
+      setCreatedInvitation(result.household);
+      setNotice(`Invitation created for ${result.household.displayName}.`);
+      await load();
+    }
     setBusy("");
   }
 
@@ -112,6 +145,15 @@ export default function DashboardClient() {
   return <main className="admin-shell"><header className="admin-top"><div><p className="admin-kicker">Baby Moncada</p><h1>Host dashboard</h1><p>Manage invitation links, guest names, event details, and live RSVP results.</p></div><button className="admin-secondary" onClick={async () => { await fetch("/api/admin/session", { method: "DELETE" }); router.replace("/dashboard/login"); }}>Log out</button></header>
     {(error || notice) && <div className={error ? "admin-alert error" : "admin-alert"} role="status">{error || notice}</div>}
     <section className="stats-grid" aria-label="RSVP totals"><button className={responseFilter === "all" ? "stats-card selected" : "stats-card"} onClick={() => setResponseFilter("all")}><strong>{stats.invited}</strong><span>All invited</span></button><button className={responseFilter === "yes" ? "stats-card selected" : "stats-card"} onClick={() => setResponseFilter("yes")}><strong>{stats.attending}</strong><span>Yes — attending</span></button><button className={responseFilter === "no" ? "stats-card selected" : "stats-card"} onClick={() => setResponseFilter("no")}><strong>{stats.declined}</strong><span>No — can’t attend</span></button><button className={responseFilter === "pending" ? "stats-card selected" : "stats-card"} onClick={() => setResponseFilter("pending")}><strong>{stats.pending}</strong><span>Pending</span></button></section>
+
+    <section className="admin-card invitation-builder-card"><div className="section-heading"><div><p className="admin-kicker">New invitation</p><h2>Type the names. The link builds itself.</h2></div><span>Nothing is saved until you press Create invitation</span></div>
+      <div className="invitation-builder-grid"><div className="invitation-builder-form"><label>Who is this invitation for?<textarea value={namesInput} onChange={(e) => { setNamesInput(e.target.value); setCustomDraft(null); setCreatedInvitation(null); }} placeholder="Maria Lopez, David Smith, Sofia, & Mateo" aria-describedby="names-help" /></label><small id="names-help">Separate each person with a comma, “&amp;”, “and”, or a new line. Each person gets their own Yes or No choice.</small>
+        {parsedNames.length > 20 && <p className="builder-error" role="alert">Use no more than 20 people on one invitation.</p>}
+        <details className="builder-advanced"><summary>Customize the wording or short link</summary><div className="field-grid"><label>Short link<input value={invitationDraft.slugBase} onChange={(e) => setCustomDraft({ ...invitationDraft, slugBase: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-{2,}/g, "-") })} /></label><label>Dashboard party name<input value={invitationDraft.displayName} onChange={(e) => setCustomDraft({ ...invitationDraft, displayName: e.target.value })} /></label><label className="wide">Invitation “For” wording<input value={invitationDraft.invitationLabel} onChange={(e) => setCustomDraft({ ...invitationDraft, invitationLabel: e.target.value })} /></label><label>Message greeting<input value={invitationDraft.messageGreeting} onChange={(e) => setCustomDraft({ ...invitationDraft, messageGreeting: e.target.value })} /></label></div></details>
+        <button className="admin-primary create-invitation-button" disabled={busy === "create" || parsedNames.length < 1 || parsedNames.length > 20 || !invitationDraft.slugBase || !invitationDraft.displayName || !invitationDraft.invitationLabel || !invitationDraft.messageGreeting} onClick={() => void createInvitation()}>{busy === "create" ? "Creating invitation…" : "Create invitation"}</button></div>
+        <div className="builder-preview" aria-live="polite"><span>Preview before saving</span>{parsedNames.length ? <><strong>{invitationDraft.displayName}</strong><code>/invite/{invitationDraft.slugBase}</code><div className="builder-guest-list">{parsedNames.map((name, index) => <i key={`${name}-${index}`}>{name}</i>)}</div><p>{event.copy_message_template.replaceAll("{{household}}", invitationDraft.messageGreeting).replaceAll("{{link}}", `${typeof window === "undefined" ? "" : window.location.origin}/invite/${invitationDraft.slugBase}`)}</p><small>If that short link already exists, the final link safely adds “-2” or the next available number.</small></> : <p>Enter the people receiving one shared link. Their invitation preview will appear here.</p>}</div></div>
+      {createdInvitation && (() => { const createdLink = invitationLink(createdInvitation.slug); const createdMessage = event.copy_message_template.replaceAll("{{household}}", createdInvitation.messageGreeting).replaceAll("{{link}}", createdLink); return <div className="created-invitation" role="status"><div><span>Ready to send</span><strong>{createdInvitation.displayName}</strong><code>{createdLink}</code></div><div className="copy-row"><button className={copiedKey === "created-link" ? "copy-success" : ""} onClick={() => copy(createdLink, "New invitation link copied.", "created-link")}>{copiedKey === "created-link" ? "✓ Copied!" : "Copy link"}</button><button className={copiedKey === "created-message" ? "copy-success" : ""} onClick={() => copy(createdMessage, "Ready-to-send message copied.", "created-message")}>{copiedKey === "created-message" ? "✓ Copied!" : "Copy message"}</button><a href={`/invite/${createdInvitation.slug}`} target="_blank" rel="noreferrer">Preview invitation</a><button className="admin-secondary" onClick={() => { setNamesInput(""); setCustomDraft(null); setCreatedInvitation(null); }}>Create another</button></div></div>; })()}
+    </section>
 
     <section className="admin-card response-directory-card"><div className="section-heading"><div><p className="admin-kicker">Live invitations and RSVPs</p><h2>{dashboardView === "parties" ? "Send links and track RSVPs" : "Every guest, at a glance"}</h2></div><span>{dashboardView === "parties" ? `${partyDirectory.length} matching ${partyDirectory.length === 1 ? "party" : "parties"}` : `${responseDirectory.length} matching ${responseDirectory.length === 1 ? "guest" : "guests"}`}</span></div>
       {dashboardView === "parties" && <p className="directory-help">Copy or preview each party’s invitation directly from its card. No extra section required.</p>}

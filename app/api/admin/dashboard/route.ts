@@ -33,6 +33,14 @@ const householdSchema = z.object({
   guests: z.array(z.object({ id: z.string().uuid(), name: z.string().trim().min(1).max(100) })).min(1).max(20),
 });
 
+const createHouseholdSchema = z.object({
+  slugBase: z.string().trim().toLowerCase().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(72),
+  displayName: z.string().trim().min(1).max(300),
+  invitationLabel: z.string().trim().min(1).max(300),
+  messageGreeting: z.string().trim().min(1).max(150),
+  guests: z.array(z.string().trim().min(1).max(100)).min(1).max(20),
+});
+
 function dbError(error: { message: string } | null) {
   if (error) throw new Error(error.message);
 }
@@ -102,5 +110,26 @@ export async function PATCH(request: Request) {
     console.error("dashboard_save_failed", error);
     const message = error instanceof Error && error.message.includes("already in use") ? "That invitation link is already in use." : "Changes were not saved. Please try again.";
     return Response.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  if (!(await hasHostSession())) return Response.json({ error: "Host sign-in required." }, { status: 401 });
+  try {
+    const parsed = createHouseholdSchema.safeParse(await request.json());
+    if (!parsed.success) return Response.json({ error: parsed.error.issues[0]?.message ?? "Check the invitation details." }, { status: 400 });
+    const admin = createAdminServerClient();
+    const { data, error } = await admin.rpc("admin_create_household", {
+      p_slug_base: parsed.data.slugBase,
+      p_display_name: parsed.data.displayName,
+      p_invitation_label: parsed.data.invitationLabel,
+      p_message_greeting: parsed.data.messageGreeting,
+      p_guests: parsed.data.guests,
+    });
+    dbError(error);
+    return Response.json({ household: data }, { status: 201, headers: { "Cache-Control": "private, no-store" } });
+  } catch (error) {
+    console.error("dashboard_create_failed", error);
+    return Response.json({ error: "The invitation was not created. No partial invitation was saved; please try again." }, { status: 500 });
   }
 }
