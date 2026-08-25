@@ -119,7 +119,8 @@ test("save instructions preserve the household-specific invitation link", async 
     read("app/dashboard/layout.tsx"),
     read("app/dashboard/manifest.webmanifest/route.ts"),
   ]);
-  assert.match(page, /Save this specific invite/);
+  assert.match(page, /Save this invitation/);
+  assert.match(page, /Home Screen for quick access to the registry, directions, and RSVP/);
   assert.match(page, /Add to Home Screen/);
   assert.match(page, /Add Bookmark/);
   assert.match(page, /Add to Bookmarks/);

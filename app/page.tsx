@@ -250,7 +250,7 @@ function InviteScreen({ countdown, rsvp, onRSVP, onCalendar }: { countdown: Retu
     <div className="diaper-raffle"><strong>✈ Diaper Raffle</strong><span>Bring a pack, any size, for a chance to win a prize</span></div>
     <RSVPDeadline value={rsvp.event?.rsvpDeadline ?? "2026-09-11"} />
     <div className="home-actions"><button className="phone-action primary" onClick={onRSVP}>RSVP</button><button className="phone-action" onClick={onCalendar}>Add to calendar</button></div>
-    <div className="save-invite"><strong>📌 Save this specific invite</strong><p>Safari: Share → Add to Home Screen, or More → Add Bookmark. Chrome: Share → Add to Home Screen, or More → Add to Bookmarks. Keep this page open while saving so the icon or bookmark returns to this exact invitation. Desktop: Ctrl/Cmd + D.</p><button onClick={shareInvite}>{shareLabel}</button></div>
+    <div className="save-invite"><strong>📌 Save this invitation</strong><p>Add this invitation to your Home Screen for quick access to the registry, directions, and RSVP.<span><b>iPhone (Safari or Chrome):</b> Tap Share → Add to Home Screen.</span><small>Prefer a bookmark? Use Add Bookmark in Safari or Add to Bookmarks in Chrome.</small></p><button onClick={shareInvite}>{shareLabel}</button></div>
   </div>;
 }
 
