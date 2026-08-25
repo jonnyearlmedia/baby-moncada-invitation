@@ -221,7 +221,7 @@ details[open] .household-body { animation:panel-in .24s ease-out; }
 /* Literal dimensions from Baby Moncada Invitation.dc.html. */
 .app-page{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:32px 16px}
 .phone.boarding-pass{height:min(880px,92vh);border-radius:26px;overflow:hidden;box-shadow:0 30px 60px -20px oklch(30% .05 250/.35)}
-.boarding-pass .phone-content{inset:0 0 75px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.boarding-pass .phone-content{inset:0 0 var(--phone-nav-reserved-height,75px);overflow-y:auto;-webkit-overflow-scrolling:touch}
 .boarding-pass .ticket-screen{padding:0 0 28px}
 .ticket-header{align-items:flex-start;padding:26px 24px 0;border:0;background:transparent}
 .ticket-header p{margin:0;color:var(--app-muted);font-size:11px;line-height:1.6;letter-spacing:.16em;text-transform:uppercase}
@@ -242,11 +242,11 @@ details[open] .household-body { animation:panel-in .24s ease-out; }
 .rsvp-deadline{display:grid;gap:4px;margin:0 24px 18px;padding:14px 16px;border:1px dashed var(--app-accent);border-radius:12px;background:oklch(93% .025 232)}.rsvp-deadline span{color:var(--app-muted);font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}.rsvp-deadline strong{font-family:var(--font-ticket-serif),'Instrument Serif',serif;font-size:18px;line-height:1.15}.rsvp-deadline p{margin:1px 0 0;color:var(--app-muted);font-size:11px;line-height:1.45}.feature-screen>.rsvp-deadline{margin:0 0 18px}.rsvp-deadline.compact{padding:12px 14px}.rsvp-deadline.compact strong{font-size:17px}
 .boarding-pass .home-actions{gap:10px;padding:0 24px 16px}.boarding-pass .home-actions .phone-action{min-height:0;padding:16px;border-radius:14px;font-size:15px}.boarding-pass .home-actions .primary{padding:18px;font-size:16px}
 .save-invite{margin:0 24px 28px;padding:14px 16px}.save-invite strong{font-size:12px}.save-invite p{margin:0 0 10px;font-size:11px}.save-invite button{padding:10px;font-size:12px}
-.boarding-pass .phone-nav{left:0;right:0;bottom:0;padding:8px 6px;border-top:1px dashed var(--app-line);background:var(--app-surface);box-shadow:none;backdrop-filter:none}
+.boarding-pass .phone-nav{left:0;right:0;bottom:0;padding:8px 6px max(8px,env(safe-area-inset-bottom,0px));border-top:1px dashed var(--app-line);background:var(--app-surface);box-shadow:none;backdrop-filter:none}
 .boarding-pass .phone-nav button{min-height:59px;gap:4px;padding:8px 4px;border-radius:14px;font-size:10px;letter-spacing:.05em;text-transform:uppercase}
 .boarding-pass .phone-nav button.selected{color:var(--app-accent-text);background:var(--app-text)}
 .boarding-pass .phone-nav button svg{width:18px;height:18px;margin:0}
-@media(max-width:480px){.app-page{display:flex;padding:32px 16px}.phone.boarding-pass{width:min(430px,100%);height:min(880px,92vh);border:1px solid var(--app-line);border-radius:26px;box-shadow:0 30px 60px -20px oklch(30% .05 250/.35)}.ticket-divider i{background:oklch(93% .025 232)}}
+@media(max-width:480px){.app-page{display:flex;height:var(--invitation-viewport-height,100svh);min-height:var(--invitation-viewport-height,100svh);padding:32px 16px;overflow:hidden}.phone.boarding-pass{--phone-nav-reserved-height:calc(75px + env(safe-area-inset-bottom,0px));width:min(430px,100%);height:min(880px,calc(var(--invitation-viewport-height,100svh) - 64px));max-height:calc(var(--invitation-viewport-height,100svh) - 64px);border:1px solid var(--app-line);border-radius:26px;box-shadow:0 30px 60px -20px oklch(30% .05 250/.35)}.ticket-divider i{background:oklch(93% .025 232)}}
 @media(max-width:350px){.ticket-header,.ticket-hero,.ticket-details,.countdown-wrap{padding-inline:18px}.flight-wrap,.ticket-divider,.ticket-barcode,.baby-on-board,.diaper-raffle,.rsvp-deadline,.save-invite{margin-inline:18px}.feature-screen>.rsvp-deadline{margin-inline:0}.boarding-pass .home-actions{padding-inline:18px}.ticket-hero h1{font-size:39px}}
 
 .boarding-pass .feature-screen{padding:26px 24px 28px}

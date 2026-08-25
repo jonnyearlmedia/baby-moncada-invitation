@@ -85,3 +85,13 @@ test("travel view uses an interactive map at the exact venue coordinates", async
   assert.match(page, /Ask the front desk for the Baby Moncada shower location or follow any posted event signs/);
   assert.match(page, /warm during the day and cooler in the evening/);
 });
+
+test("mobile invitation tracks the visible browser viewport and reserves the safe bottom area", async () => {
+  const [page, layout, styles] = await Promise.all([read("app/page.tsx"), read("app/layout.tsx"), read("app/globals.css")]);
+  assert.match(layout, /viewportFit:\s*"cover"/);
+  assert.match(page, /window\.visualViewport/);
+  assert.match(page, /--invitation-viewport-height/);
+  assert.match(styles, /height:var\(--invitation-viewport-height,100svh\)/);
+  assert.match(styles, /env\(safe-area-inset-bottom,0px\)/);
+  assert.match(styles, /--phone-nav-reserved-height/);
+});

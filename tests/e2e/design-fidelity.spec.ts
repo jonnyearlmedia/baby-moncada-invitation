@@ -58,3 +58,23 @@ test("all five Claude-designed screens fit and retain their exact labels", async
   await page.getByRole("navigation", { name: "Invitation features" }).getByRole("button", { name: "RSVP", exact: true }).click();
   await expect(page.getByText("RSVP by September 11, 2026")).toBeVisible();
 });
+
+test("mobile bottom navigation remains inside the live visual viewport", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "This regression check is specific to mobile browser chrome.");
+  await page.setViewportSize({ width: 390, height: 620 });
+  await page.goto("/invite/murao");
+  await expect(page.getByRole("navigation", { name: "Invitation features" })).toBeVisible();
+
+  await expect.poll(() => page.evaluate(() => document.querySelector<HTMLElement>(".app-page")?.style.getPropertyValue("--invitation-viewport-height"))).toBe("620px");
+  const geometry = await page.evaluate(() => {
+    const app = document.querySelector<HTMLElement>(".app-page")!.getBoundingClientRect();
+    const card = document.querySelector<HTMLElement>(".phone.boarding-pass")!.getBoundingClientRect();
+    const nav = document.querySelector<HTMLElement>(".phone-nav")!.getBoundingClientRect();
+    const visibleBottom = (window.visualViewport?.offsetTop ?? 0) + (window.visualViewport?.height ?? window.innerHeight);
+    return { appHeight: app.height, cardBottom: card.bottom, navBottom: nav.bottom, visibleBottom };
+  });
+
+  expect(geometry.appHeight).toBe(620);
+  expect(geometry.cardBottom).toBeLessThanOrEqual(geometry.visibleBottom - 31);
+  expect(geometry.navBottom).toBeLessThanOrEqual(geometry.visibleBottom - 31);
+});

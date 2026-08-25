@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { Caveat, Geist, Geist_Mono, IBM_Plex_Mono, Instrument_Serif } from "next/font/google";
 import "./globals.css";
@@ -16,6 +16,12 @@ const geistMono = Geist_Mono({
 const ticketSerif = Instrument_Serif({ weight: "400", style: ["normal", "italic"], subsets: ["latin"], variable: "--font-ticket-serif" });
 const ticketMono = IBM_Plex_Mono({ weight: ["400", "500", "600", "700"], subsets: ["latin"], variable: "--font-ticket-mono" });
 const ticketScript = Caveat({ weight: "600", subsets: ["latin"], variable: "--font-ticket-script" });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();

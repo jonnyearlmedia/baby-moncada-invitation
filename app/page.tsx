@@ -72,9 +72,43 @@ export default function Home({ inviteSlug = "murao" }: { inviteSlug?: string }) 
   const [category, setCategory] = useState("All");
   const [overlay, setOverlay] = useState<Overlay>(null);
   const [registry, setRegistry] = useState<RegistryState>({ status: "loading", items: [], updatedAt: null });
+  const appPageRef = useRef<HTMLElement>(null);
   const phoneContentRef = useRef<HTMLDivElement>(null);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [rsvp, setRsvp] = useState<RSVP>({ canonicalSlug: inviteSlug, household: "", invitationLabel: "", messageGreeting: "", guests: [], note: "", submitted: false, updatedAt: null, status: "loading", error: null, event: null });
+
+  useEffect(() => {
+    const appPage = appPageRef.current;
+    if (!appPage) return;
+
+    const visualViewport = window.visualViewport;
+    let animationFrame = 0;
+    const updateVisibleHeight = () => {
+      window.cancelAnimationFrame(animationFrame);
+      animationFrame = window.requestAnimationFrame(() => {
+        const visibleHeight = Math.round(visualViewport?.height ?? window.innerHeight);
+        appPage.style.setProperty("--invitation-viewport-height", `${visibleHeight}px`);
+      });
+    };
+
+    updateVisibleHeight();
+    visualViewport?.addEventListener("resize", updateVisibleHeight);
+    visualViewport?.addEventListener("scroll", updateVisibleHeight);
+    window.addEventListener("resize", updateVisibleHeight);
+    window.addEventListener("orientationchange", updateVisibleHeight);
+    window.addEventListener("pageshow", updateVisibleHeight);
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      visualViewport?.removeEventListener("resize", updateVisibleHeight);
+      visualViewport?.removeEventListener("scroll", updateVisibleHeight);
+      window.removeEventListener("resize", updateVisibleHeight);
+      window.removeEventListener("orientationchange", updateVisibleHeight);
+      window.removeEventListener("pageshow", updateVisibleHeight);
+      appPage.style.removeProperty("--invitation-viewport-height");
+    };
+  }, []);
+
   useEffect(() => {
     const initialFrame = window.requestAnimationFrame(() => {
       setCountdown(getCountdown());
@@ -158,7 +192,7 @@ export default function Home({ inviteSlug = "murao" }: { inviteSlug?: string }) 
   }
 
   return (
-    <main className="app-page">
+    <main className="app-page" ref={appPageRef}>
       <section className="phone boarding-pass" aria-label="Baby Moncada invitation">
         <div className="phone-content" ref={phoneContentRef}>
           {view === "invite" && <InviteScreen countdown={countdown} rsvp={rsvp} onRSVP={() => changeView("rsvp")} onCalendar={downloadCalendar} />}
@@ -168,7 +202,7 @@ export default function Home({ inviteSlug = "murao" }: { inviteSlug?: string }) 
           {view === "rsvp" && <RSVPScreen rsvp={rsvp} setRsvp={setRsvp} onSave={saveRSVP} />}
         </div>
         <nav className="phone-nav" aria-label="Invitation features">
-          {nav.map((item) => <button key={item[0]} className={view === item[0] ? "selected" : ""} aria-current={view === item[0] ? "page" : undefined} onClick={() => changeView(item[0])}><span className="nav-icon"><Icon name={item[1]} />{item[0] === "rsvp" && rsvp.submitted && <i aria-label="RSVP submitted" />}</span>{item[2]}</button>)}
+          {nav.map((item) => <button key={item[0]} className={view === item[0] ? "selected" : ""} aria-current={view === item[0] ? "page" : undefined} onClick={() => changeView(item[0])}><span className="nav-icon"><Icon name={item[1]} />{item[0] === "rsvp" && rsvp.submitted && <i aria-hidden="true" />}</span>{item[2]}</button>)}
         </nav>
         {overlay && <HandoffSheet overlay={overlay} onClose={() => setOverlay(null)} />}
       </section>
