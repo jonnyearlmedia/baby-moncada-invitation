@@ -83,7 +83,8 @@ test("dashboard controls work on the complete roster", async ({ context, page })
   await page.goto("/dashboard");
   await page.locator("input").first().fill("1991");
   await page.getByRole("button", { name: "Open dashboard" }).click();
-  await expect(page.getByRole("heading", { name: "Responses by invitation party" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Type the names. The link builds itself." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Send links and track RSVPs" })).toBeVisible();
   await expect(page.locator("details.household-card")).toHaveCount(58);
   await expect(page.getByRole("button", { name: "Parties", exact: true })).toHaveClass(/selected/);
   await expect(page.locator(".party-directory-card")).toHaveCount(58);
