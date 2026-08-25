@@ -319,6 +319,7 @@ function RegistryScreen({ category, setCategory, products: visible, registry, on
       <div className="registry-monogram" aria-hidden="true">J <span>+</span> F</div>
       <div><strong>Janelle &amp; Fernando Moncada</strong><p>Rohnert Park, CA · Baby due November 25, 2026</p></div>
     </div>
+    <div className="registry-official-link"><ExternalLink href={REGISTRY_URL} primary>See the full registry on Babylist</ExternalLink><small>Use Babylist directly for checkout, gift reservations, returns, and thank-you tracking.</small></div>
     <div className="registry-summary"><span><strong>{registry.items.length}</strong> gifts</span><span><strong>{categoryCounts.length - 1}</strong> categories</span><span className="live-state"><i /> Current</span></div>
     <p className="registry-trust">Availability and purchase status refresh from Babylist. Choose a gift to see its exact buying options.</p>
     <div className="category-row" aria-label="Registry categories">{categoryCounts.map(([name, count]) => <button key={name} aria-pressed={category === name} onClick={() => setCategory(name)}>{name} {count}</button>)}</div>
@@ -332,7 +333,6 @@ function RegistryScreen({ category, setCategory, products: visible, registry, on
         </div>
       </article>)}</div>
     {visible.length === 0 && <div className="registry-empty"><strong>No gifts in this category.</strong><p>Choose another category to continue browsing.</p></div>}
-    <div className="registry-footer"><p>Babylist remains the source of truth for checkout, gift reservations, returns, and thank-you tracking.</p><ExternalLink href={REGISTRY_URL}>See the full registry on Babylist</ExternalLink></div>
   </div>;
 }
 
@@ -373,6 +373,10 @@ function RSVPScreen({ rsvp, setRsvp, onSave }: { rsvp: RSVP; setRsvp: React.Disp
         <p>Your response is saved. You can return with this invitation link to make a change.</p>
         {rsvp.updatedAt && <span className="saved-time">Last updated {new Date(rsvp.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>}
         <button className="phone-action full" onClick={() => setRsvp({ ...rsvp, submitted: false, error: null })}>Change response</button>
+        {attending.length > 0 && <div className="rsvp-return-reminders" aria-label="Before the baby shower">
+          <article><span>Reminder 01</span><strong>Diaper raffle</strong><p>Bring a pack of diapers, any size, for a chance to win a prize.</p></article>
+          <article><span>Reminder 02</span><strong>Keep this live invitation handy</strong><p>This is your live invitation. Add it to your Home Screen or bookmark it, then keep returning here for the latest registry items, directions, hotel details, and event instructions. Any updates will appear here.</p></article>
+        </div>}
       </div>
     </div>;
   }

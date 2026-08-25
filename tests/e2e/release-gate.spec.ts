@@ -31,7 +31,14 @@ test("every guest-facing control works and every destination is exact", async ({
   await expect(page.getByRole("link", { name: "Check rooms & book with Hilton" })).toHaveAttribute("href", /ctyhocn=STSRHUP.*arrivalDate=2026-09-25.*departureDate=2026-09-27.*groupCode=905/);
 
   await nav.getByRole("button", { name: "Registry", exact: true }).click();
+  const babylistHandoff = page.getByRole("link", { name: "See the full registry on Babylist" });
+  await expect(babylistHandoff).toHaveAttribute("href", "https://my.babylist.com/janelle-fernando");
   await expect(page.locator(".product").first()).toBeVisible();
+  const handoffBox = await babylistHandoff.boundingBox();
+  const firstProductBox = await page.locator(".product").first().boundingBox();
+  expect(handoffBox).not.toBeNull();
+  expect(firstProductBox).not.toBeNull();
+  expect(handoffBox!.y).toBeLessThan(firstProductBox!.y);
   const firstProductTitle = await page.locator(".product h3").first().textContent();
   expect(firstProductTitle?.trim().length).toBeGreaterThan(0);
   await page.locator(".product").first().getByRole("button", { name: /View .* option/ }).click();

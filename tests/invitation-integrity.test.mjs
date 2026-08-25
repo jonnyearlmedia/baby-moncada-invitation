@@ -39,6 +39,14 @@ test("RSVP writes validate complete named responses inside one database transact
   assert.doesNotMatch(route, /D1|drizzle|Cloudflare/);
 });
 
+test("confirmed attendees receive diaper raffle and live invitation reminders", async () => {
+  const page = await read("app/page.tsx");
+  assert.match(page, /attending\.length > 0/);
+  assert.match(page, /Bring a pack of diapers, any size, for a chance to win a prize/);
+  assert.match(page, /Keep this live invitation handy/);
+  assert.match(page, /latest registry items, directions, hotel details, and event instructions/);
+});
+
 test("database tables are RLS-protected and old readable links survive renames", async () => {
   const migration = await read("supabase/migrations/20260824073636_production_rsvp_pilot.sql");
   for (const table of ["event_settings", "households", "household_slug_aliases", "guests", "rsvp_submissions", "rsvp_guest_responses", "registry_items", "registry_offers", "admin_login_attempts", "admin_audit_log"]) assert.match(migration, new RegExp(`alter table public\\.${table} enable row level security`));
@@ -88,6 +96,10 @@ test("registry refreshes current Babylist items without caching or generic item 
   assert.match(page, /View.*option/);
   assert.match(page, /Open the registry on Babylist/);
   assert.match(page, /Nothing stale is being shown/);
+  const babylistHandoff = page.indexOf("See the full registry on Babylist");
+  const productList = page.indexOf('<div className="products">');
+  assert.ok(babylistHandoff > -1 && babylistHandoff < productList);
+  assert.doesNotMatch(page, /className="registry-footer"/);
 });
 
 test("travel view uses an interactive map at the exact venue coordinates", async () => {
