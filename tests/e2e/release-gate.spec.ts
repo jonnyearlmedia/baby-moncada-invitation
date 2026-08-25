@@ -56,8 +56,9 @@ test("every guest-facing control works and every destination is exact", async ({
 
   await nav.getByRole("button", { name: "RSVP", exact: true }).click();
   const changeResponse = page.getByRole("button", { name: "Change response" });
-  if (await changeResponse.isVisible()) await changeResponse.click();
   const confirm = page.getByRole("button", { name: /Confirm RSVP|Save changes/ });
+  await expect(changeResponse.or(confirm)).toBeVisible();
+  if (await changeResponse.isVisible()) await changeResponse.click();
   await expect(confirm).toBeVisible();
   const guestCards = page.locator(".invitee");
   await expect(guestCards).toHaveCount(2);
