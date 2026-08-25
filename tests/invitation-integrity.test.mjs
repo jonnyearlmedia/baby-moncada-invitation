@@ -95,3 +95,10 @@ test("mobile invitation tracks the visible browser viewport and reserves the saf
   assert.match(styles, /env\(safe-area-inset-bottom,0px\)/);
   assert.match(styles, /--phone-nav-reserved-height/);
 });
+
+test("save instructions preserve the household-specific invitation link", async () => {
+  const page = await read("app/page.tsx");
+  assert.match(page, /Keep the original text message/);
+  assert.match(page, /Add Bookmark to/);
+  assert.doesNotMatch(page, /Add to Home Screen/);
+});
