@@ -42,9 +42,9 @@ test("RSVP writes validate complete named responses inside one database transact
 test("confirmed attendees receive diaper raffle and live invitation reminders", async () => {
   const page = await read("app/page.tsx");
   assert.match(page, /attending\.length > 0/);
-  assert.match(page, /Bring a pack of diapers, any size, for a chance to win a prize/);
-  assert.match(page, /Keep this live invitation handy/);
-  assert.match(page, /latest registry items, directions, hotel details, and event instructions/);
+  assert.match(page, /Bring a pack of diapers/);
+  assert.match(page, /Save this invitation/);
+  assert.match(page, /current registry items, directions, hotel details, and event updates/);
 });
 
 test("database tables are RLS-protected and old readable links survive renames", async () => {

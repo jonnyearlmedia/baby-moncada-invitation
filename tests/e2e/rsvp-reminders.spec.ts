@@ -43,16 +43,12 @@ test("attendees see both reminders directly below Change response", async ({ pag
   const changeResponse = page.getByRole("button", { name: "Change response" });
   const reminders = page.getByLabel("Before the baby shower");
   await expect(changeResponse).toBeVisible();
-  await expect(reminders).toContainText("Diaper raffle");
-  await expect(reminders).toContainText("Keep this live invitation handy");
-  await expect(reminders).toContainText("Home Screen or bookmark it");
-  await expect(reminders).toContainText("registry items, directions, hotel details, and event instructions");
+  await expect(reminders).toContainText("Bring a pack of diapers");
+  await expect(reminders).toContainText("Save this invitation");
+  await expect(reminders).toContainText("Home Screen or bookmarks");
+  await expect(reminders).toContainText("registry items, directions, hotel details, and event updates");
 
-  const changeBox = await changeResponse.boundingBox();
-  const reminderBox = await reminders.boundingBox();
-  expect(changeBox).not.toBeNull();
-  expect(reminderBox).not.toBeNull();
-  expect(reminderBox!.y).toBeGreaterThan(changeBox!.y + changeBox!.height);
+  await expect(changeResponse.locator("xpath=following-sibling::*[1]")).toHaveClass(/rsvp-next-steps/);
 });
 
 test("an all-declined RSVP does not show attendee reminders", async ({ page }) => {

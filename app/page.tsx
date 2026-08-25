@@ -52,6 +52,12 @@ function getCountdown() {
   };
 }
 
+function formatNameList(names: string[]) {
+  if (names.length < 2) return names[0] ?? "";
+  if (names.length === 2) return `${names[0]} and ${names[1]}`;
+  return `${names.slice(0, -1).join(", ")}, and ${names.at(-1)}`;
+}
+
 function ExternalLink({ href, children, primary = false }: { href: string; children: React.ReactNode; primary?: boolean }) {
   return <a className={`phone-action${primary ? " primary" : ""}`} href={href} target="_blank" rel="noopener noreferrer">{children}</a>;
 }
@@ -360,10 +366,10 @@ function RSVPScreen({ rsvp, setRsvp, onSave }: { rsvp: RSVP; setRsvp: React.Disp
   if (rsvp.submitted) {
     const declined = rsvp.guests.filter((guest) => guest.response === "no").map((guest) => guest.name);
     const responseSummary = attending.length === rsvp.guests.length
-      ? `${attending.join(", ")} ${attending.length === 1 ? "is" : "are"} attending.`
+      ? `${formatNameList(attending)} ${attending.length === 1 ? "is" : "are"} attending.`
       : attending.length === 0
-        ? `${declined.join(", ")} ${declined.length === 1 ? "can’t" : "can’t"} make it.`
-        : `${attending.join(", ")} ${attending.length === 1 ? "is" : "are"} attending. ${declined.join(", ")} can’t make it.`;
+        ? `${formatNameList(declined)} can’t make it.`
+        : `${formatNameList(attending)} ${attending.length === 1 ? "is" : "are"} attending. ${formatNameList(declined)} can’t make it.`;
     return <div className="feature-screen rsvp-screen">
       <ScreenHeader kicker="RSVP received" title={`Thank you, ${rsvp.messageGreeting}.`} mark="✓" />
       <div className="rsvp-success">
@@ -373,10 +379,11 @@ function RSVPScreen({ rsvp, setRsvp, onSave }: { rsvp: RSVP; setRsvp: React.Disp
         <p>Your response is saved. You can return with this invitation link to make a change.</p>
         {rsvp.updatedAt && <span className="saved-time">Last updated {new Date(rsvp.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>}
         <button className="phone-action full" onClick={() => setRsvp({ ...rsvp, submitted: false, error: null })}>Change response</button>
-        {attending.length > 0 && <div className="rsvp-return-reminders" aria-label="Before the baby shower">
-          <article><span>Reminder 01</span><strong>Diaper raffle</strong><p>Bring a pack of diapers, any size, for a chance to win a prize.</p></article>
-          <article><span>Reminder 02</span><strong>Keep this live invitation handy</strong><p>This is your live invitation. Add it to your Home Screen or bookmark it, then keep returning here for the latest registry items, directions, hotel details, and event instructions. Any updates will appear here.</p></article>
-        </div>}
+        {attending.length > 0 && <section className="rsvp-next-steps" aria-label="Before the baby shower">
+          <header><strong>Before the shower</strong><span>Two quick reminders</span></header>
+          <div className="rsvp-next-step raffle-step"><span>Raffle</span><div><strong>Bring a pack of diapers</strong><p>Any size counts as one entry for a chance to win a prize.</p></div></div>
+          <div className="rsvp-next-step live-invite-step"><span>Live</span><div><strong>Save this invitation</strong><p>Add it to your Home Screen or bookmarks. Return anytime for current registry items, directions, hotel details, and event updates.</p></div></div>
+        </section>}
       </div>
     </div>;
   }
