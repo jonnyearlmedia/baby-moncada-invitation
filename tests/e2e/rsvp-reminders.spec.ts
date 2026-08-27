@@ -9,7 +9,7 @@ const event = {
   venueAddress: "5870 Labath Ave, Rohnert Park, CA 94928",
   contactEmail: "j_elyssa05@yahoo.com",
   contactPhone: "+17073345988",
-  registryUrl: "https://my.babylist.com/janelle-fernando",
+  registryUrl: "https://www.amazon.com/baby-reg/janelle-moncada-november-2026-rohnertpark/10AIJQD53FRAQ",
   hotelBookingUrl: "https://www.hilton.com/",
   hotelBookingDeadline: "2026-09-01",
   hotelGroupCode: "905",

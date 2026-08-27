@@ -84,6 +84,6 @@ test("hotel, maps, and registry handoffs use their exact destinations", async ({
   await expect(page.getByRole("link", { name: "Google Maps" })).toHaveAttribute("href", /google\.com\/maps\/dir.*5870/);
   await page.getByRole("button", { name: "Registry" }).click();
   await expect(page.locator(".product").first()).toBeVisible();
-  await expect(page.locator(".product-art").first()).toHaveAttribute("src", /^https:\/\/images\.babylist\.com\//);
+  await expect(page.locator(".product-art").first()).toHaveAttribute("src", /^https:\/\/m\.media-amazon\.com\/images\//);
   await expect(page.locator(".product").first().getByRole("button", { name: /View .* option/ })).toBeVisible();
 });

@@ -48,8 +48,9 @@ test("confirmed attendees receive diaper raffle and live invitation reminders", 
 });
 
 test("database tables are RLS-protected and old readable links survive renames", async () => {
-  const migration = await read("supabase/migrations/20260824073636_production_rsvp_pilot.sql");
-  for (const table of ["event_settings", "households", "household_slug_aliases", "guests", "rsvp_submissions", "rsvp_guest_responses", "registry_items", "registry_offers", "admin_login_attempts", "admin_audit_log"]) assert.match(migration, new RegExp(`alter table public\\.${table} enable row level security`));
+  const [migration, registryMigration] = await Promise.all([read("supabase/migrations/20260824073636_production_rsvp_pilot.sql"), read("supabase/migrations/20260827165346_amazon_registry_snapshot.sql")]);
+  const schema = `${migration}\n${registryMigration}`;
+  for (const table of ["event_settings", "households", "household_slug_aliases", "guests", "rsvp_submissions", "rsvp_guest_responses", "registry_items", "registry_offers", "registry_sync_runs", "registry_sync_state", "admin_login_attempts", "admin_audit_log"]) assert.match(schema, new RegExp(`alter table public\\.${table} enable row level security`));
   assert.match(migration, /insert into public\.household_slug_aliases\(slug, household_id\) values\(v_old_slug/);
 });
 
@@ -85,20 +86,24 @@ test("host-created invitations are validated and committed through one protected
   assert.match(migration, /grant execute .* to service_role/);
 });
 
-test("registry refreshes current Babylist items without caching or generic item fallbacks", async () => {
+test("registry refreshes every current Amazon page and preserves registry-linked item URLs", async () => {
   const [route, page] = await Promise.all([read("app/api/registry/route.ts"), read("app/page.tsx")]);
-  assert.match(route, /reg_items\/minimal\?offset=0&limit=100/);
+  assert.match(route, /visitor-view-load-more-items/);
+  assert.match(route, /"UNPURCHASED"/);
+  assert.match(route, /"PURCHASED"/);
+  assert.match(route, /paginationKey/);
   assert.match(route, /cache: "no-store"/);
-  assert.match(route, /offer\.url/);
-  assert.doesNotMatch(route, /normal_url/);
-  assert.match(route, /is_reserved/);
+  assert.match(route, /searchParams\.get\("colid"\) === REGISTRY_ID/);
+  assert.match(route, /searchParams\.get\("coliid"\) === itemId/);
   assert.match(route, /quantityNeeded === 0/);
+  assert.match(route, /items\.length !== cards\.length/);
   assert.match(page, /View.*option/);
-  assert.match(page, /Open the registry on Babylist/);
+  assert.match(page, /Open the registry on Amazon/);
   assert.match(page, /Nothing stale is being shown/);
-  const babylistHandoff = page.indexOf("See the full registry on Babylist");
+  const amazonHandoff = page.indexOf("See the full registry on Amazon");
   const productList = page.indexOf('<div className="products">');
-  assert.ok(babylistHandoff > -1 && babylistHandoff < productList);
+  assert.ok(amazonHandoff > -1 && amazonHandoff < productList);
+  assert.doesNotMatch(page, /Babylist/);
   assert.doesNotMatch(page, /className="registry-footer"/);
 });
 

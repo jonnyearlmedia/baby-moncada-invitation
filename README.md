@@ -27,7 +27,7 @@ The remaining households are intentionally not seeded until the pilot has been r
 - copy-link and copy-ready-message controls for every household
 - RLS on every public-schema table; no direct browser table access
 
-Babylist remains the checkout and fulfillment source of truth. Automated product mirroring is disabled until Babylist authorizes a production integration; the invitation opens the exact live registry instead of showing potentially stale cards.
+Amazon is the checkout and fulfillment source of truth. The invitation refreshes all still-needed and purchased pages from Janelle’s public Amazon registry, keeps Amazon’s registry-context item links intact, and falls back to the exact official registry instead of showing a partial or stale list.
 
 ## Local setup
 

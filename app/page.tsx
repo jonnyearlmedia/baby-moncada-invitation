@@ -1,12 +1,12 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element -- Babylist supplies live, variable registry image URLs; native lazy loading keeps the list resilient when an item image changes. */
+/* eslint-disable @next/next/no-img-element -- Amazon supplies live, variable registry image URLs; native lazy loading keeps the list resilient when an item image changes. */
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { EventSettings } from "@/lib/invitation-types";
 
 const BOOKING_URL = "https://www.hilton.com/en/book/reservation/rooms/?ctyhocn=STSRHUP&arrivalDate=2026-09-25&departureDate=2026-09-27&groupCode=905&room1NumAdults=1&cid=OM%2CWW%2CHILTONLINK%2CEN%2CDirectLink";
-const REGISTRY_URL = "https://my.babylist.com/janelle-fernando";
+const REGISTRY_URL = "https://www.amazon.com/baby-reg/janelle-moncada-november-2026-rohnertpark/10AIJQD53FRAQ";
 const HOTEL_ADDRESS = "5870 Labath Ave, Rohnert Park, CA 94928";
 const HOTEL_APPLE_MAPS = "https://maps.apple.com/?daddr=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&dirflg=d";
 const HOTEL_GOOGLE_MAPS = "https://www.google.com/maps/dir/?api=1&destination=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&travelmode=driving&dir_action=navigate";
@@ -22,9 +22,9 @@ const nav = [
 
 type View = (typeof nav)[number][0];
 type IconName = (typeof nav)[number][1] | "calendar";
-type RegistryOffer = { id: number; store: string; url: string; price: number | null; isBabylist: boolean; availability: string | null; availabilityText: string | null };
-type RegistryItem = { id: number; title: string; image: string; category: string; price: string | null; quantity: number; quantityNeeded: number; isFulfilled: boolean; reservedCount: number; offers: RegistryOffer[] };
-type RegistryState = { status: "loading" | "ready" | "handoff" | "error"; items: RegistryItem[]; updatedAt: string | null };
+type RegistryOffer = { id: string | number; store: string; url: string; price: number | null; isRegistry: boolean; availability: string | null; availabilityText: string | null };
+type RegistryItem = { id: string | number; title: string; image: string; category: string; price: string | null; quantity: number; quantityNeeded: number; isFulfilled: boolean; reservedCount: number; offers: RegistryOffer[] };
+type RegistryState = { status: "loading" | "ready" | "handoff" | "error"; items: RegistryItem[]; updatedAt: string | null; refreshState: "current" | "refreshing" };
 type Overlay = { type: "gift"; item: RegistryItem } | null;
 type Attendance = "yes" | "no" | null;
 type RSVP = {
@@ -77,7 +77,7 @@ export default function Home({ inviteSlug = "murao" }: { inviteSlug?: string }) 
   const [view, setView] = useState<View>("invite");
   const [category, setCategory] = useState("All");
   const [overlay, setOverlay] = useState<Overlay>(null);
-  const [registry, setRegistry] = useState<RegistryState>({ status: "loading", items: [], updatedAt: null });
+  const [registry, setRegistry] = useState<RegistryState>({ status: "loading", items: [], updatedAt: null, refreshState: "current" });
   const appPageRef = useRef<HTMLElement>(null);
   const phoneContentRef = useRef<HTMLDivElement>(null);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -148,11 +148,11 @@ export default function Home({ inviteSlug = "murao" }: { inviteSlug?: string }) 
       try {
         const response = await fetch("/api/registry");
         if (!response.ok) throw new Error("Registry refresh failed");
-        const data = await response.json() as { mode?: "handoff"; items?: RegistryItem[]; updatedAt?: string };
-        if (active && data.mode === "handoff") setRegistry({ status: "handoff", items: [], updatedAt: null });
-        else if (active) setRegistry({ status: "ready", items: data.items ?? [], updatedAt: data.updatedAt ?? null });
+        const data = await response.json() as { mode?: "handoff"; items?: RegistryItem[]; updatedAt?: string; refreshState?: "current" | "refreshing" };
+        if (active && data.mode === "handoff") setRegistry({ status: "handoff", items: [], updatedAt: null, refreshState: "current" });
+        else if (active) setRegistry({ status: "ready", items: data.items ?? [], updatedAt: data.updatedAt ?? null, refreshState: data.refreshState ?? "current" });
       } catch {
-        if (active) setRegistry({ status: "error", items: [], updatedAt: null });
+        if (active) setRegistry({ status: "error", items: [], updatedAt: null, refreshState: "current" });
       }
     }
     loadRegistry();
@@ -301,33 +301,34 @@ function RegistryScreen({ category, setCategory, products: visible, registry, on
     for (const item of registry.items) counts.set(item.category, (counts.get(item.category) ?? 0) + 1);
     return [["All", registry.items.length], ...Array.from(counts.entries()).sort(([a], [b]) => a.localeCompare(b))] as [string, number][];
   }, [registry.items]);
+  const updateLabel = registry.refreshState === "refreshing" ? "Refreshing" : "Synced recently";
 
   if (registry.status === "loading") return <div className="feature-screen">
-    <ScreenHeader kicker="Babylist registry" title="Janelle’s registry" mark="Updating" />
+    <ScreenHeader kicker="Amazon registry" title="Janelle’s registry" mark="Updating" />
     <div className="registry-loading" role="status"><div className="loading-ring" /><strong>Loading the current registry</strong><p>Checking gift availability and retailer options.</p></div>
   </div>;
 
   if (registry.status === "error") return <div className="feature-screen">
-    <ScreenHeader kicker="Babylist registry" title="Janelle’s registry" mark="Unavailable" />
-    <div className="registry-empty"><strong>We couldn’t refresh the gift list.</strong><p>Nothing stale is being shown. Open Babylist to see the current registry and purchase status.</p><ExternalLink href={REGISTRY_URL} primary>Open the registry on Babylist</ExternalLink></div>
+    <ScreenHeader kicker="Amazon registry" title="Janelle’s registry" mark="Unavailable" />
+    <div className="registry-empty"><strong>We couldn’t refresh the gift list.</strong><p>Nothing stale is being shown. Open Amazon to see the current registry and purchase status.</p><ExternalLink href={REGISTRY_URL} primary>Open the registry on Amazon</ExternalLink></div>
   </div>;
 
   if (registry.status === "handoff") return <div className="feature-screen">
-    <ScreenHeader kicker="Babylist registry" title="Janelle’s registry" mark="Live on Babylist" />
+    <ScreenHeader kicker="Amazon registry" title="Janelle’s registry" mark="Live on Amazon" />
     <div className="registry-profile"><div className="registry-monogram" aria-hidden="true">J <span>+</span> F</div><div><strong>Janelle &amp; Fernando Moncada</strong><p>Baby due November 25, 2026</p></div></div>
-    <div className="registry-empty"><strong>See the current registry directly on Babylist.</strong><p>New items, changes, fulfilled gifts, and checkout stay accurate on the live registry. This invitation will not show a stale copy.</p><ExternalLink href={REGISTRY_URL} primary>Open the registry on Babylist</ExternalLink></div>
+    <div className="registry-empty"><strong>See the current registry directly on Amazon.</strong><p>New items, changes, fulfilled gifts, and checkout stay accurate on the live registry. This invitation will not show a stale copy.</p><ExternalLink href={REGISTRY_URL} primary>Open the registry on Amazon</ExternalLink></div>
   </div>;
 
   const stillNeeded = registry.items.filter((item) => !item.isFulfilled).length;
   return <div className="feature-screen">
-    <ScreenHeader kicker="Live from Babylist" title="Janelle’s registry" mark={`${stillNeeded} still needed`} />
+    <ScreenHeader kicker="Live from Amazon" title="Janelle’s registry" mark={`${stillNeeded} still needed`} />
     <div className="registry-profile">
       <div className="registry-monogram" aria-hidden="true">J <span>+</span> F</div>
       <div><strong>Janelle &amp; Fernando Moncada</strong><p>Rohnert Park, CA · Baby due November 25, 2026</p></div>
     </div>
-    <div className="registry-official-link"><ExternalLink href={REGISTRY_URL} primary>See the full registry on Babylist</ExternalLink><small>Use Babylist directly for checkout, gift reservations, returns, and thank-you tracking.</small></div>
-    <div className="registry-summary"><span><strong>{registry.items.length}</strong> gifts</span><span><strong>{categoryCounts.length - 1}</strong> categories</span><span className="live-state"><i /> Current</span></div>
-    <p className="registry-trust">Availability and purchase status refresh from Babylist. Choose a gift to see its exact buying options.</p>
+    <div className="registry-official-link"><ExternalLink href={REGISTRY_URL} primary>See the full registry on Amazon</ExternalLink><small>Use Amazon directly for checkout, gift tracking, returns, and thank-you records.</small></div>
+    <div className="registry-summary"><span><strong>{registry.items.length}</strong> gifts</span><span><strong>{categoryCounts.length - 1}</strong> categories</span><span className="live-state"><i /> {updateLabel}</span></div>
+    <p className="registry-trust">Items, quantities, and purchase status refresh from Amazon. Every gift opens through its exact registry-linked product page.</p>
     <div className="category-row" aria-label="Registry categories">{categoryCounts.map(([name, count]) => <button key={name} aria-pressed={category === name} onClick={() => setCategory(name)}>{name} {count}</button>)}</div>
     <div className="products">{visible.map((product) => <article className={`product${product.isFulfilled ? " reserved" : ""}`} key={product.id}>
         <img className="product-art" src={product.image} alt="" loading="lazy" />
@@ -419,17 +420,15 @@ function RSVPScreen({ rsvp, setRsvp, onSave }: { rsvp: RSVP; setRsvp: React.Disp
 function HandoffSheet({ overlay, onClose }: { overlay: Exclude<Overlay, null>; onClose: () => void }) {
   if (overlay.type === "gift") {
     const { item } = overlay;
-    const externalOnly = item.offers.length > 0 && item.offers.every((offer) => !offer.isBabylist);
     return <div className="handoff-overlay" role="dialog" aria-modal="true" aria-labelledby="handoff-title"><div className="handoff-sheet gift-sheet"><div className="sheet-handle" />
       <button className="sheet-close" aria-label="Close gift details" onClick={onClose}>×</button>
       <div className="gift-sheet-head"><img src={item.image} alt="" /><div><span>{item.category}</span><h3 id="handoff-title">{item.title}</h3><strong>{item.price || "See current price"}</strong></div></div>
       <div className="offer-list">
-        {item.offers.map((offer) => <ExternalLink key={offer.id} href={offer.url} primary={offer.isBabylist}>
-          <span>{offer.isBabylist ? "Buy through Babylist" : `View at ${offer.store}`}</span><b>{offer.price != null ? `$${offer.price.toFixed(2)}` : "Current price"} ↗</b>
+        {item.offers.map((offer) => <ExternalLink key={offer.id} href={offer.url} primary={offer.isRegistry}>
+          <span>{offer.isRegistry ? "View registry item on Amazon" : `View at ${offer.store}`}</span><b>{offer.price != null ? `$${offer.price.toFixed(2)}` : "Current price"} ↗</b>
         </ExternalLink>)}
       </div>
-      {item.offers.length === 0 && <p>No item-level purchase option is available right now. Babylist may have changed this gift.</p>}
-      {externalOnly && <div className="purchase-note"><strong>Buying from another store?</strong><p>Babylist does not automatically know when an outside retailer purchase is complete. After checkout, return to the registry and mark this gift as purchased so another guest doesn’t buy it too.</p><ExternalLink href={REGISTRY_URL}>Return to Babylist after purchase</ExternalLink></div>}
+      {item.offers.length === 0 && <p>No item-level purchase option is available right now. Amazon may have changed this gift.</p>}
       <button className="phone-action full" onClick={onClose}>Keep browsing gifts</button>
     </div></div>;
   }

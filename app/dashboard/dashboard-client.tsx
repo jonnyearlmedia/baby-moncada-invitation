@@ -177,7 +177,7 @@ export default function DashboardClient() {
         <label className="wide">Address<input value={event.venue_address} onChange={(e) => updateEvent("venue_address", e.target.value)} /></label>
         <label>Email<input type="email" value={event.contact_email} onChange={(e) => updateEvent("contact_email", e.target.value)} /></label>
         <label>Phone in +1 format<input value={event.contact_phone} onChange={(e) => updateEvent("contact_phone", e.target.value)} /></label>
-        <label className="wide">Babylist registry URL<input type="url" value={event.registry_url} onChange={(e) => updateEvent("registry_url", e.target.value)} /></label>
+        <label className="wide">Amazon registry URL<input type="url" value={event.registry_url} onChange={(e) => updateEvent("registry_url", e.target.value)} /></label>
         <label className="wide">Hilton booking URL<input type="url" value={event.hotel_booking_url} onChange={(e) => updateEvent("hotel_booking_url", e.target.value)} /></label>
         <label>Hotel deadline<input type="date" value={event.hotel_booking_deadline} onChange={(e) => updateEvent("hotel_booking_deadline", e.target.value)} /></label>
         <label>Group code<input value={event.hotel_group_code} onChange={(e) => updateEvent("hotel_group_code", e.target.value)} /></label>
@@ -201,6 +201,6 @@ export default function DashboardClient() {
           </div></details>;
       })}</div>
     </section>
-    <section className="admin-card registry-admin"><p className="admin-kicker">Registry accuracy</p><h2>Babylist remains the live source</h2><p>The invitation refreshes its product images, purchase status, and exact item links directly from Babylist whenever a guest opens the registry. If that refresh fails, guests are sent to the official Babylist registry instead of seeing stale products.</p><a href={event.registry_url} target="_blank" rel="noreferrer">Open and verify the live Babylist registry</a></section>
+    <section className="admin-card registry-admin"><p className="admin-kicker">Registry accuracy</p><h2>Amazon is the live source</h2><p>The invitation checks a verified Amazon snapshot whenever a guest opens the registry and refreshes it directly from Amazon at least every 10 minutes while the registry is in use. If a safe refresh is unavailable, guests are sent to the official Amazon registry instead of seeing outdated products.</p><a href={event.registry_url} target="_blank" rel="noreferrer">Open and verify the live Amazon registry</a></section>
   </main>;
 }

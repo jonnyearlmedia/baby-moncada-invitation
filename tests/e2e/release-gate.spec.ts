@@ -31,10 +31,10 @@ test("every guest-facing control works and every destination is exact", async ({
   await expect(page.getByRole("link", { name: "Check rooms & book with Hilton" })).toHaveAttribute("href", /ctyhocn=STSRHUP.*arrivalDate=2026-09-25.*departureDate=2026-09-27.*groupCode=905/);
 
   await nav.getByRole("button", { name: "Registry", exact: true }).click();
-  const babylistHandoff = page.getByRole("link", { name: "See the full registry on Babylist" });
-  await expect(babylistHandoff).toHaveAttribute("href", "https://my.babylist.com/janelle-fernando");
+  const amazonHandoff = page.getByRole("link", { name: "See the full registry on Amazon" });
+  await expect(amazonHandoff).toHaveAttribute("href", "https://www.amazon.com/baby-reg/janelle-moncada-november-2026-rohnertpark/10AIJQD53FRAQ");
   await expect(page.locator(".product").first()).toBeVisible();
-  const handoffBox = await babylistHandoff.boundingBox();
+  const handoffBox = await amazonHandoff.boundingBox();
   const firstProductBox = await page.locator(".product").first().boundingBox();
   expect(handoffBox).not.toBeNull();
   expect(firstProductBox).not.toBeNull();
@@ -42,7 +42,7 @@ test("every guest-facing control works and every destination is exact", async ({
   const firstProductTitle = await page.locator(".product h3").first().textContent();
   expect(firstProductTitle?.trim().length).toBeGreaterThan(0);
   await page.locator(".product").first().getByRole("button", { name: /View .* option/ }).click();
-  await expect(page.locator(".offer-list a").first()).toHaveAttribute("href", /^https:\/\/(?!my\.babylist\.com\/janelle-fernando\/?$).+/);
+  await expect(page.locator(".offer-list a").first()).toHaveAttribute("href", /^https:\/\/www\.amazon\.com\/.*\/dp\/[A-Z0-9]{10}\?.*colid=10AIJQD53FRAQ.*coliid=[A-Z0-9]+/);
   await page.getByRole("button", { name: "Keep browsing gifts" }).click();
 
   await nav.getByRole("button", { name: "Travel", exact: true }).click();
@@ -74,7 +74,7 @@ test("every guest-facing control works and every destination is exact", async ({
 
 test("all external destinations resolve to the intended service and address", async ({ request }) => {
   const destinations = [
-    ["https://my.babylist.com/janelle-fernando", /my\.babylist\.com\/janelle-fernando/],
+    ["https://www.amazon.com/baby-reg/janelle-moncada-november-2026-rohnertpark/10AIJQD53FRAQ", /amazon\.com\/baby-reg\/janelle-moncada-november-2026-rohnertpark\/10AIJQD53FRAQ/],
     ["https://maps.apple.com/?daddr=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&dirflg=d", /maps\.apple\.com\/directions.*5870/],
     ["https://www.google.com/maps/dir/?api=1&destination=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&travelmode=driving&dir_action=navigate", /google\.com\/maps\/dir.*5870/],
     ["https://waze.com/ul?q=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&navigate=yes", /waze\.com\/ul.*5870/],
@@ -144,7 +144,7 @@ test("dashboard controls work on the complete roster", async ({ context, page })
   await grace.getByRole("button", { name: "Save this invitation" }).click();
   expect((await invitationSave).ok()).toBe(true);
   await expect(page.getByText("Changes saved.")).toBeVisible();
-  await expect(page.getByRole("link", { name: "Open and verify the live Babylist registry" })).toHaveAttribute("href", "https://my.babylist.com/janelle-fernando");
+  await expect(page.getByRole("link", { name: "Open and verify the live Amazon registry" })).toHaveAttribute("href", "https://www.amazon.com/baby-reg/janelle-moncada-november-2026-rohnertpark/10AIJQD53FRAQ");
 
   await page.getByRole("button", { name: "Log out" }).click();
   await expect(page.getByRole("heading", { name: "Host dashboard" })).toBeVisible();
