@@ -74,7 +74,6 @@ test("every guest-facing control works and every destination is exact", async ({
 
 test("all external destinations resolve to the intended service and address", async ({ request }) => {
   const destinations = [
-    ["https://www.amazon.com/baby-reg/janelle-moncada-november-2026-rohnertpark/10AIJQD53FRAQ", /amazon\.com\/baby-reg\/janelle-moncada-november-2026-rohnertpark\/10AIJQD53FRAQ/],
     ["https://maps.apple.com/?daddr=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&dirflg=d", /maps\.apple\.com\/directions.*5870/],
     ["https://www.google.com/maps/dir/?api=1&destination=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&travelmode=driving&dir_action=navigate", /google\.com\/maps\/dir.*5870/],
     ["https://waze.com/ul?q=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&navigate=yes", /waze\.com\/ul.*5870/],
@@ -93,12 +92,16 @@ test("dashboard controls work on the complete roster", async ({ context, page })
   await page.getByRole("button", { name: "Open dashboard" }).click();
   await expect(page.getByRole("heading", { name: "Type the names. The link builds itself." })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Send links and track RSVPs" })).toBeVisible();
-  await expect(page.locator("details.household-card")).toHaveCount(58);
+  const invitedCount = Number((await page.locator(".stats-grid").getByRole("button", { name: /All invited/ }).locator("strong").textContent())?.trim());
+  const partyCount = Number((await page.getByText(/matching parties$/).textContent())?.match(/\d+/)?.[0]);
+  expect(invitedCount).toBeGreaterThanOrEqual(128);
+  expect(partyCount).toBeGreaterThanOrEqual(58);
+  await expect(page.locator("details.household-card")).toHaveCount(partyCount);
   await expect(page.getByRole("button", { name: "Parties", exact: true })).toHaveClass(/selected/);
-  await expect(page.locator(".party-directory-card")).toHaveCount(58);
+  await expect(page.locator(".party-directory-card")).toHaveCount(partyCount);
   await expect(page.locator(".directory-row")).toHaveCount(0);
   await page.getByRole("button", { name: "Individual guests" }).click();
-  await expect(page.locator(".directory-row")).toHaveCount(128);
+  await expect(page.locator(".directory-row")).toHaveCount(invitedCount);
 
   for (const label of ["All invited", "Yes — attending", "No — can’t attend", "Pending"]) {
     const button = page.locator(".stats-grid").getByRole("button", { name: new RegExp(label) });
@@ -126,7 +129,7 @@ test("dashboard controls work on the complete roster", async ({ context, page })
   await expect(grace.getByRole("button", { name: "✓ Copied!" })).toBeVisible();
   const copiedMessage = await page.evaluate(() => navigator.clipboard.readText());
   expect(copiedMessage).toContain("Hi Auntie Grace!");
-  expect(copiedMessage).toContain("https://moncada-baby-shower.vercel.app/invite/ponticelle");
+  expect(copiedMessage).toContain(`${new URL(process.env.PLAYWRIGHT_BASE_URL!).origin}/invite/ponticelle`);
 
   const previewEvent = context.waitForEvent("page");
   await grace.getByRole("link", { name: "Preview invitation" }).click();

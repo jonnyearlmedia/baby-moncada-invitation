@@ -60,6 +60,7 @@ test.beforeEach(async ({ context, page }) => {
 });
 
 test("dashboard defaults to invitation parties and preserves the individual guest view", async ({ page }) => {
+  test.skip(Boolean(process.env.PLAYWRIGHT_BASE_URL), "This test uses the local 58-party dashboard fixture.");
   await page.goto("/dashboard");
   await expect(page.getByRole("heading", { name: "Send links and track RSVPs" })).toBeVisible();
   await expect(page.getByText("Copy or preview each party’s invitation directly from its card. No extra section required.")).toBeVisible();
@@ -92,6 +93,7 @@ test("dashboard defaults to invitation parties and preserves the individual gues
 });
 
 test("host can paste a mixed-last-name party and receive a ready-to-send invitation", async ({ page }) => {
+  test.skip(Boolean(process.env.PLAYWRIGHT_BASE_URL), "This test uses the local invitation-builder fixture.");
   await page.goto("/dashboard");
   const builder = page.locator(".invitation-builder-card");
   await expect(builder.getByRole("heading", { name: "Type the names. The link builds itself." })).toBeVisible();
