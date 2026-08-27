@@ -8,7 +8,6 @@ const ITEMS_ENDPOINT = "https://www.amazon.com/baby-reg/visitor-view-load-more-i
 const USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/140 Safari/537.36";
 const MAX_PAGES_PER_FILTER = 10;
 const FRESH_FOR_MS = 10 * 60 * 1000;
-const MAX_STALE_MS = 30 * 60 * 1000;
 const SYNC_LOCK_MS = 2 * 60 * 1000;
 
 type AmazonGridState = {
@@ -320,20 +319,20 @@ export async function GET() {
         const reason = error instanceof Error ? error.message : "Amazon registry refresh failed";
         await admin.from("registry_sync_state").update({ syncing_until: null, last_error: reason, updated_at: new Date().toISOString() }).eq("id", true);
         await finishRun(admin, runId, { status: "failed", detail: reason });
-        if (hasUsableSnapshot(snapshot) && snapshotAge(snapshot) <= MAX_STALE_MS) {
+        if (hasUsableSnapshot(snapshot)) {
           return registryResponse(snapshot.items, snapshot.last_succeeded_at!, "refreshing");
         }
         return handoffResponse(reason);
       }
     }
 
-    if (hasUsableSnapshot(snapshot) && snapshotAge(snapshot) <= MAX_STALE_MS) {
+    if (hasUsableSnapshot(snapshot)) {
       return registryResponse(snapshot.items, snapshot.last_succeeded_at!, "refreshing");
     }
     return handoffResponse("Amazon registry refresh is already in progress");
   } catch (error) {
     const reason = error instanceof Error ? error.message : "Registry refresh failed";
-    if (hasUsableSnapshot(snapshot) && snapshotAge(snapshot) <= MAX_STALE_MS) {
+    if (hasUsableSnapshot(snapshot)) {
       return registryResponse(snapshot!.items, snapshot!.last_succeeded_at!, "refreshing");
     }
     return handoffResponse(reason);

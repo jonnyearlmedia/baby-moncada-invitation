@@ -301,7 +301,8 @@ function RegistryScreen({ category, setCategory, products: visible, registry, on
     for (const item of registry.items) counts.set(item.category, (counts.get(item.category) ?? 0) + 1);
     return [["All", registry.items.length], ...Array.from(counts.entries()).sort(([a], [b]) => a.localeCompare(b))] as [string, number][];
   }, [registry.items]);
-  const updateLabel = registry.refreshState === "refreshing" ? "Refreshing" : "Synced recently";
+  const syncedAt = registry.updatedAt ? new Date(registry.updatedAt).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "recently";
+  const updateLabel = registry.refreshState === "refreshing" ? `Last verified ${syncedAt}` : `Synced ${syncedAt}`;
 
   if (registry.status === "loading") return <div className="feature-screen">
     <ScreenHeader kicker="Amazon registry" title="Janelle’s registry" mark="Updating" />
@@ -328,6 +329,7 @@ function RegistryScreen({ category, setCategory, products: visible, registry, on
     </div>
     <div className="registry-official-link"><ExternalLink href={REGISTRY_URL} primary>See the full registry on Amazon</ExternalLink><small>Use Amazon directly for checkout, gift tracking, returns, and thank-you records.</small></div>
     <div className="registry-summary"><span><strong>{registry.items.length}</strong> gifts</span><span><strong>{categoryCounts.length - 1}</strong> categories</span><span className="live-state"><i /> {updateLabel}</span></div>
+    {registry.refreshState === "refreshing" && <p className="registry-trust"><strong>Amazon sync is delayed.</strong> These are the last verified items. Use the official Amazon button above for the newest purchase status.</p>}
     <p className="registry-trust">Items, quantities, and purchase status refresh from Amazon. Every gift opens through its exact registry-linked product page.</p>
     <div className="category-row" aria-label="Registry categories">{categoryCounts.map(([name, count]) => <button key={name} aria-pressed={category === name} onClick={() => setCategory(name)}>{name} {count}</button>)}</div>
     <div className="products">{visible.map((product) => <article className={`product${product.isFulfilled ? " reserved" : ""}`} key={product.id}>

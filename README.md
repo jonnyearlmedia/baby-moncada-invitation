@@ -27,7 +27,7 @@ The remaining households are intentionally not seeded until the pilot has been r
 - copy-link and copy-ready-message controls for every household
 - RLS on every public-schema table; no direct browser table access
 
-Amazon is the checkout and fulfillment source of truth. The invitation refreshes all still-needed and purchased pages from Janelle’s public Amazon registry, keeps Amazon’s registry-context item links intact, and falls back to the exact official registry instead of showing a partial or stale list.
+Amazon is the checkout and fulfillment source of truth. The invitation refreshes all still-needed and purchased pages from Janelle’s public Amazon registry, keeps Amazon’s registry-context item links intact, and retains the last complete verified snapshot if Amazon delays an automated refresh. The UI shows the verification time and keeps the exact official registry link above the products.
 
 ## Local setup
 

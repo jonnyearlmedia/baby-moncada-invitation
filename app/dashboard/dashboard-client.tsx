@@ -201,6 +201,6 @@ export default function DashboardClient() {
           </div></details>;
       })}</div>
     </section>
-    <section className="admin-card registry-admin"><p className="admin-kicker">Registry accuracy</p><h2>Amazon is the live source</h2><p>The invitation checks a verified Amazon snapshot whenever a guest opens the registry and refreshes it directly from Amazon at least every 10 minutes while the registry is in use. If a safe refresh is unavailable, guests are sent to the official Amazon registry instead of seeing outdated products.</p><a href={event.registry_url} target="_blank" rel="noreferrer">Open and verify the live Amazon registry</a></section>
+    <section className="admin-card registry-admin"><p className="admin-kicker">Registry accuracy</p><h2>Amazon is the live source</h2><p>The invitation checks a verified Amazon snapshot whenever a guest opens the registry and attempts a direct Amazon refresh at least every 10 minutes while the registry is in use. If Amazon delays an automated refresh, the last verified items remain available with their sync time and the official Amazon button stays at the top for current purchase status.</p><a href={event.registry_url} target="_blank" rel="noreferrer">Open and verify the live Amazon registry</a></section>
   </main>;
 }
