@@ -19,17 +19,19 @@ const categoryNames = {
   feeding: "Feeding",
 };
 
-function readGridState(html) {
+function readGridState(html, previous = {}) {
   const $ = cheerio.load(html);
   const diagnostics = [];
   for (const element of $("script[type='a-state']").toArray()) {
     try {
       const value = JSON.parse($(element).text());
       diagnostics.push(Object.keys(value));
-      if (value.registryId === REGISTRY_ID && "filters" in value && value.designAsin && value.ownerCustomerId) {
+      const designAsin = value.designAsin || previous.designAsin;
+      const ownerCustomerId = value.ownerCustomerId || previous.ownerCustomerId;
+      if (value.registryId === REGISTRY_ID && "filters" in value && designAsin && ownerCustomerId) {
         return {
-          designAsin: value.designAsin,
-          ownerCustomerId: value.ownerCustomerId,
+          designAsin,
+          ownerCustomerId,
           lastItemCategory: value.lastItemCategory ?? "",
           paginationKey: value.paginationKey ?? "",
           registryId: value.registryId,
@@ -173,7 +175,7 @@ async function loadPages(page, csrf, baseState, filter, firstHtml) {
     if (state.paginationKey) seenKeys.add(state.paginationKey);
     const html = await fetchFilteredPage(page, csrf, filter, state);
     items.push(...parseItems(html));
-    state = readGridState(html);
+    state = readGridState(html, state);
     if (!state.paginationKey) return items;
   }
   throw new Error("Amazon registry exceeded the verified pagination limit");
