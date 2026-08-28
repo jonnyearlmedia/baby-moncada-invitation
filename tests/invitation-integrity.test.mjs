@@ -94,15 +94,11 @@ test("registry refreshes every current Amazon page and preserves registry-linked
     read(".github/workflows/amazon-registry-sync.yml"),
     read("supabase/migrations/20260828052059_github_registry_sync_rpc.sql"),
   ]);
-  assert.match(route, /visitor-view-load-more-items/);
-  assert.match(route, /"UNPURCHASED"/);
-  assert.match(route, /"PURCHASED"/);
-  assert.match(route, /paginationKey/);
-  assert.match(route, /cache: "no-store"/);
-  assert.match(route, /searchParams\.get\("colid"\) === REGISTRY_ID/);
-  assert.match(route, /searchParams\.get\("coliid"\) === itemId/);
-  assert.match(route, /quantityNeeded === 0/);
-  assert.match(route, /items\.length !== cards\.length/);
+  assert.match(route, /registry_sync_state/);
+  assert.match(route, /snapshot\.items\.length === snapshot\.item_count/);
+  assert.match(route, /SCHEDULE_INTERVAL_MS \+ SCHEDULE_GRACE_MS/);
+  assert.match(route, /Cache-Control.*private, no-store/);
+  assert.doesNotMatch(route, /amazon\.com.*fetch|visitor-view-load-more-items/);
   assert.match(page, /View.*option/);
   assert.match(page, /Open the registry on Amazon/);
   assert.match(page, /Nothing stale is being shown/);
@@ -114,8 +110,13 @@ test("registry refreshes every current Amazon page and preserves registry-linked
   assert.match(workflow, /cron: "17 \*\/6 \* \* \*"/);
   assert.match(workflow, /REGISTRY_SYNC_TOKEN/);
   assert.match(scheduledSync, /chromium\.launch/);
+  assert.match(scheduledSync, /visitor-view-load-more-items/);
   assert.match(scheduledSync, /loadPages\(page, csrf, state, "UNPURCHASED"/);
   assert.match(scheduledSync, /loadPages\(page, csrf, state, "PURCHASED"/);
+  assert.match(scheduledSync, /searchParams\.get\("colid"\) === REGISTRY_ID/);
+  assert.match(scheduledSync, /searchParams\.get\("coliid"\) === itemId/);
+  assert.match(scheduledSync, /quantityNeeded === 0/);
+  assert.match(scheduledSync, /items\.length !== cards\.length/);
   assert.match(scheduledSync, /commit_amazon_registry_sync/);
   assert.match(migration, /token_hash = extensions\.digest\(p_token, 'sha256'\)/);
   assert.match(migration, /v_retained_count \* 4 < v_old_count \* 3/);

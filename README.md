@@ -27,7 +27,9 @@ The remaining households are intentionally not seeded until the pilot has been r
 - copy-link and copy-ready-message controls for every household
 - RLS on every public-schema table; no direct browser table access
 
-Amazon is the checkout and fulfillment source of truth. The invitation refreshes all still-needed and purchased pages from Janelle’s public Amazon registry, keeps Amazon’s registry-context item links intact, and retains the last complete verified snapshot if Amazon delays an automated refresh. The UI shows the verification time and keeps the exact official registry link above the products.
+Amazon is the checkout and fulfillment source of truth. A GitHub Actions browser job checks every still-needed and purchased registry page every six hours, validates the full result, preserves Amazon's registry-context item links, and atomically publishes the new snapshot through a narrowly scoped token-protected Supabase function. Guest requests only read the last complete verified snapshot, so an Amazon outage or incomplete scrape cannot replace it with partial data. The UI shows the verification time and keeps the exact official registry link above the products.
+
+The scheduled job is `.github/workflows/amazon-registry-sync.yml`. Its three GitHub Actions secrets are `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and `REGISTRY_SYNC_TOKEN`. A failed run is logged in `registry_sync_runs` and leaves the prior snapshot untouched.
 
 ## Local setup
 

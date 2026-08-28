@@ -14,7 +14,7 @@ type HouseholdRow = {
   id: string; slug: string; display_name: string; invitation_label: string; message_greeting: string;
   guests: GuestRow[]; submission: { note: string; updated_at: string } | null;
 };
-type DashboardData = { event: EventRow; households: HouseholdRow[]; registrySync: { status: string; finished_at: string | null } | null };
+type DashboardData = { event: EventRow; households: HouseholdRow[]; registrySync: { status: string; finished_at: string | null; detail: string | null; item_count: number | null } | null };
 type ResponseFilter = "all" | "yes" | "no" | "pending";
 type DashboardView = "parties" | "guests";
 type InvitationDraft = { slugBase: string; displayName: string; invitationLabel: string; messageGreeting: string };
@@ -201,6 +201,6 @@ export default function DashboardClient() {
           </div></details>;
       })}</div>
     </section>
-    <section className="admin-card registry-admin"><p className="admin-kicker">Registry accuracy</p><h2>Amazon is the live source</h2><p>The invitation checks a verified Amazon snapshot whenever a guest opens the registry and attempts a direct Amazon refresh at least every 10 minutes while the registry is in use. If Amazon delays an automated refresh, the last verified items remain available with their sync time and the official Amazon button stays at the top for current purchase status.</p><a href={event.registry_url} target="_blank" rel="noreferrer">Open and verify the live Amazon registry</a></section>
+    <section className="admin-card registry-admin"><p className="admin-kicker">Registry accuracy</p><h2>Amazon is the live source</h2><p>An automated browser checks every needed and purchased page on the Amazon registry every six hours. A new snapshot is published only after every product, quantity, image, and registry-linked Amazon URL passes validation. If a check fails, invitations keep the last complete verified list instead of showing partial or invented data.</p><p><strong>Latest automatic check:</strong> {data.registrySync ? `${data.registrySync.status === "succeeded" ? "Succeeded" : "Needs attention"} · ${formatDateTime(data.registrySync.finished_at)}${data.registrySync.item_count ? ` · ${data.registrySync.item_count} products` : ""}` : "No check recorded yet"}{data.registrySync?.detail ? <><br /><small>{data.registrySync.detail}</small></> : null}</p><a href={event.registry_url} target="_blank" rel="noreferrer">Open and verify the live Amazon registry</a></section>
   </main>;
 }
