@@ -36,3 +36,11 @@ jobs:
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      - name: Upload Amazon diagnostics after a failed read
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: amazon-registry-diagnostics
+          path: artifacts/
+          if-no-files-found: ignore
+          retention-days: 3

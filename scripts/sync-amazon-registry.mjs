@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { mkdir, writeFile } from "node:fs/promises";
 import process from "node:process";
 import * as cheerio from "cheerio";
 import { chromium } from "playwright";
@@ -169,13 +170,23 @@ async function loadPages(page, csrf, baseState, filter, firstHtml) {
 
 async function loadAmazonRegistry() {
   const browser = await chromium.launch({ headless: true });
+  let page;
   try {
     const context = await browser.newContext({ locale: "en-US", timezoneId: "America/Los_Angeles" });
-    const page = await context.newPage();
+    page = await context.newPage();
     await page.route(/\.(?:png|jpe?g|gif|webp|svg|woff2?)(?:\?|$)/i, (route) => route.abort());
     const response = await page.goto(REGISTRY_URL, { waitUntil: "domcontentloaded", timeout: 45_000 });
     if (!response || response.status() >= 400) throw new Error(`Amazon registry returned ${response?.status() ?? "no response"}`);
     const firstHtml = await page.content();
+    const diagnostics = {
+      status: response.status(),
+      url: page.url(),
+      title: await page.title(),
+      htmlBytes: firstHtml.length,
+      itemCards: cheerio.load(firstHtml)(".aok-float-left[asin][category][itemid]").length,
+      stateBlocks: cheerio.load(firstHtml)("script[type='a-state']").length,
+    };
+    console.log("amazon_registry_page_loaded", diagnostics);
     if (!firstHtml.includes("Janelle Moncada") || !firstHtml.includes(REGISTRY_ID)) throw new Error(`Amazon returned the wrong page: ${await page.title()}`);
     const $ = cheerio.load(firstHtml);
     const csrf = $("#generic-registry-anticsrf-token").attr("content");
@@ -188,6 +199,13 @@ async function loadAmazonRegistry() {
     const items = [...needed, ...purchased];
     if (new Set(items.map((item) => item.id)).size !== items.length) throw new Error("Amazon returned duplicate registry items");
     return items;
+  } catch (error) {
+    if (page) {
+      await mkdir("artifacts", { recursive: true });
+      await writeFile("artifacts/amazon-registry-debug.html", await page.content());
+      await page.screenshot({ path: "artifacts/amazon-registry-debug.png", fullPage: true });
+    }
+    throw error;
   } finally {
     await browser.close();
   }
