@@ -21,9 +21,11 @@ const categoryNames = {
 
 function readGridState(html) {
   const $ = cheerio.load(html);
+  const diagnostics = [];
   for (const element of $("script[type='a-state']").toArray()) {
     try {
       const value = JSON.parse($(element).text());
+      diagnostics.push(Object.keys(value));
       if (value.registryId === REGISTRY_ID && "filters" in value && value.designAsin && value.ownerCustomerId) {
         return {
           designAsin: value.designAsin,
@@ -37,7 +39,7 @@ function readGridState(html) {
       // Amazon includes unrelated state blocks that are not JSON registry state.
     }
   }
-  throw new Error("Amazon registry pagination data is unavailable");
+  throw new Error(`Amazon registry pagination data is unavailable (${JSON.stringify(diagnostics)})`);
 }
 
 function safeItemUrl(value, asin, itemId) {
@@ -146,6 +148,15 @@ async function fetchFilteredPage(page, csrf, filter, state) {
       sort: "CATEGORY",
       filters: filter,
     },
+  });
+  const responseDom = cheerio.load(result.body);
+  console.log("amazon_registry_page_received", {
+    filter,
+    status: result.status,
+    htmlBytes: result.body.length,
+    itemCards: responseDom(".aok-float-left[asin][category][itemid]").length,
+    stateBlocks: responseDom("script[type='a-state']").length,
+    hadPaginationKey: Boolean(state.paginationKey),
   });
   if (result.status !== 200) throw new Error(`Amazon ${filter} page returned ${result.status}`);
   return result.body;
