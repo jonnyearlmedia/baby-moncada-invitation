@@ -13,7 +13,8 @@
     "test:e2e": "playwright test",
     "verify": "npm run lint && npm test && npm run build",
     "lint": "eslint . --ignore-pattern .next",
-    "passcode:hash": "node scripts/hash-passcode.mjs"
+    "passcode:hash": "node scripts/hash-passcode.mjs",
+    "registry:sync": "node scripts/sync-amazon-registry.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.112.3",

@@ -1,0 +1,38 @@
+name: Amazon registry sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Validate Amazon without updating the live snapshot
+        required: true
+        type: boolean
+        default: true
+  schedule:
+    - cron: "17 */2 * * *"
+
+concurrency:
+  group: amazon-registry-sync
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Read and validate the complete Amazon registry
+        run: node scripts/sync-amazon-registry.mjs
+        env:
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
