@@ -9,7 +9,7 @@ on:
         type: boolean
         default: true
   schedule:
-    - cron: "17 */2 * * *"
+    - cron: "17 */6 * * *"
 
 concurrency:
   group: amazon-registry-sync
@@ -35,7 +35,8 @@ jobs:
         env:
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          REGISTRY_SYNC_TOKEN: ${{ secrets.REGISTRY_SYNC_TOKEN }}
       - name: Upload Amazon diagnostics after a failed read
         if: failure()
         uses: actions/upload-artifact@v4

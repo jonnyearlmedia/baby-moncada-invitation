@@ -224,57 +224,34 @@ async function loadAmazonRegistry() {
   }
 }
 
-function adminClient() {
+function syncClient() {
   const url = process.env.SUPABASE_URL;
-  const secret = process.env.SUPABASE_SECRET_KEY;
-  if (!url || !secret) throw new Error("SUPABASE_URL and SUPABASE_SECRET_KEY are required for a live sync");
-  return createClient(url, secret, { auth: { persistSession: false, autoRefreshToken: false } });
+  const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !publishableKey) throw new Error("SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY are required for a live sync");
+  return createClient(url, publishableKey, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
 async function saveSnapshot(items) {
-  const admin = adminClient();
-  const currentResult = await admin.from("registry_sync_state").select("items,item_count").eq("id", true).single();
-  if (currentResult.error) throw currentResult.error;
-  const previousIds = new Set((currentResult.data.items ?? []).map((item) => item.id));
-  const retained = items.filter((item) => previousIds.has(item.id)).length;
-  if (previousIds.size > 0 && retained / previousIds.size < 0.75) {
-    throw new Error(`Safety check blocked a large registry drop (${retained}/${previousIds.size} prior items retained)`);
-  }
-
-  const now = new Date().toISOString();
-  const fulfilled = items.filter((item) => item.isFulfilled).length;
+  const client = syncClient();
+  const token = process.env.REGISTRY_SYNC_TOKEN;
+  if (!token) throw new Error("REGISTRY_SYNC_TOKEN is required for a live sync");
   const fingerprint = createHash("sha256").update(JSON.stringify(items)).digest("hex");
-  const updateResult = await admin.from("registry_sync_state").update({
-    source: "Amazon",
-    registry_url: REGISTRY_URL,
-    items,
-    item_count: items.length,
-    fulfilled_count: fulfilled,
-    last_started_at: now,
-    last_succeeded_at: now,
-    syncing_until: null,
-    last_error: null,
-    updated_at: now,
-  }).eq("id", true);
-  if (updateResult.error) throw updateResult.error;
-  const runResult = await admin.from("registry_sync_runs").insert({
-    status: "succeeded",
-    item_count: items.length,
-    offer_count: items.length,
-    source_fingerprint: fingerprint,
-    detail: `GitHub browser sync: ${fulfilled} purchased`,
-    finished_at: now,
+  const result = await client.rpc("commit_amazon_registry_sync", {
+    p_token: token,
+    p_items: items,
+    p_source_fingerprint: fingerprint,
   });
-  if (runResult.error) throw runResult.error;
+  if (result.error) throw result.error;
 }
 
 async function recordFailure(error) {
-  if (dryRun || !process.env.SUPABASE_URL || !process.env.SUPABASE_SECRET_KEY) return;
-  const admin = adminClient();
+  if (dryRun || !process.env.SUPABASE_URL || !process.env.SUPABASE_PUBLISHABLE_KEY || !process.env.REGISTRY_SYNC_TOKEN) return;
+  const client = syncClient();
   const detail = error instanceof Error ? error.message : String(error);
-  const now = new Date().toISOString();
-  await admin.from("registry_sync_state").update({ last_error: detail, syncing_until: null, updated_at: now }).eq("id", true);
-  await admin.from("registry_sync_runs").insert({ status: "failed", detail: `GitHub browser sync: ${detail}`, finished_at: now });
+  await client.rpc("record_amazon_registry_sync_failure", {
+    p_token: process.env.REGISTRY_SYNC_TOKEN,
+    p_detail: detail,
+  });
 }
 
 try {

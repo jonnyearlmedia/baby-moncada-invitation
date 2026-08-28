@@ -87,7 +87,13 @@ test("host-created invitations are validated and committed through one protected
 });
 
 test("registry refreshes every current Amazon page and preserves registry-linked item URLs", async () => {
-  const [route, page] = await Promise.all([read("app/api/registry/route.ts"), read("app/page.tsx")]);
+  const [route, page, scheduledSync, workflow, migration] = await Promise.all([
+    read("app/api/registry/route.ts"),
+    read("app/page.tsx"),
+    read("scripts/sync-amazon-registry.mjs"),
+    read(".github/workflows/amazon-registry-sync.yml"),
+    read("supabase/migrations/20260828052059_github_registry_sync_rpc.sql"),
+  ]);
   assert.match(route, /visitor-view-load-more-items/);
   assert.match(route, /"UNPURCHASED"/);
   assert.match(route, /"PURCHASED"/);
@@ -105,6 +111,16 @@ test("registry refreshes every current Amazon page and preserves registry-linked
   assert.ok(amazonHandoff > -1 && amazonHandoff < productList);
   assert.doesNotMatch(page, /Babylist/);
   assert.doesNotMatch(page, /className="registry-footer"/);
+  assert.match(workflow, /cron: "17 \*\/6 \* \* \*"/);
+  assert.match(workflow, /REGISTRY_SYNC_TOKEN/);
+  assert.match(scheduledSync, /chromium\.launch/);
+  assert.match(scheduledSync, /loadPages\(page, csrf, state, "UNPURCHASED"/);
+  assert.match(scheduledSync, /loadPages\(page, csrf, state, "PURCHASED"/);
+  assert.match(scheduledSync, /commit_amazon_registry_sync/);
+  assert.match(migration, /token_hash = extensions\.digest\(p_token, 'sha256'\)/);
+  assert.match(migration, /v_retained_count \* 4 < v_old_count \* 3/);
+  assert.match(migration, /revoke all on public\.registry_sync_credentials from public, anon, authenticated/);
+  assert.match(migration, /grant execute on function public\.commit_amazon_registry_sync.*to anon/);
 });
 
 test("travel view uses an interactive map at the exact venue coordinates", async () => {
