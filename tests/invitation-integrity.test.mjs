@@ -113,6 +113,9 @@ test("registry refreshes every current Amazon page and preserves registry-linked
   assert.match(scheduledSync, /visitor-view-load-more-items/);
   assert.match(scheduledSync, /loadPages\(page, csrf, state, "UNPURCHASED"/);
   assert.match(scheduledSync, /loadPages\(page, csrf, state, "PURCHASED"/);
+  assert.match(scheduledSync, /const nextState = readGridState\(html, state\)/);
+  assert.match(scheduledSync, /allowEmpty: !nextState\.paginationKey/);
+  assert.match(scheduledSync, /!allowEmpty && cards\.length === 0/);
   assert.match(scheduledSync, /searchParams\.get\("colid"\) === REGISTRY_ID/);
   assert.match(scheduledSync, /searchParams\.get\("coliid"\) === itemId/);
   assert.match(scheduledSync, /quantityNeeded === 0/);

@@ -76,7 +76,7 @@ function parsePrice(value) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function parseItems(html) {
+function parseItems(html, { allowEmpty = false } = {}) {
   const $ = cheerio.load(html);
   const cards = $(".aok-float-left[asin][category][itemid]");
   const items = cards.toArray().flatMap((element) => {
@@ -117,7 +117,7 @@ function parseItems(html) {
       }],
     }];
   });
-  if (cards.length === 0 || items.length !== cards.length) throw new Error(`Amazon returned an incomplete registry page (${items.length}/${cards.length} valid items)`);
+  if ((!allowEmpty && cards.length === 0) || items.length !== cards.length) throw new Error(`Amazon returned an incomplete registry page (${items.length}/${cards.length} valid items)`);
   return items;
 }
 
@@ -174,8 +174,9 @@ async function loadPages(page, csrf, baseState, filter, firstHtml) {
     if (state.paginationKey && seenKeys.has(state.paginationKey)) throw new Error("Amazon repeated a registry page");
     if (state.paginationKey) seenKeys.add(state.paginationKey);
     const html = await fetchFilteredPage(page, csrf, filter, state);
-    items.push(...parseItems(html));
-    state = readGridState(html, state);
+    const nextState = readGridState(html, state);
+    items.push(...parseItems(html, { allowEmpty: !nextState.paginationKey }));
+    state = nextState;
     if (!state.paginationKey) return items;
   }
   throw new Error("Amazon registry exceeded the verified pagination limit");
