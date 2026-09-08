@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
   REGISTRY_SUMMARY_SELECTOR,
+  REGISTRY_UNIT_TOLERANCE,
   RegistryValidationError,
   assertNoDuplicateItems,
   collectFilterPages,
@@ -130,19 +131,45 @@ test("only exact registry item links and Amazon image hosts are accepted", () =>
 
 // This is the check that catches a page Amazon silently skipped: every page that was read looks
 // perfectly valid, so the scraped totals are the only evidence that one is missing.
-test("a read that disagrees with Amazon's header totals is caught", () => {
+test("a read short of Amazon's header totals by a whole page is rejected", () => {
   const items = parseItems(registryPage);
   const scraped = summarizeItems(items);
   assert.equal(scraped.totalUnits, 7);
   assert.equal(scraped.purchasedUnits, 0);
 
-  assert.equal(verifyRegistryTotals(items, { purchasedUnits: 0, totalUnits: 7 }).matched, true);
-  assert.equal(verifyRegistryTotals(items, { purchasedUnits: 0, totalUnits: 8 }).matched, false, "one unit missing");
-  assert.equal(verifyRegistryTotals(items, { purchasedUnits: 1, totalUnits: 7 }).matched, false, "a purchase missing");
+  const exact = verifyRegistryTotals(items, { purchasedUnits: 0, totalUnits: 7 });
+  assert.equal(exact.matched, true);
+  assert.equal(exact.withinTolerance, true);
+
+  // a missed page is tens of units short, which is what this has to stop
+  const missedPage = verifyRegistryTotals(items, { purchasedUnits: 0, totalUnits: 37 });
+  assert.equal(missedPage.withinTolerance, false);
+  assert.equal(missedPage.short, 30);
+
+  const missedPurchases = verifyRegistryTotals(items, { purchasedUnits: 9, totalUnits: 7 });
+  assert.equal(missedPurchases.withinTolerance, false);
 
   const unverified = verifyRegistryTotals(items, null);
   assert.equal(unverified.checked, false);
   assert.equal(unverified.matched, null);
+});
+
+// Amazon's header on this registry sits one unit above the sum of Amazon's own item cards, on
+// every capture taken. Failing on that would freeze the registry over a counter no guest sees.
+test("Amazon's own off-by-one header does not block a complete read", () => {
+  const items = parseItems(registryPage);
+  const drifted = verifyRegistryTotals(items, { purchasedUnits: 0, totalUnits: 8 });
+  assert.equal(drifted.matched, false, "the drift is still reported");
+  assert.equal(drifted.short, 1);
+  assert.equal(drifted.withinTolerance, true, "and it still publishes");
+  assert.equal(REGISTRY_UNIT_TOLERANCE, 2);
+});
+
+test("reading more units than Amazon reports is never treated as a missed item", () => {
+  const items = parseItems(registryPage);
+  const ahead = verifyRegistryTotals(items, { purchasedUnits: 0, totalUnits: 5 });
+  assert.equal(ahead.short, -2);
+  assert.equal(ahead.withinTolerance, true);
 });
 
 test("duplicate items across the two filters are rejected", () => {

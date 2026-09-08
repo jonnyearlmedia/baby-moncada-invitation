@@ -138,8 +138,15 @@ async function readRegistry() {
 
     const totals = verifyRegistryTotals(items, summary);
     console.log("amazon_registry_totals", totals);
-    if (totals.checked && !totals.matched) {
+    if (totals.checked && !totals.withinTolerance) {
       throw new RegistryValidationError(`Amazon registry totals disagree: read ${totals.scraped.purchasedUnits}/${totals.scraped.totalUnits} units, Amazon reports ${totals.reported.purchasedUnits}/${totals.reported.totalUnits}`);
+    }
+    if (totals.checked && !totals.matched) {
+      console.warn("amazon_registry_totals_drifted", {
+        short: totals.short,
+        purchasedShort: totals.purchasedShort,
+        note: "Amazon's header disagrees with its own item cards; within tolerance, so the read is published",
+      });
     }
     if (!totals.checked) console.warn("amazon_registry_totals_unverified", "Amazon no longer prints a purchased/total header; the completeness check is inactive");
     return items;

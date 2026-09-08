@@ -17,6 +17,13 @@ export const ITEM_CARD_SELECTOR = ".aok-float-left[asin][category][itemid]";
 export const REGISTRY_SUMMARY_SELECTOR = "#br-purchased-and-total-items-count";
 export const MAX_PAGES_PER_FILTER = 10;
 
+// Amazon's header count runs one unit ahead of Amazon's own item cards on this registry. Verified
+// on captures from 2026-09-07 and 2026-09-08: every card on every page parses, and each card's
+// "N NEEDED" badge matches its "N of M Purchased" text, summing to 100 units while the header says
+// 101. So the header is a completeness signal, not an exact figure. What it has to catch is a
+// missed page, which drops up to 30 items at once and is nowhere near this tolerance.
+export const REGISTRY_UNIT_TOLERANCE = 2;
+
 const categoryNames = {
   "activity-and-gear": "Activity & gear",
   "baby-clothing": "Baby clothing",
@@ -176,10 +183,15 @@ export function summarizeItems(items) {
 // Rejects a scrape that disagrees with Amazon's own header. This is what catches a page that was
 // silently skipped, which is invisible to every other check because each page it did read is valid.
 export function verifyRegistryTotals(items, summary) {
-  if (!summary) return { checked: false, matched: null, scraped: summarizeItems(items), reported: null };
   const scraped = summarizeItems(items);
-  const matched = scraped.totalUnits === summary.totalUnits && scraped.purchasedUnits === summary.purchasedUnits;
-  return { checked: true, matched, scraped, reported: summary };
+  if (!summary) return { checked: false, matched: null, short: null, withinTolerance: null, scraped, reported: null };
+  const short = summary.totalUnits - scraped.totalUnits;
+  const purchasedShort = summary.purchasedUnits - scraped.purchasedUnits;
+  const matched = short === 0 && purchasedShort === 0;
+  // Only a shortfall matters. Reading more than Amazon reports means Amazon's counter is behind,
+  // never that an item was missed.
+  const withinTolerance = short <= REGISTRY_UNIT_TOLERANCE && Math.abs(purchasedShort) <= REGISTRY_UNIT_TOLERANCE;
+  return { checked: true, matched, short, purchasedShort, withinTolerance, scraped, reported: summary };
 }
 
 export function assertNoDuplicateItems(items) {
