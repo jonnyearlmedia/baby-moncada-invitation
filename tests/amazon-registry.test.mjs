@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
   REGISTRY_SUMMARY_SELECTOR,
+  RegistryValidationError,
   assertNoDuplicateItems,
   collectFilterPages,
   parseItems,
@@ -148,4 +149,28 @@ test("duplicate items across the two filters are rejected", () => {
   const items = parseItems(registryPage);
   assert.doesNotThrow(() => assertNoDuplicateItems(items));
   assert.throws(() => assertNoDuplicateItems([...items, items[0]]), /duplicate registry items/);
+});
+
+// A read Amazon answered but that failed validation gives the same answer every time, so the
+// retry loop must not spend three passes over the registry on it.
+test("validation failures are marked permanent so they are not retried", () => {
+  assert.throws(() => parseItems(registryPage.replace(/0 of 1 Purchased/i, "sold out")), (error) => {
+    assert.equal(error instanceof RegistryValidationError, true);
+    assert.equal(error.permanent, true);
+    return true;
+  });
+  assert.throws(() => assertNoDuplicateItems([...parseItems(registryPage), parseItems(registryPage)[0]]), RegistryValidationError);
+});
+
+test("a page Amazon serves is handed to the caller so a failed read can be inspected", async () => {
+  const seen = [];
+  await collectFilterPages({
+    filter: "UNPURCHASED",
+    firstHtml: registryPage,
+    fetchPage: async () => emptyPageWithKey,
+    onPage: (fetched) => seen.push(fetched),
+  });
+  assert.equal(seen.length, 1);
+  assert.equal(seen[0].filter, "UNPURCHASED");
+  assert.equal(seen[0].html, emptyPageWithKey);
 });

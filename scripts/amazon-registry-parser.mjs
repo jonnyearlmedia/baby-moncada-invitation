@@ -1,5 +1,15 @@
 import * as cheerio from "cheerio";
 
+// A read that Amazon answered but that failed validation. Retrying it just repeats the same
+// answer, so these end the run immediately instead of burning three passes over the registry.
+export class RegistryValidationError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "RegistryValidationError";
+    this.permanent = true;
+  }
+}
+
 export const REGISTRY_ID = "10AIJQD53FRAQ";
 export const REGISTRY_URL = "https://www.amazon.com/baby-reg/janelle-moncada-november-2026-rohnertpark/10AIJQD53FRAQ";
 export const ITEMS_ENDPOINT = "https://www.amazon.com/baby-reg/visitor-view-load-more-items";
@@ -149,7 +159,7 @@ export function parseItems(html) {
       }],
     }];
   });
-  if (items.length !== cards.length) throw new Error(`Amazon returned an incomplete registry page (${items.length}/${cards.length} valid items)`);
+  if (items.length !== cards.length) throw new RegistryValidationError(`Amazon returned an incomplete registry page (${items.length}/${cards.length} valid items)`);
   return items;
 }
 
@@ -173,21 +183,22 @@ export function verifyRegistryTotals(items, summary) {
 }
 
 export function assertNoDuplicateItems(items) {
-  if (new Set(items.map((item) => item.id)).size !== items.length) throw new Error("Amazon returned duplicate registry items");
+  if (new Set(items.map((item) => item.id)).size !== items.length) throw new RegistryValidationError("Amazon returned duplicate registry items");
 }
 
 // The pagination loop lives here, with the network injected, so the exact sequence that broke the
 // sync in September can be replayed in a test without touching Amazon.
-export async function collectFilterPages({ filter, firstHtml, baseState, fetchPage, log = () => {} }) {
+export async function collectFilterPages({ filter, firstHtml, baseState, fetchPage, log = () => {}, onPage = () => {} }) {
   const items = firstHtml ? parseItems(firstHtml) : [];
   let state = firstHtml ? readGridState(firstHtml) : { ...baseState, lastItemCategory: "", paginationKey: "" };
   const seenKeys = new Set();
 
   for (let index = firstHtml ? 1 : 0; index < MAX_PAGES_PER_FILTER; index += 1) {
     if (firstHtml && !state.paginationKey) return items;
-    if (state.paginationKey && seenKeys.has(state.paginationKey)) throw new Error("Amazon repeated a registry page");
+    if (state.paginationKey && seenKeys.has(state.paginationKey)) throw new RegistryValidationError("Amazon repeated a registry page");
     if (state.paginationKey) seenKeys.add(state.paginationKey);
     const html = await fetchPage(filter, state);
+    onPage({ filter, index, html });
     const pageItems = parseItems(html);
     // Amazon hands out a pagination key that leads to an empty page, so an empty page is the end
     // of the filter whatever the key claims. The header totals check is what proves nothing was
@@ -200,5 +211,5 @@ export async function collectFilterPages({ filter, firstHtml, baseState, fetchPa
     state = readGridState(html, state);
     if (!state.paginationKey) return items;
   }
-  throw new Error("Amazon registry exceeded the verified pagination limit");
+  throw new RegistryValidationError("Amazon registry exceeded the verified pagination limit");
 }

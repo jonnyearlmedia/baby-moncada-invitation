@@ -9,6 +9,7 @@ import {
   ITEM_CARD_SELECTOR,
   REGISTRY_ID,
   REGISTRY_SUMMARY_SELECTOR,
+  RegistryValidationError,
   REGISTRY_URL,
   assertNoDuplicateItems,
   collectFilterPages,
@@ -58,6 +59,7 @@ async function fetchFilteredPage(page, csrf, filter, state) {
     status: result.status,
     htmlBytes: result.body.length,
     itemCards: responseDom(ITEM_CARD_SELECTOR).length,
+    anyItemIdCards: responseDom("[itemid]").length,
     stateBlocks: responseDom("script[type='a-state']").length,
     hadPaginationKey: Boolean(state.paginationKey),
   });
@@ -68,6 +70,7 @@ async function fetchFilteredPage(page, csrf, filter, state) {
 async function readRegistry() {
   const browser = await chromium.launch({ headless: true });
   let page;
+  const readPages = [];
   try {
     const context = await browser.newContext({ locale: "en-US", timezoneId: "America/Los_Angeles" });
     page = await context.newPage();
@@ -104,6 +107,7 @@ async function readRegistry() {
       title: await page.title(),
       htmlBytes: firstHtml.length,
       itemCards: cheerio.load(firstHtml)(ITEM_CARD_SELECTOR).length,
+      anyItemIdCards: cheerio.load(firstHtml)("[itemid]").length,
       stateBlocks: cheerio.load(firstHtml)("script[type='a-state']").length,
       reportedTotals: summary,
     });
@@ -113,18 +117,20 @@ async function readRegistry() {
     if (!csrf) throw new Error("Amazon registry CSRF token is unavailable");
     const state = readGridState(firstHtml);
     const fetchPage = (filter, pageState) => fetchFilteredPage(page, csrf, filter, pageState);
+    readPages.push({ filter: "FIRST", index: 0, html: firstHtml });
+    const onPage = (fetched) => readPages.push(fetched);
     const [needed, purchased] = await Promise.all([
-      collectFilterPages({ filter: "UNPURCHASED", firstHtml, baseState: state, fetchPage, log: console.log }),
-      collectFilterPages({ filter: "PURCHASED", baseState: state, fetchPage, log: console.log }),
+      collectFilterPages({ filter: "UNPURCHASED", firstHtml, baseState: state, fetchPage, log: console.log, onPage }),
+      collectFilterPages({ filter: "PURCHASED", baseState: state, fetchPage, log: console.log, onPage }),
     ]);
 
     // A filter that returns nothing at all is a failed read, not an empty registry, unless
     // Amazon's own header says that filter really is empty.
     if (needed.length === 0 && (!summary || summary.totalUnits > summary.purchasedUnits)) {
-      throw new Error("Amazon returned no still-needed registry items");
+      throw new RegistryValidationError("Amazon returned no still-needed registry items");
     }
     if (purchased.length === 0 && (!summary || summary.purchasedUnits > 0)) {
-      throw new Error("Amazon returned no purchased registry items");
+      throw new RegistryValidationError("Amazon returned no purchased registry items");
     }
 
     const items = [...needed, ...purchased];
@@ -133,7 +139,7 @@ async function readRegistry() {
     const totals = verifyRegistryTotals(items, summary);
     console.log("amazon_registry_totals", totals);
     if (totals.checked && !totals.matched) {
-      throw new Error(`Amazon registry totals disagree: read ${totals.scraped.purchasedUnits}/${totals.scraped.totalUnits} units, Amazon reports ${totals.reported.purchasedUnits}/${totals.reported.totalUnits}`);
+      throw new RegistryValidationError(`Amazon registry totals disagree: read ${totals.scraped.purchasedUnits}/${totals.scraped.totalUnits} units, Amazon reports ${totals.reported.purchasedUnits}/${totals.reported.totalUnits}`);
     }
     if (!totals.checked) console.warn("amazon_registry_totals_unverified", "Amazon no longer prints a purchased/total header; the completeness check is inactive");
     return items;
@@ -142,6 +148,11 @@ async function readRegistry() {
       await mkdir("artifacts", { recursive: true });
       await writeFile("artifacts/amazon-registry-debug.html", await page.content());
       await page.screenshot({ path: "artifacts/amazon-registry-debug.png", fullPage: true });
+      // The paged responses are where a miscounted registry actually shows up, and they are not
+      // in the rendered page, so a failed read has to keep them too.
+      for (const fetched of readPages) {
+        await writeFile(`artifacts/amazon-registry-${fetched.filter}-${fetched.index}.html`, fetched.html);
+      }
     }
     throw error;
   } finally {
@@ -156,7 +167,8 @@ async function loadAmazonRegistry() {
       return await readRegistry();
     } catch (error) {
       lastError = error;
-      console.warn("amazon_registry_attempt_failed", { attempt, of: MAX_ATTEMPTS, detail: error instanceof Error ? error.message : String(error) });
+      console.warn("amazon_registry_attempt_failed", { attempt, of: MAX_ATTEMPTS, permanent: Boolean(error?.permanent), detail: error instanceof Error ? error.message : String(error) });
+      if (error?.permanent) break;
       if (attempt < MAX_ATTEMPTS) await new Promise((resolve) => setTimeout(resolve, attempt * 15_000));
     }
   }
