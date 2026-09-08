@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
+  REGISTRY_SUMMARY_SELECTOR,
   assertNoDuplicateItems,
   collectFilterPages,
   parseItems,
@@ -43,7 +44,23 @@ test("real Amazon cards parse into complete registry items", () => {
 
 test("Amazon's own purchased/total header is read", () => {
   assert.deepEqual(parseRegistrySummary(registryPage), { purchasedUnits: 9, totalUnits: 101 });
+  // the header is split across nodes, so it is read from Amazon's counted spans first
+  assert.match(registryPage, /id="br-purchased-and-total-items-count"/);
+  assert.equal(registryPage.includes("9/101"), false, "the number never appears as one string");
+  // and still falls back to the sentence if Amazon renames the element
+  assert.deepEqual(
+    parseRegistrySummary(registryPage.replace('id="br-purchased-and-total-items-count"', 'id="renamed"')),
+    { purchasedUnits: 9, totalUnits: 101 },
+  );
   assert.equal(parseRegistrySummary("<html><body>no summary here</body></html>"), null);
+});
+
+// The check shipped inactive the first time because the header is not in the DOM at
+// DOMContentLoaded, so the sync has to wait for it before reading the page.
+test("the sync waits for the header before reading the page", async () => {
+  const script = await readFile(new URL("scripts/sync-amazon-registry.mjs", root), "utf8");
+  assert.match(script, /waitForSelector\(REGISTRY_SUMMARY_SELECTOR/);
+  assert.equal(REGISTRY_SUMMARY_SELECTOR, "#br-purchased-and-total-items-count");
 });
 
 // The September outage: Amazon served a terminal page with no items that still carried a

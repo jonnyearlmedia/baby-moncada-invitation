@@ -4,6 +4,7 @@ export const REGISTRY_ID = "10AIJQD53FRAQ";
 export const REGISTRY_URL = "https://www.amazon.com/baby-reg/janelle-moncada-november-2026-rohnertpark/10AIJQD53FRAQ";
 export const ITEMS_ENDPOINT = "https://www.amazon.com/baby-reg/visitor-view-load-more-items";
 export const ITEM_CARD_SELECTOR = ".aok-float-left[asin][category][itemid]";
+export const REGISTRY_SUMMARY_SELECTOR = "#br-purchased-and-total-items-count";
 export const MAX_PAGES_PER_FILTER = 10;
 
 const categoryNames = {
@@ -78,13 +79,20 @@ export function countItemCards(html) {
 // Amazon prints an authoritative "<purchased>/<total> items purchased" summary in the registry
 // header. It counts units, so an item wanted five times contributes five. It is the only
 // independent number on the page, which makes it the one real check that every page was read.
+// The header is rendered after DOMContentLoaded, so the page has to be waited on before this runs.
 export function parseRegistrySummary(html) {
   const $ = cheerio.load(html);
   $("script, style, noscript").remove();
-  const match = $("body").text().replace(/\s+/g, " ").match(/(\d+)\s*\/\s*(\d+)\s+items?\s+purchased/i);
-  if (!match) return null;
-  const purchasedUnits = Number(match[1]);
-  const totalUnits = Number(match[2]);
+  const header = $(REGISTRY_SUMMARY_SELECTOR).first();
+  const counts = header.length
+    ? { purchased: header.find(".purchased-count").first().text(), total: header.find(".total-count").first().text() }
+    : null;
+  const pair = counts && counts.purchased.trim() && counts.total.trim()
+    ? [counts.purchased, counts.total]
+    : (header.length ? header.text() : $("body").text()).replace(/\s+/g, " ").match(/(\d+)\s*\/\s*(\d+)\s+items?\s+purchased/i)?.slice(1, 3);
+  if (!pair) return null;
+  const purchasedUnits = Number(pair[0].trim());
+  const totalUnits = Number(pair[1].trim());
   if (!Number.isInteger(purchasedUnits) || !Number.isInteger(totalUnits) || totalUnits < 1 || purchasedUnits > totalUnits) return null;
   return { purchasedUnits, totalUnits };
 }

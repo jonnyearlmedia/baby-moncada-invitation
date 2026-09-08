@@ -8,6 +8,7 @@ import {
   ITEMS_ENDPOINT,
   ITEM_CARD_SELECTOR,
   REGISTRY_ID,
+  REGISTRY_SUMMARY_SELECTOR,
   REGISTRY_URL,
   assertNoDuplicateItems,
   collectFilterPages,
@@ -72,6 +73,10 @@ async function readRegistry() {
     await page.route(/\.(?:png|jpe?g|gif|webp|svg|woff2?)(?:\?|$)/i, (route) => route.abort());
     const response = await page.goto(REGISTRY_URL, { waitUntil: "domcontentloaded", timeout: 45_000 });
     if (!response || response.status() >= 400) throw new Error(`Amazon registry returned ${response?.status() ?? "no response"}`);
+    // Amazon renders the header count after DOMContentLoaded. Without this wait the completeness
+    // check silently reads nothing and passes every run, which is worse than not having it.
+    await page.waitForSelector(REGISTRY_SUMMARY_SELECTOR, { timeout: 20_000 })
+      .catch(() => console.warn("amazon_registry_summary_selector_missing", REGISTRY_SUMMARY_SELECTOR));
     const firstHtml = await page.content();
     const summary = parseRegistrySummary(firstHtml);
     console.log("amazon_registry_page_loaded", {
