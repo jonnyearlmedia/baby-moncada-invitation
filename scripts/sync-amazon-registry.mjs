@@ -13,6 +13,7 @@ import {
   assertNoDuplicateItems,
   collectFilterPages,
   parseRegistrySummary,
+  parseSummaryCounts,
   readGridState,
   summarizeItems,
   verifyRegistryTotals,
@@ -73,12 +74,30 @@ async function readRegistry() {
     await page.route(/\.(?:png|jpe?g|gif|webp|svg|woff2?)(?:\?|$)/i, (route) => route.abort());
     const response = await page.goto(REGISTRY_URL, { waitUntil: "domcontentloaded", timeout: 45_000 });
     if (!response || response.status() >= 400) throw new Error(`Amazon registry returned ${response?.status() ?? "no response"}`);
-    // Amazon renders the header count after DOMContentLoaded. Without this wait the completeness
-    // check silently reads nothing and passes every run, which is worse than not having it.
-    await page.waitForSelector(REGISTRY_SUMMARY_SELECTOR, { timeout: 20_000 })
-      .catch(() => console.warn("amazon_registry_summary_selector_missing", REGISTRY_SUMMARY_SELECTOR));
+    // Amazon ships the header element empty and fills in the counts after DOMContentLoaded, so
+    // waiting for the element is not enough: wait until it actually carries the numbers. Without
+    // this the completeness check reads nothing and passes every run, which is worse than
+    // not having it at all.
+    const headerText = await page.waitForFunction(
+      (selector) => {
+        const element = document.querySelector(selector);
+        const text = element?.textContent?.replace(/\s+/g, " ").trim() ?? "";
+        return /\d+\s*\/\s*\d+/.test(text) ? text : null;
+      },
+      REGISTRY_SUMMARY_SELECTOR,
+      { timeout: 20_000, polling: 250 },
+    ).then((handle) => handle.jsonValue()).catch(() => null);
+
     const firstHtml = await page.content();
-    const summary = parseRegistrySummary(firstHtml);
+    const summary = parseSummaryCounts(headerText) ?? parseRegistrySummary(firstHtml);
+    if (!summary) {
+      console.warn("amazon_registry_summary_unreadable", {
+        selector: REGISTRY_SUMMARY_SELECTOR,
+        headerText,
+        headerHtml: await page.evaluate((selector) => document.querySelector(selector)?.outerHTML ?? null, REGISTRY_SUMMARY_SELECTOR),
+        bodyMentionsPurchased: /items?\s+purchased/i.test(firstHtml),
+      });
+    }
     console.log("amazon_registry_page_loaded", {
       status: response.status(),
       url: page.url(),

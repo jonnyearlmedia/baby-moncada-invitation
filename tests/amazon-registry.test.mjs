@@ -7,6 +7,7 @@ import {
   collectFilterPages,
   parseItems,
   parseRegistrySummary,
+  parseSummaryCounts,
   readGridState,
   safeImageUrl,
   safeItemUrl,
@@ -55,12 +56,25 @@ test("Amazon's own purchased/total header is read", () => {
   assert.equal(parseRegistrySummary("<html><body>no summary here</body></html>"), null);
 });
 
-// The check shipped inactive the first time because the header is not in the DOM at
-// DOMContentLoaded, so the sync has to wait for it before reading the page.
-test("the sync waits for the header before reading the page", async () => {
+// The check shipped inactive twice: the header element exists before Amazon fills in the counts,
+// so the sync has to wait for the digits, not for the element.
+test("the sync waits for the header to carry digits before reading the page", async () => {
   const script = await readFile(new URL("scripts/sync-amazon-registry.mjs", root), "utf8");
-  assert.match(script, /waitForSelector\(REGISTRY_SUMMARY_SELECTOR/);
+  assert.match(script, /waitForFunction\(/);
+  assert.match(script, /REGISTRY_SUMMARY_SELECTOR,/);
+  assert.match(script, /amazon_registry_summary_unreadable/, "an unreadable header must be diagnosable in one run");
   assert.equal(REGISTRY_SUMMARY_SELECTOR, "#br-purchased-and-total-items-count");
+});
+
+test("an empty header element is not mistaken for a real count", () => {
+  const emptied = registryPage
+    .replace('<span class="purchased-count">9</span>', '<span class="purchased-count"></span>')
+    .replace('<span class="total-count">101</span>', '<span class="total-count"></span>');
+  assert.equal(parseRegistrySummary(emptied), null);
+  assert.equal(parseSummaryCounts(""), null);
+  assert.equal(parseSummaryCounts("/ items purchased"), null);
+  assert.deepEqual(parseSummaryCounts("9/101 items purchased"), { purchasedUnits: 9, totalUnits: 101 });
+  assert.equal(parseSummaryCounts("12/3"), null, "purchased above total is not a real count");
 });
 
 // The September outage: Amazon served a terminal page with no items that still carried a

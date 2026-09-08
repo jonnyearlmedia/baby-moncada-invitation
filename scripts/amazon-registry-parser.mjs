@@ -79,26 +79,35 @@ export function countItemCards(html) {
 // Amazon prints an authoritative "<purchased>/<total> items purchased" summary in the registry
 // header. It counts units, so an item wanted five times contributes five. It is the only
 // independent number on the page, which makes it the one real check that every page was read.
-// The header is rendered after DOMContentLoaded, so the page has to be waited on before this runs.
-export function parseRegistrySummary(html) {
-  const $ = cheerio.load(html);
-  $("script, style, noscript").remove();
-  const header = $(REGISTRY_SUMMARY_SELECTOR).first();
-  const counts = header.length
-    ? { purchased: header.find(".purchased-count").first().text(), total: header.find(".total-count").first().text() }
-    : null;
-  const pair = counts && counts.purchased.trim() && counts.total.trim()
-    ? [counts.purchased, counts.total]
-    : (header.length ? header.text() : $("body").text()).replace(/\s+/g, " ").match(/(\d+)\s*\/\s*(\d+)\s+items?\s+purchased/i)?.slice(1, 3);
-  if (!pair) return null;
-  const purchasedUnits = Number(pair[0].trim());
-  const totalUnits = Number(pair[1].trim());
+export function parseSummaryCounts(text) {
+  if (!text) return null;
+  const match = text.replace(/\s+/g, " ").match(/(\d+)\s*\/\s*(\d+)/);
+  if (!match) return null;
+  const purchasedUnits = Number(match[1]);
+  const totalUnits = Number(match[2]);
   if (!Number.isInteger(purchasedUnits) || !Number.isInteger(totalUnits) || totalUnits < 1 || purchasedUnits > totalUnits) return null;
   return { purchasedUnits, totalUnits };
 }
 
-// An empty page is returned as an empty list so the caller can treat it as the end of a filter.
-// A page whose cards do not all parse is always an error: a partial read must never be published.
+// The header is populated after DOMContentLoaded, and the element exists empty before that, so
+// the sync waits for these counts to actually carry digits rather than for the element to appear.
+export function readSummaryText(html) {
+  const $ = cheerio.load(html);
+  $("script, style, noscript").remove();
+  const header = $(REGISTRY_SUMMARY_SELECTOR).first();
+  if (header.length) {
+    const counts = `${header.find(".purchased-count").first().text().trim()}/${header.find(".total-count").first().text().trim()}`;
+    if (parseSummaryCounts(counts)) return counts;
+    return header.text().replace(/\s+/g, " ").trim();
+  }
+  const sentence = $("body").text().replace(/\s+/g, " ").match(/(\d+)\s*\/\s*(\d+)\s+items?\s+purchased/i);
+  return sentence ? sentence[0] : null;
+}
+
+export function parseRegistrySummary(html) {
+  return parseSummaryCounts(readSummaryText(html));
+}
+
 export function parseItems(html) {
   const $ = cheerio.load(html);
   const cards = $(ITEM_CARD_SELECTOR);
