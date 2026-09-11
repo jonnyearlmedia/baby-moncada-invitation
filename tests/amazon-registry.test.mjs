@@ -201,3 +201,22 @@ test("a page Amazon serves is handed to the caller so a failed read can be inspe
   assert.equal(seen[0].filter, "UNPURCHASED");
   assert.equal(seen[0].html, emptyPageWithKey);
 });
+
+// GitHub runs the six-hourly job late, worst overnight: gaps between consecutive successful runs
+// measured 4.3h to 7.8h over Sep 8-10. A threshold at or under that put "Amazon sync is delayed"
+// in front of guests on a healthy registry, so it has to clear real drift while still catching a
+// genuinely missed cycle (12h or more).
+test("the staleness threshold clears real scheduler drift but still catches a missed cycle", async () => {
+  const route = await readFile(new URL("app/api/registry/route.ts", root), "utf8");
+  const readHours = (name) => {
+    const match = route.match(new RegExp(`const ${name} = ([^;]+);`));
+    assert.ok(match, `${name} must be defined`);
+    return Number(new Function(`return ${match[1]}`)()) / 3_600_000;
+  };
+  const threshold = readHours("SCHEDULE_INTERVAL_MS") + readHours("SCHEDULE_GRACE_MS");
+
+  const worstObservedDriftHours = 7.8;
+  const missedCycleHours = 12;
+  assert.ok(threshold > worstObservedDriftHours, `threshold ${threshold}h must clear observed drift`);
+  assert.ok(threshold < missedCycleHours, `threshold ${threshold}h must still flag a missed cycle`);
+});

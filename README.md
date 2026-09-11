@@ -35,6 +35,8 @@ A filter that comes back completely empty is treated as a failed read unless the
 
 The parsing and pagination live in `scripts/amazon-registry-parser.mjs` so they can be tested without a browser. `tests/amazon-registry.test.mjs` runs them against real Amazon markup captured by the job's own diagnostics upload, including the exact page sequence that caused that outage.
 
+Guest requests flag the snapshot as delayed once it is older than `SCHEDULE_INTERVAL_MS + SCHEDULE_GRACE_MS`. The grace is four hours because GitHub runs the six-hourly job late: measured gaps between consecutive successful runs over September 8 to 10 ranged from 4.3 to 7.8 hours, so a tighter window showed guests an "Amazon sync is delayed" banner on a healthy registry. A genuinely missed cycle is twelve hours or more and still trips it.
+
 The scheduled job is `.github/workflows/amazon-registry-sync.yml`. Its three GitHub Actions secrets are `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and `REGISTRY_SYNC_TOKEN`. A failed run is logged in `registry_sync_runs`, leaves the prior snapshot untouched, uploads every page Amazon returned as a diagnostics artifact, and opens a `registry-sync` tracking issue that later failures comment on and the next success closes. Run the workflow manually with `dry_run` enabled to check Amazon without touching the live snapshot.
 
 ## Local setup
