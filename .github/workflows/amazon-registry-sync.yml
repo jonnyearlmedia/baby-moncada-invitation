@@ -17,6 +17,7 @@ concurrency:
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   sync:
@@ -45,3 +46,74 @@ jobs:
           path: artifacts/
           if-no-files-found: ignore
           retention-days: 3
+
+      # A failed sync leaves the previous snapshot in place, so guests see no error and nothing
+      # else surfaces the problem. This opens one tracking issue and comments on every later
+      # failure, so a stalled registry reaches a person on the first run instead of the tenth.
+      - name: Report the failure
+        if: failure() && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        with:
+          script: |
+            const title = "Amazon registry sync is failing";
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: "registry-sync",
+              per_page: 1,
+            });
+            const body = [
+              "The scheduled Amazon registry sync failed. Guests still see the last complete "
+              + "verified snapshot, so nothing is broken for them, but the registry stops "
+              + "updating until this is fixed.",
+              "",
+              `Failed run: ${process.env.RUN_URL}`,
+              "The run's `amazon-registry-diagnostics` artifact holds the page Amazon returned.",
+            ].join("\n");
+            if (existing.data.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.data[0].number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                labels: ["registry-sync"],
+                body,
+              });
+            }
+
+      # Closes the tracking issue once a scheduled run succeeds again.
+      - name: Clear the failure report
+        if: success() && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: "registry-sync",
+              per_page: 10,
+            });
+            for (const issue of existing.data) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: "The registry sync succeeded again, so this is resolved.",
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: "closed",
+              });
+            }

@@ -4,122 +4,24 @@ import process from "node:process";
 import * as cheerio from "cheerio";
 import { chromium } from "playwright";
 import { createClient } from "@supabase/supabase-js";
+import {
+  ITEMS_ENDPOINT,
+  ITEM_CARD_SELECTOR,
+  REGISTRY_ID,
+  REGISTRY_SUMMARY_SELECTOR,
+  RegistryValidationError,
+  REGISTRY_URL,
+  assertNoDuplicateItems,
+  collectFilterPages,
+  parseRegistrySummary,
+  parseSummaryCounts,
+  readGridState,
+  summarizeItems,
+  verifyRegistryTotals,
+} from "./amazon-registry-parser.mjs";
 
-const REGISTRY_ID = "10AIJQD53FRAQ";
-const REGISTRY_URL = "https://www.amazon.com/baby-reg/janelle-moncada-november-2026-rohnertpark/10AIJQD53FRAQ";
-const ITEMS_ENDPOINT = "https://www.amazon.com/baby-reg/visitor-view-load-more-items";
-const MAX_PAGES_PER_FILTER = 10;
 const dryRun = process.env.DRY_RUN === "true";
-
-const categoryNames = {
-  "activity-and-gear": "Activity & gear",
-  "baby-clothing": "Baby clothing",
-  bathing: "Bathing",
-  diapering: "Diapering",
-  feeding: "Feeding",
-};
-
-function readGridState(html, previous = {}) {
-  const $ = cheerio.load(html);
-  const diagnostics = [];
-  for (const element of $("script[type='a-state']").toArray()) {
-    try {
-      const value = JSON.parse($(element).text());
-      diagnostics.push(Object.keys(value));
-      const designAsin = value.designAsin || previous.designAsin;
-      const ownerCustomerId = value.ownerCustomerId || previous.ownerCustomerId;
-      if (value.registryId === REGISTRY_ID && "filters" in value && designAsin && ownerCustomerId) {
-        return {
-          designAsin,
-          ownerCustomerId,
-          lastItemCategory: value.lastItemCategory ?? "",
-          paginationKey: value.paginationKey ?? "",
-          registryId: value.registryId,
-        };
-      }
-    } catch {
-      // Amazon includes unrelated state blocks that are not JSON registry state.
-    }
-  }
-  throw new Error(`Amazon registry pagination data is unavailable (${JSON.stringify(diagnostics)})`);
-}
-
-function safeItemUrl(value, asin, itemId) {
-  if (!value) return null;
-  try {
-    const url = new URL(value, "https://www.amazon.com");
-    const exactRegistryItem = url.pathname.includes(`/dp/${asin}`)
-      && url.searchParams.get("colid") === REGISTRY_ID
-      && url.searchParams.get("coliid") === itemId;
-    return url.protocol === "https:" && ["amazon.com", "www.amazon.com"].includes(url.hostname) && exactRegistryItem
-      ? url.toString()
-      : null;
-  } catch {
-    return null;
-  }
-}
-
-function safeImageUrl(value) {
-  if (!value) return null;
-  try {
-    const url = new URL(value);
-    if (url.protocol !== "https:" || !["m.media-amazon.com", "images-na.ssl-images-amazon.com"].includes(url.hostname)) return null;
-    url.hostname = "m.media-amazon.com";
-    return url.toString();
-  } catch {
-    return null;
-  }
-}
-
-function parsePrice(value) {
-  const parsed = Number(value.replace(/[^0-9.]/g, ""));
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function parseItems(html, { allowEmpty = false } = {}) {
-  const $ = cheerio.load(html);
-  const cards = $(".aok-float-left[asin][category][itemid]");
-  const items = cards.toArray().flatMap((element) => {
-    const card = $(element);
-    const itemId = card.attr("itemid");
-    const asin = card.attr("asin");
-    const purchaseMatch = card.text().match(/(\d+)\s+of\s+(\d+)\s+Purchased/i);
-    if (!itemId || !asin || !purchaseMatch) return [];
-
-    const title = card.find("h2[aria-label]").first().attr("aria-label")?.trim();
-    const image = safeImageUrl(card.find("img.br-vv-item-card-image").first().attr("src"));
-    const url = safeItemUrl(card.find(`a[href*="/dp/${asin}"][href*="colid="][href*="coliid="]`).first().attr("href"), asin, itemId);
-    const purchased = Number(purchaseMatch[1]);
-    const quantity = Number(purchaseMatch[2]);
-    if (!title || !image || !url || !Number.isInteger(purchased) || !Number.isInteger(quantity) || quantity < 1 || purchased < 0 || purchased > quantity) return [];
-
-    const price = card.find(".a-price .a-offscreen").first().text().trim();
-    const categoryKey = card.attr("category")?.replace("br-checklist-category-", "") ?? "general";
-    const quantityNeeded = quantity - purchased;
-    return [{
-      id: itemId,
-      title,
-      image,
-      category: categoryNames[categoryKey] ?? categoryKey.split("-").map((word) => word[0]?.toUpperCase() + word.slice(1)).join(" "),
-      price: price || null,
-      quantity,
-      quantityNeeded,
-      isFulfilled: quantityNeeded === 0,
-      reservedCount: purchased,
-      offers: [{
-        id: `${itemId}-amazon`,
-        store: "Amazon",
-        url,
-        price: price ? parsePrice(price) : null,
-        isRegistry: true,
-        availability: quantityNeeded === 0 ? "purchased" : "available",
-        availabilityText: `${purchased} of ${quantity} purchased`,
-      }],
-    }];
-  });
-  if ((!allowEmpty && cards.length === 0) || items.length !== cards.length) throw new Error(`Amazon returned an incomplete registry page (${items.length}/${cards.length} valid items)`);
-  return items;
-}
+const MAX_ATTEMPTS = 3;
 
 async function fetchFilteredPage(page, csrf, filter, state) {
   const result = await page.evaluate(async ({ endpoint, token, referer, fields }) => {
@@ -156,7 +58,8 @@ async function fetchFilteredPage(page, csrf, filter, state) {
     filter,
     status: result.status,
     htmlBytes: result.body.length,
-    itemCards: responseDom(".aok-float-left[asin][category][itemid]").length,
+    itemCards: responseDom(ITEM_CARD_SELECTOR).length,
+    anyItemIdCards: responseDom("[itemid]").length,
     stateBlocks: responseDom("script[type='a-state']").length,
     hadPaginationKey: Boolean(state.paginationKey),
   });
@@ -164,65 +67,119 @@ async function fetchFilteredPage(page, csrf, filter, state) {
   return result.body;
 }
 
-async function loadPages(page, csrf, baseState, filter, firstHtml) {
-  const items = firstHtml ? parseItems(firstHtml) : [];
-  let state = firstHtml ? readGridState(firstHtml) : { ...baseState, lastItemCategory: "", paginationKey: "" };
-  const seenKeys = new Set();
-
-  for (let index = firstHtml ? 1 : 0; index < MAX_PAGES_PER_FILTER; index += 1) {
-    if (firstHtml && !state.paginationKey) return items;
-    if (state.paginationKey && seenKeys.has(state.paginationKey)) throw new Error("Amazon repeated a registry page");
-    if (state.paginationKey) seenKeys.add(state.paginationKey);
-    const html = await fetchFilteredPage(page, csrf, filter, state);
-    const nextState = readGridState(html, state);
-    items.push(...parseItems(html, { allowEmpty: !nextState.paginationKey }));
-    state = nextState;
-    if (!state.paginationKey) return items;
-  }
-  throw new Error("Amazon registry exceeded the verified pagination limit");
-}
-
-async function loadAmazonRegistry() {
+async function readRegistry() {
   const browser = await chromium.launch({ headless: true });
   let page;
+  const readPages = [];
   try {
     const context = await browser.newContext({ locale: "en-US", timezoneId: "America/Los_Angeles" });
     page = await context.newPage();
     await page.route(/\.(?:png|jpe?g|gif|webp|svg|woff2?)(?:\?|$)/i, (route) => route.abort());
     const response = await page.goto(REGISTRY_URL, { waitUntil: "domcontentloaded", timeout: 45_000 });
     if (!response || response.status() >= 400) throw new Error(`Amazon registry returned ${response?.status() ?? "no response"}`);
+    // Amazon ships the header element empty and fills in the counts after DOMContentLoaded, so
+    // waiting for the element is not enough: wait until it actually carries the numbers. Without
+    // this the completeness check reads nothing and passes every run, which is worse than
+    // not having it at all.
+    const headerText = await page.waitForFunction(
+      (selector) => {
+        const element = document.querySelector(selector);
+        const text = element?.textContent?.replace(/\s+/g, " ").trim() ?? "";
+        return /\d+\s*\/\s*\d+/.test(text) ? text : null;
+      },
+      REGISTRY_SUMMARY_SELECTOR,
+      { timeout: 20_000, polling: 250 },
+    ).then((handle) => handle.jsonValue()).catch(() => null);
+
     const firstHtml = await page.content();
-    const diagnostics = {
+    const summary = parseSummaryCounts(headerText) ?? parseRegistrySummary(firstHtml);
+    if (!summary) {
+      console.warn("amazon_registry_summary_unreadable", {
+        selector: REGISTRY_SUMMARY_SELECTOR,
+        headerText,
+        headerHtml: await page.evaluate((selector) => document.querySelector(selector)?.outerHTML ?? null, REGISTRY_SUMMARY_SELECTOR),
+        bodyMentionsPurchased: /items?\s+purchased/i.test(firstHtml),
+      });
+    }
+    console.log("amazon_registry_page_loaded", {
       status: response.status(),
       url: page.url(),
       title: await page.title(),
       htmlBytes: firstHtml.length,
-      itemCards: cheerio.load(firstHtml)(".aok-float-left[asin][category][itemid]").length,
+      itemCards: cheerio.load(firstHtml)(ITEM_CARD_SELECTOR).length,
+      anyItemIdCards: cheerio.load(firstHtml)("[itemid]").length,
       stateBlocks: cheerio.load(firstHtml)("script[type='a-state']").length,
-    };
-    console.log("amazon_registry_page_loaded", diagnostics);
+      reportedTotals: summary,
+    });
     if (!firstHtml.includes("Janelle Moncada") || !firstHtml.includes(REGISTRY_ID)) throw new Error(`Amazon returned the wrong page: ${await page.title()}`);
     const $ = cheerio.load(firstHtml);
     const csrf = $("#generic-registry-anticsrf-token").attr("content");
     if (!csrf) throw new Error("Amazon registry CSRF token is unavailable");
     const state = readGridState(firstHtml);
+    const fetchPage = (filter, pageState) => fetchFilteredPage(page, csrf, filter, pageState);
+    readPages.push({ filter: "FIRST", index: 0, html: firstHtml });
+    const onPage = (fetched) => readPages.push(fetched);
     const [needed, purchased] = await Promise.all([
-      loadPages(page, csrf, state, "UNPURCHASED", firstHtml),
-      loadPages(page, csrf, state, "PURCHASED"),
+      collectFilterPages({ filter: "UNPURCHASED", firstHtml, baseState: state, fetchPage, log: console.log, onPage }),
+      collectFilterPages({ filter: "PURCHASED", baseState: state, fetchPage, log: console.log, onPage }),
     ]);
+
+    // A filter that returns nothing at all is a failed read, not an empty registry, unless
+    // Amazon's own header says that filter really is empty.
+    if (needed.length === 0 && (!summary || summary.totalUnits > summary.purchasedUnits)) {
+      throw new RegistryValidationError("Amazon returned no still-needed registry items");
+    }
+    if (purchased.length === 0 && (!summary || summary.purchasedUnits > 0)) {
+      throw new RegistryValidationError("Amazon returned no purchased registry items");
+    }
+
     const items = [...needed, ...purchased];
-    if (new Set(items.map((item) => item.id)).size !== items.length) throw new Error("Amazon returned duplicate registry items");
+    assertNoDuplicateItems(items);
+
+    const totals = verifyRegistryTotals(items, summary);
+    console.log("amazon_registry_totals", totals);
+    if (totals.checked && !totals.withinTolerance) {
+      throw new RegistryValidationError(`Amazon registry totals disagree: read ${totals.scraped.purchasedUnits}/${totals.scraped.totalUnits} units, Amazon reports ${totals.reported.purchasedUnits}/${totals.reported.totalUnits}`);
+    }
+    if (totals.checked && !totals.matched) {
+      console.warn("amazon_registry_totals_drifted", {
+        short: totals.short,
+        purchasedShort: totals.purchasedShort,
+        note: "Amazon's header disagrees with its own item cards; within tolerance, so the read is published",
+      });
+    }
+    if (!totals.checked) console.warn("amazon_registry_totals_unverified", "Amazon no longer prints a purchased/total header; the completeness check is inactive");
     return items;
   } catch (error) {
     if (page) {
       await mkdir("artifacts", { recursive: true });
       await writeFile("artifacts/amazon-registry-debug.html", await page.content());
       await page.screenshot({ path: "artifacts/amazon-registry-debug.png", fullPage: true });
+      // The paged responses are where a miscounted registry actually shows up, and they are not
+      // in the rendered page, so a failed read has to keep them too.
+      for (const fetched of readPages) {
+        await writeFile(`artifacts/amazon-registry-${fetched.filter}-${fetched.index}.html`, fetched.html);
+      }
     }
     throw error;
   } finally {
     await browser.close();
   }
+}
+
+async function loadAmazonRegistry() {
+  let lastError;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+    try {
+      return await readRegistry();
+    } catch (error) {
+      lastError = error;
+      console.warn("amazon_registry_attempt_failed", { attempt, of: MAX_ATTEMPTS, permanent: Boolean(error?.permanent), detail: error instanceof Error ? error.message : String(error) });
+      if (error?.permanent) break;
+      if (attempt < MAX_ATTEMPTS) await new Promise((resolve) => setTimeout(resolve, attempt * 15_000));
+    }
+  }
+  throw lastError;
 }
 
 function syncClient() {
@@ -259,9 +216,7 @@ try {
   console.log("amazon_registry_sync_started", { dryRun, registryId: REGISTRY_ID });
   const items = await loadAmazonRegistry();
   const summary = {
-    total: items.length,
-    needed: items.filter((item) => !item.isFulfilled).length,
-    purchased: items.filter((item) => item.isFulfilled).length,
+    ...summarizeItems(items),
     exactLinks: items.filter((item) => item.offers[0].url.includes(`colid=${REGISTRY_ID}`) && item.offers[0].url.includes("coliid=")).length,
   };
   if (!dryRun) await saveSnapshot(items);

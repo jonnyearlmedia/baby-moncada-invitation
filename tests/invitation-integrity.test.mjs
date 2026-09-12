@@ -87,11 +87,12 @@ test("host-created invitations are validated and committed through one protected
 });
 
 test("registry refreshes every current Amazon page and preserves registry-linked item URLs", async () => {
-  const [route, page, scheduledSync, workflow, migration] = await Promise.all([
+  const [route, page, scheduledSync, workflow, parser, migration] = await Promise.all([
     read("app/api/registry/route.ts"),
     read("app/page.tsx"),
     read("scripts/sync-amazon-registry.mjs"),
     read(".github/workflows/amazon-registry-sync.yml"),
+    read("scripts/amazon-registry-parser.mjs"),
     read("supabase/migrations/20260828052059_github_registry_sync_rpc.sql"),
   ]);
   assert.match(route, /registry_sync_state/);
@@ -110,17 +111,22 @@ test("registry refreshes every current Amazon page and preserves registry-linked
   assert.match(workflow, /cron: "17 \*\/6 \* \* \*"/);
   assert.match(workflow, /REGISTRY_SYNC_TOKEN/);
   assert.match(scheduledSync, /chromium\.launch/);
-  assert.match(scheduledSync, /visitor-view-load-more-items/);
-  assert.match(scheduledSync, /loadPages\(page, csrf, state, "UNPURCHASED"/);
-  assert.match(scheduledSync, /loadPages\(page, csrf, state, "PURCHASED"/);
-  assert.match(scheduledSync, /const nextState = readGridState\(html, state\)/);
-  assert.match(scheduledSync, /allowEmpty: !nextState\.paginationKey/);
-  assert.match(scheduledSync, /!allowEmpty && cards\.length === 0/);
-  assert.match(scheduledSync, /searchParams\.get\("colid"\) === REGISTRY_ID/);
-  assert.match(scheduledSync, /searchParams\.get\("coliid"\) === itemId/);
-  assert.match(scheduledSync, /quantityNeeded === 0/);
-  assert.match(scheduledSync, /items\.length !== cards\.length/);
+  assert.match(parser, /visitor-view-load-more-items/);
+  assert.match(scheduledSync, /collectFilterPages\(\{ filter: "UNPURCHASED"/);
+  assert.match(scheduledSync, /collectFilterPages\(\{ filter: "PURCHASED"/);
+  // Amazon's own header count is the only independent proof that no page was skipped.
+  assert.match(scheduledSync, /verifyRegistryTotals\(items, summary\)/);
+  assert.match(scheduledSync, /totals\.checked && !totals\.matched/);
+  assert.match(scheduledSync, /Amazon returned no still-needed registry items/);
+  assert.match(scheduledSync, /Amazon returned no purchased registry items/);
+  assert.match(parser, /searchParams\.get\("colid"\) === REGISTRY_ID/);
+  assert.match(parser, /searchParams\.get\("coliid"\) === itemId/);
+  assert.match(parser, /quantityNeeded === 0/);
+  assert.match(parser, /items\.length !== cards\.length/);
   assert.match(scheduledSync, /commit_amazon_registry_sync/);
+  // A failed sync has to reach a human; two silent days of a stale registry is the failure mode.
+  assert.match(workflow, /issues: write/);
+  assert.match(workflow, /if: failure\(\)/);
   assert.match(migration, /token_hash = extensions\.digest\(p_token, 'sha256'\)/);
   assert.match(migration, /v_retained_count \* 4 < v_old_count \* 3/);
   assert.match(migration, /revoke all on public\.registry_sync_credentials from public, anon, authenticated/);
