@@ -178,10 +178,6 @@ export default function DashboardClient() {
         <label>Email<input type="email" value={event.contact_email} onChange={(e) => updateEvent("contact_email", e.target.value)} /></label>
         <label>Phone in +1 format<input value={event.contact_phone} onChange={(e) => updateEvent("contact_phone", e.target.value)} /></label>
         <label className="wide">Amazon registry URL<input type="url" value={event.registry_url} onChange={(e) => updateEvent("registry_url", e.target.value)} /></label>
-        <label className="wide">Hilton booking URL<input type="url" value={event.hotel_booking_url} onChange={(e) => updateEvent("hotel_booking_url", e.target.value)} /></label>
-        <label>Hotel deadline<input type="date" value={event.hotel_booking_deadline} onChange={(e) => updateEvent("hotel_booking_deadline", e.target.value)} /></label>
-        <label>Group code<input value={event.hotel_group_code} onChange={(e) => updateEvent("hotel_group_code", e.target.value)} /></label>
-        <label>Rate label<input value={event.hotel_rate_label} onChange={(e) => updateEvent("hotel_rate_label", e.target.value)} /></label>
         <label className="wide">Copy-message template<textarea value={event.copy_message_template} onChange={(e) => updateEvent("copy_message_template", e.target.value)} /><small>Keep <code>{"{{household}}"}</code> and <code>{"{{link}}"}</code> where the name and link should appear.</small></label>
       </div>
       <button className="admin-primary" disabled={busy === "event"} onClick={() => save({ kind: "event", eventTitle: event.event_title, hostsDisplay: event.hosts_display, eventStartsAt: event.event_starts_at, rsvpDeadline: event.rsvp_deadline, venueName: event.venue_name, venueAddress: event.venue_address, contactEmail: event.contact_email, contactPhone: event.contact_phone, registryUrl: event.registry_url, hotelBookingUrl: event.hotel_booking_url, hotelBookingDeadline: event.hotel_booking_deadline, hotelGroupCode: event.hotel_group_code, hotelRateLabel: event.hotel_rate_label, copyMessageTemplate: event.copy_message_template }, "event")}>{busy === "event" ? "Saving…" : "Save event details"}</button>

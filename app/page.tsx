@@ -207,7 +207,7 @@ export default function Home({ inviteSlug = "murao" }: { inviteSlug?: string }) 
       <section className="phone boarding-pass" aria-label="Baby Moncada invitation">
         <div className="phone-content" ref={phoneContentRef}>
           {view === "invite" && <InviteScreen countdown={countdown} rsvp={rsvp} deadlinePassed={deadlinePassed} onRSVP={() => changeView("rsvp")} onCalendar={downloadCalendar} />}
-          {view === "stay" && <StayScreen bookingUrl={rsvp.event?.hotelBookingUrl ?? BOOKING_URL} />}
+          {view === "stay" && <StayScreen bookingUrl={BOOKING_URL} />}
           {view === "registry" && <RegistryScreen category={category} setCategory={setCategory} products={visibleProducts} registry={registry} onGift={(item) => setOverlay({ type: "gift", item })} />}
           {view === "maps" && <MapsScreen />}
           {view === "rsvp" && <RSVPScreen rsvp={rsvp} setRsvp={setRsvp} deadlinePassed={deadlinePassed} onSave={saveRSVP} />}
