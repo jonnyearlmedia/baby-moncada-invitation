@@ -4,7 +4,7 @@ test("boarding-pass design preserves Claude handoff geometry and typography", as
   await page.goto("/invite/murao");
   await expect(page.getByRole("heading", { name: "Baby Moncada" })).toBeVisible();
   await expect(page.getByText("A baby shower honoring Janelle & Fernando")).toBeVisible();
-  await expect(page.getByText("RSVP by September 11, 2026")).toBeVisible();
+  await expect(page.getByText("RSVP as soon as possible")).toBeVisible();
 
   const design = await page.evaluate(() => {
     const card = document.querySelector<HTMLElement>(".phone.boarding-pass")!;
@@ -62,7 +62,7 @@ test("all five Claude-designed screens fit and retain their exact labels", async
   }
 
   await page.getByRole("navigation", { name: "Invitation features" }).getByRole("button", { name: "RSVP", exact: true }).click();
-  await expect(page.getByText("RSVP by September 11, 2026")).toBeVisible();
+  await expect(page.getByText("RSVP as soon as possible")).toBeVisible();
 });
 
 test("mobile bottom navigation remains inside the live visual viewport", async ({ page, isMobile }) => {

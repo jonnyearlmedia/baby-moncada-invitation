@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { EventSettings } from "@/lib/invitation-types";
 
 const BOOKING_URL = "https://www.hilton.com/en/book/reservation/rooms/?ctyhocn=STSRHUP&arrivalDate=2026-09-25&departureDate=2026-09-27&groupCode=905&room1NumAdults=1&cid=OM%2CWW%2CHILTONLINK%2CEN%2CDirectLink";
+const FALLBACK_RSVP_DEADLINE = "2026-09-11";
 const REGISTRY_URL = "https://www.amazon.com/baby-reg/janelle-moncada-november-2026-rohnertpark/10AIJQD53FRAQ";
 const HOTEL_ADDRESS = "5870 Labath Ave, Rohnert Park, CA 94928";
 const HOTEL_APPLE_MAPS = "https://maps.apple.com/?daddr=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&dirflg=d";
@@ -77,6 +78,7 @@ export default function Home({ inviteSlug = "murao" }: { inviteSlug?: string }) 
   const [view, setView] = useState<View>("invite");
   const [category, setCategory] = useState("All");
   const [overlay, setOverlay] = useState<Overlay>(null);
+  const [deadlinePassed, setDeadlinePassed] = useState(true);
   const [registry, setRegistry] = useState<RegistryState>({ status: "loading", items: [], updatedAt: null, refreshState: "current" });
   const appPageRef = useRef<HTMLElement>(null);
   const phoneContentRef = useRef<HTMLDivElement>(null);
@@ -133,7 +135,10 @@ export default function Home({ inviteSlug = "murao" }: { inviteSlug?: string }) 
         const response = await fetch(`/api/rsvp?slug=${encodeURIComponent(inviteSlug)}`, { cache: "no-store" });
         const data = await response.json() as Omit<RSVP, "status" | "error"> & { error?: string };
         if (!response.ok) throw new Error(data.error || "RSVP unavailable");
-        if (active) setRsvp({ ...data, status: "ready", error: null });
+        if (!active) return;
+        setRsvp({ ...data, status: "ready", error: null });
+        const deadline = new Date(`${data.event?.rsvpDeadline ?? FALLBACK_RSVP_DEADLINE}T23:59:59-07:00`).getTime();
+        setDeadlinePassed(Number.isNaN(deadline) || deadline <= Date.now());
       } catch {
         if (active) setRsvp((current) => ({ ...current, status: "error", error: "We couldn’t load this invitation. Please try again." }));
       }
@@ -187,11 +192,11 @@ export default function Home({ inviteSlug = "murao" }: { inviteSlug?: string }) 
       "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Baby Moncada//Invitation//EN", "BEGIN:VEVENT",
       "UID:baby-moncada-20260926", "DTSTART;TZID=America/Los_Angeles:20260926T160000",
       "SUMMARY:Baby Moncada Baby Shower", `LOCATION:${HOTEL_ADDRESS}`,
-      "DESCRIPTION:Join Janelle and Fernando for the Baby Moncada baby shower at Hotel Centro Sonoma Wine Country.",
+      "DESCRIPTION:Join Janelle and Fernando for the Baby Moncada baby shower at Hotel Centro Sonoma Wine Country. Attire is casual. Diaper raffle \u2014 bring a pack of diapers in size 2 or larger for a chance to win a prize.",
       "END:VEVENT", "END:VCALENDAR",
     ].join("\r\n");
     const link = document.createElement("a");
-    link.href = URL.createObjectURL(new Blob([calendar], { type: "text/calendar" }));
+    link.href = URL.createObjectURL(new Blob([calendar], { type: "text/calendar;charset=utf-8" }));
     link.download = "baby-moncada.ics";
     link.click();
     URL.revokeObjectURL(link.href);
@@ -201,11 +206,11 @@ export default function Home({ inviteSlug = "murao" }: { inviteSlug?: string }) 
     <main className="app-page" ref={appPageRef}>
       <section className="phone boarding-pass" aria-label="Baby Moncada invitation">
         <div className="phone-content" ref={phoneContentRef}>
-          {view === "invite" && <InviteScreen countdown={countdown} rsvp={rsvp} onRSVP={() => changeView("rsvp")} onCalendar={downloadCalendar} />}
+          {view === "invite" && <InviteScreen countdown={countdown} rsvp={rsvp} deadlinePassed={deadlinePassed} onRSVP={() => changeView("rsvp")} onCalendar={downloadCalendar} />}
           {view === "stay" && <StayScreen bookingUrl={rsvp.event?.hotelBookingUrl ?? BOOKING_URL} />}
           {view === "registry" && <RegistryScreen category={category} setCategory={setCategory} products={visibleProducts} registry={registry} onGift={(item) => setOverlay({ type: "gift", item })} />}
           {view === "maps" && <MapsScreen />}
-          {view === "rsvp" && <RSVPScreen rsvp={rsvp} setRsvp={setRsvp} onSave={saveRSVP} />}
+          {view === "rsvp" && <RSVPScreen rsvp={rsvp} setRsvp={setRsvp} deadlinePassed={deadlinePassed} onSave={saveRSVP} />}
         </div>
         <nav className="phone-nav" aria-label="Invitation features">
           {nav.map((item) => <button key={item[0]} className={view === item[0] ? "selected" : ""} aria-current={view === item[0] ? "page" : undefined} onClick={() => changeView(item[0])}><span className="nav-icon"><Icon name={item[1]} />{item[0] === "rsvp" && rsvp.submitted && <i aria-hidden="true" />}</span>{item[2]}</button>)}
@@ -216,7 +221,7 @@ export default function Home({ inviteSlug = "murao" }: { inviteSlug?: string }) 
   );
 }
 
-function InviteScreen({ countdown, rsvp, onRSVP, onCalendar }: { countdown: ReturnType<typeof getCountdown>; rsvp: RSVP; onRSVP: () => void; onCalendar: () => void }) {
+function InviteScreen({ countdown, rsvp, deadlinePassed, onRSVP, onCalendar }: { countdown: ReturnType<typeof getCountdown>; rsvp: RSVP; deadlinePassed: boolean; onRSVP: () => void; onCalendar: () => void }) {
   const [shareLabel, setShareLabel] = useState("Share invite");
   async function shareInvite() {
     try {
@@ -246,6 +251,7 @@ function InviteScreen({ countdown, rsvp, onRSVP, onCalendar }: { countdown: Retu
       <TicketFact label="Boarding time" value="4:00 PM" />
       <TicketFact full label="Destination" value="Hotel Centro Sonoma Wine Country" detail={HOTEL_ADDRESS} />
       <TicketFact full label="Passenger" value={passengerNames} />
+      <TicketFact full label="Attire" value="Casual" detail="Dress comfortably" />
     </section>
     <TicketDivider />
     <section className="countdown-wrap"><p className="phone-eyebrow">Time to boarding</p><div className="countdown" aria-label="Countdown to September 26, 2026">
@@ -253,8 +259,8 @@ function InviteScreen({ countdown, rsvp, onRSVP, onCalendar }: { countdown: Retu
     </div></section>
     <div className="ticket-barcode" aria-hidden="true" />
     <div className="baby-on-board"><strong>✈ Baby On Board</strong><span>Moncada Airways</span></div>
-    <div className="diaper-raffle"><strong>✈ Diaper Raffle</strong><span>Bring a pack, any size, for a chance to win a prize</span></div>
-    <RSVPDeadline value={rsvp.event?.rsvpDeadline ?? "2026-09-11"} />
+    <div className="diaper-raffle"><strong>✈ Diaper Raffle</strong><span>Bring a pack of diapers to enter. Sizes 2 and up are the biggest help — he’ll grow into them fast.</span></div>
+    <RSVPDeadline value={rsvp.event?.rsvpDeadline ?? FALLBACK_RSVP_DEADLINE} urgent={deadlinePassed} />
     <div className="home-actions"><button className="phone-action primary" onClick={onRSVP}>RSVP</button><button className="phone-action" onClick={onCalendar}>Add to calendar</button></div>
     <div className="save-invite"><strong>📌 Save this invitation</strong><p>Add this invitation to your Home Screen for quick access to the registry, directions, and RSVP.<span><b>iPhone (Safari or Chrome):</b> Tap Share → Add to Home Screen.</span><small>Prefer a bookmark? Use Add Bookmark in Safari or Add to Bookmarks in Chrome.</small></p><button onClick={shareInvite}>{shareLabel}</button></div>
   </div>;
@@ -263,12 +269,12 @@ function InviteScreen({ countdown, rsvp, onRSVP, onCalendar }: { countdown: Retu
 function TicketDivider() { return <div className="ticket-divider" aria-hidden="true"><i /><i /></div>; }
 function TicketFact({ label, value, detail, full = false }: { label: string; value: string; detail?: string; full?: boolean }) { return <div className={full ? "ticket-fact-full" : undefined}><span>{label}</span><strong>{value}</strong>{detail && <p>{detail}</p>}</div>; }
 
-function RSVPDeadline({ value, compact = false }: { value: string; compact?: boolean }) {
+function RSVPDeadline({ value, urgent, compact = false }: { value: string; urgent: boolean; compact?: boolean }) {
   const formatted = new Date(`${value}T12:00:00`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   return <div className={`rsvp-deadline${compact ? " compact" : ""}`}>
     <span>Reply requested</span>
-    <strong>RSVP by {formatted}</strong>
-    {!compact && <p>Please respond for everyone named on this invitation.</p>}
+    <strong>{urgent ? "RSVP as soon as possible" : `RSVP by ${formatted}`}</strong>
+    {!compact && <p>{urgent ? "We\u2019re finalizing the headcount \u2014 please respond for everyone named on this invitation." : "Please respond for everyone named on this invitation."}</p>}
   </div>;
 }
 
@@ -360,7 +366,7 @@ function MapsScreen() {
   </div>;
 }
 
-function RSVPScreen({ rsvp, setRsvp, onSave }: { rsvp: RSVP; setRsvp: React.Dispatch<React.SetStateAction<RSVP>>; onSave: () => void }) {
+function RSVPScreen({ rsvp, setRsvp, deadlinePassed, onSave }: { rsvp: RSVP; setRsvp: React.Dispatch<React.SetStateAction<RSVP>>; deadlinePassed: boolean; onSave: () => void }) {
   if (rsvp.status === "loading") return <div className="feature-screen rsvp-screen"><ScreenHeader kicker="Your invitation" title="RSVP" mark="Loading" /><div className="registry-loading" role="status"><div className="loading-ring" /><strong>Finding your invitation</strong><p>Loading the people included in your party.</p></div></div>;
   if (rsvp.status === "error" && rsvp.guests.length === 0) return <div className="feature-screen rsvp-screen"><ScreenHeader kicker="Your invitation" title="RSVP" mark="Unavailable" /><div className="registry-empty"><strong>We couldn’t open this RSVP.</strong><p>{rsvp.error}</p><button className="phone-action primary full" onClick={() => window.location.reload()}>Try again</button></div></div>;
   const complete = rsvp.guests.every((guest) => guest.response !== null);
@@ -384,7 +390,7 @@ function RSVPScreen({ rsvp, setRsvp, onSave }: { rsvp: RSVP; setRsvp: React.Disp
         <button className="phone-action full" onClick={() => setRsvp({ ...rsvp, submitted: false, error: null })}>Change response</button>
         {attending.length > 0 && <section className="rsvp-next-steps" aria-label="Before the baby shower">
           <header><strong>Before the shower</strong><span>Two quick reminders</span></header>
-          <div className="rsvp-next-step raffle-step"><span>Raffle</span><div><strong>Bring a pack of diapers</strong><p>Any size counts as one entry for a chance to win a prize.</p></div></div>
+          <div className="rsvp-next-step raffle-step"><span>Raffle</span><div><strong>Bring a pack of diapers</strong><p>Sizes 2 and up are the biggest help — one pack is one entry to win a prize.</p></div></div>
           <div className="rsvp-next-step live-invite-step"><span>Live</span><div><strong>Save this invitation</strong><p>Add it to your Home Screen or bookmarks. Return anytime for current registry items, directions, hotel details, and event updates.</p></div></div>
         </section>}
       </div>
@@ -393,7 +399,7 @@ function RSVPScreen({ rsvp, setRsvp, onSave }: { rsvp: RSVP; setRsvp: React.Disp
 
   return <div className="feature-screen">
     <ScreenHeader kicker="Boarding Pass · RSVP" title="Who’s on board?" subtitle="Respond for each passenger named on this invitation." mark="" />
-    <RSVPDeadline value={rsvp.event?.rsvpDeadline ?? "2026-09-11"} compact />
+    <RSVPDeadline value={rsvp.event?.rsvpDeadline ?? FALLBACK_RSVP_DEADLINE} urgent={deadlinePassed} compact />
     <div className="party-summary">
       <span>Invitation for</span>
       <strong>{rsvp.household}</strong>
