@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { EventSettings } from "@/lib/invitation-types";
 
-const BOOKING_URL = "https://www.hilton.com/en/book/reservation/rooms/?ctyhocn=STSRHUP&arrivalDate=2026-09-25&departureDate=2026-09-27&groupCode=905&room1NumAdults=1&cid=OM%2CWW%2CHILTONLINK%2CEN%2CDirectLink";
+const BOOKING_URL = "https://www.hilton.com/en/hotels/stsrhup-hotel-centro-sonoma-wine-country/?SEO_id=GMB-AMER-UP-STSRHUP";
 const FALLBACK_RSVP_DEADLINE = "2026-09-11";
 const REGISTRY_URL = "https://www.amazon.com/baby-reg/janelle-moncada-november-2026-rohnertpark/10AIJQD53FRAQ";
 const HOTEL_ADDRESS = "5870 Labath Ave, Rohnert Park, CA 94928";
@@ -260,7 +260,7 @@ function InviteScreen({ countdown, rsvp, deadlinePassed, onRSVP, onCalendar }: {
     <div className="ticket-barcode" aria-hidden="true" />
     <div className="baby-on-board"><strong>✈ Baby On Board</strong><span>Moncada Airways</span></div>
     <div className="diaper-raffle"><strong>✈ Diaper Raffle</strong><span>Bring a pack of diapers to enter. Sizes 2 and up are the biggest help — he’ll grow into them fast.</span></div>
-    <RSVPDeadline value={rsvp.event?.rsvpDeadline ?? FALLBACK_RSVP_DEADLINE} urgent={deadlinePassed} />
+    {rsvp.submitted ? <RSVPConfirmed rsvp={rsvp} /> : <RSVPDeadline value={rsvp.event?.rsvpDeadline ?? FALLBACK_RSVP_DEADLINE} urgent={deadlinePassed} />}
     <div className="home-actions"><button className="phone-action primary" onClick={onRSVP}>RSVP</button><button className="phone-action" onClick={onCalendar}>Add to calendar</button></div>
     <div className="save-invite"><strong>📌 Save this invitation</strong><p>Add this invitation to your Home Screen for quick access to the registry, directions, and RSVP.<span><b>iPhone (Safari or Chrome):</b> Tap Share → Add to Home Screen.</span><small>Prefer a bookmark? Use Add Bookmark in Safari or Add to Bookmarks in Chrome.</small></p><button onClick={shareInvite}>{shareLabel}</button></div>
   </div>;
@@ -268,6 +268,15 @@ function InviteScreen({ countdown, rsvp, deadlinePassed, onRSVP, onCalendar }: {
 
 function TicketDivider() { return <div className="ticket-divider" aria-hidden="true"><i /><i /></div>; }
 function TicketFact({ label, value, detail, full = false }: { label: string; value: string; detail?: string; full?: boolean }) { return <div className={full ? "ticket-fact-full" : undefined}><span>{label}</span><strong>{value}</strong>{detail && <p>{detail}</p>}</div>; }
+
+function RSVPConfirmed({ rsvp }: { rsvp: RSVP }) {
+  const attending = rsvp.guests.filter((guest) => guest.response === "yes").length;
+  return <div className="rsvp-deadline confirmed">
+    <span>RSVP received</span>
+    <strong>{attending > 0 ? `You\u2019re on the list \u2014 party of ${attending}` : "Thanks for letting us know"}</strong>
+    <p>{attending > 0 ? "See you September 26. Tap RSVP to change your response." : "We\u2019ll miss you. Tap RSVP if anything changes."}</p>
+  </div>;
+}
 
 function RSVPDeadline({ value, urgent, compact = false }: { value: string; urgent: boolean; compact?: boolean }) {
   const formatted = new Date(`${value}T12:00:00`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
@@ -286,19 +295,18 @@ function StayScreen({ bookingUrl }: { bookingUrl: string }) {
   return <div className="feature-screen">
     <ScreenHeader kicker="Boarding Pass · Hotel Stay" title="Stay on site" subtitle="Hotel Centro Sonoma Wine Country · Tapestry by Hilton" mark="" />
     <div className="info-block venue-block"><strong>Hotel Centro Sonoma Wine Country</strong><p>Tapestry by Hilton<br />{HOTEL_ADDRESS}</p></div>
-    <div className="stay-facts"><div><span>Check in</span><strong>Fri, Sep 25</strong></div><div><span>Check out</span><strong>Sun, Sep 27</strong></div><div><span>Group code</span><strong>905</strong></div></div>
+    <div className="stay-facts two-up"><div><span>Check in</span><strong>Fri, Sep 25</strong></div><div><span>Check out</span><strong>Sun, Sep 27</strong></div></div>
     <div className="room-list">
       <Room name="1 King Bed" detail="Sleeps 2 · workspace · mini refrigerator" />
       <Room name="2 Queen Beds" detail="Sleeps 4 · workspace · mini refrigerator" />
     </div>
     <div className="amenities"><span>Free Wi-Fi</span><span>Outdoor pool</span><span>Restaurant</span><span>Fitness center</span><span>Pet friendly</span></div>
-    <div className="booking-deadline"><strong>Book by Sep 11</strong><span>The group rate closes September 11, 2026 — reserve before then.</span></div>
-    <div className="booking-panel"><div><span>Official room block</span><strong>$149/night special group rate</strong><p>September 25–27. Hilton confirms live room availability, taxes and fees, and the final total before booking.</p></div><ExternalLink href={bookingUrl} primary>Check rooms &amp; book with Hilton</ExternalLink></div>
+    <div className="booking-panel"><div><span>Booking</span><strong>Reserve directly with the hotel</strong><p>Rooms are booked on your own for September 25–27. Hilton shows live availability, taxes and fees, and the final total before you confirm.</p></div><ExternalLink href={bookingUrl} primary>Check rooms &amp; book with Hilton</ExternalLink></div>
   </div>;
 }
 
 function Room({ name, detail }: { name: string; detail: string }) {
-  return <article className="room"><div className="room-top"><h3>{name}</h3><span className="room-status">Special Rate</span></div><p>{detail}</p></article>;
+  return <article className="room"><div className="room-top"><h3>{name}</h3><span className="room-status">Available</span></div><p>{detail}</p></article>;
 }
 
 function RegistryScreen({ category, setCategory, products: visible, registry, onGift }: { category: string; setCategory: (value: string) => void; products: RegistryItem[]; registry: RegistryState; onGift: (item: RegistryItem) => void }) {

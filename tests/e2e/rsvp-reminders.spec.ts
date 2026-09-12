@@ -57,3 +57,15 @@ test("an all-declined RSVP does not show attendee reminders", async ({ page }) =
   await expect(page.getByRole("button", { name: "Change response" })).toBeVisible();
   await expect(page.getByLabel("Before the baby shower")).toHaveCount(0);
 });
+
+test("a household that already replied sees its status instead of the RSVP nudge", async ({ page }) => {
+  await page.goto("/invite/attending-reminder");
+  await expect(page.getByText("You’re on the list — party of 1")).toBeVisible();
+  await expect(page.getByText("RSVP as soon as possible")).toHaveCount(0);
+});
+
+test("a household that declined sees a settled reply box, not a nudge", async ({ page }) => {
+  await page.goto("/invite/declined-reminder");
+  await expect(page.getByText("Thanks for letting us know")).toBeVisible();
+  await expect(page.getByText("RSVP as soon as possible")).toHaveCount(0);
+});

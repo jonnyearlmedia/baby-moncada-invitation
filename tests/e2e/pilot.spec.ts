@@ -77,7 +77,7 @@ test("a real RSVP survives reload and can be changed", async ({ page }) => {
 test("hotel, maps, and registry handoffs use their exact destinations", async ({ page }) => {
   await page.goto("/invite/murao");
   await page.getByRole("button", { name: "Hotel" }).click();
-  await expect(page.getByRole("link", { name: /Check rooms/ })).toHaveAttribute("href", /hilton\.com.*arrivalDate=2026-09-25.*groupCode=905/);
+  await expect(page.getByRole("link", { name: /Check rooms/ })).toHaveAttribute("href", /hilton\.com.*stsrhup/i);
   await page.getByRole("button", { name: "Travel" }).click();
   await expect(page.getByTitle(/Interactive map showing Hotel Centro/)).toHaveAttribute("src", /openstreetmap\.org.*marker=38\.3516523%2C-122\.7205662/);
   await expect(page.getByRole("link", { name: "Apple Maps" })).toHaveAttribute("href", /maps\.apple\.com.*5870/);
