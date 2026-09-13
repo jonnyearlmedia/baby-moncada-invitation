@@ -251,7 +251,7 @@ function InviteScreen({ countdown, rsvp, deadlinePassed, onRSVP, onCalendar }: {
       <TicketFact label="Boarding time" value="4:00 PM" />
       <TicketFact full label="Destination" value="Hotel Centro Sonoma Wine Country" detail={HOTEL_ADDRESS} />
       <TicketFact full label="Passenger" value={passengerNames} />
-      <TicketFact full label="Attire" value="Casual" detail="Dress comfortably" />
+      <TicketFact full label="Attire" value="Casual" detail="Come as you are" />
     </section>
     <TicketDivider />
     <section className="countdown-wrap"><p className="phone-eyebrow">Time to boarding</p><div className="countdown" aria-label="Countdown to September 26, 2026">
