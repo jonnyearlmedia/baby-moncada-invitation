@@ -330,7 +330,7 @@ details[open] .household-body { animation:panel-in .24s ease-out; }
 .arrival-guide{margin:0 24px 20px;padding:18px 20px;border:1.5px dashed var(--app-line);border-radius:16px;background:var(--app-surface)}
 .feature-screen>.arrival-guide{margin:0 0 16px}
 .arrival-guide h3{margin:0 0 12px;font-family:var(--font-ticket-serif),'Instrument Serif',serif;font-size:26px;font-weight:400;line-height:1.05;letter-spacing:-.01em}
-.arrival-map{display:block;width:100%;height:auto;margin:0 0 15px;border-radius:12px;background:oklch(97% .008 232)}
+.arrival-map{display:block;width:100%;height:auto;margin:-4px 0 13px}
 .arrival-guide ol{display:grid;gap:13px;margin:0;padding:0;list-style:none}
 .arrival-guide li{display:flex;gap:12px;align-items:flex-start}
 .arrival-guide li>span{flex:none;width:26px;height:26px;display:grid;place-items:center;border-radius:50%;color:var(--app-accent-text);background:var(--app-accent);font-family:var(--font-ticket-mono),'IBM Plex Mono',monospace;font-size:10px;font-weight:700}
