@@ -47,9 +47,14 @@ test("the invitation turns into a live departure board on the day", async ({ pag
   await expect(page.locator(".departure-stamp")).toHaveText("TODAY");
 
   const actions = page.locator(".invite-screen > .day-of-actions");
+  await expect(actions.getByRole("link")).toHaveText(["Apple Maps", "Google Maps", "Waze"]);
   await expect(actions.getByRole("link", { name: "Apple Maps" })).toHaveAttribute("href", /maps\.apple\.com.*5870/);
   await expect(actions.getByRole("link", { name: "Google Maps" })).toHaveAttribute("href", /google\.com\/maps\/dir.*5870/);
-  await expect(actions.getByRole("link", { name: "Text Janelle" })).toHaveAttribute("href", "sms:+17073345988");
+  await expect(actions.getByRole("link", { name: "Waze" })).toHaveAttribute("href", /waze\.com\/ul.*5870.*navigate=yes/);
+
+  const contact = page.locator(".invite-screen > .day-of-contact");
+  await expect(contact.getByRole("link", { name: "Text Janelle" })).toHaveAttribute("href", "sms:+17073345988");
+  await expect(contact.getByRole("link", { name: "Call Janelle" })).toHaveAttribute("href", "tel:+17073345988");
 
   await expect(page.locator(".arrival-strip")).toContainText("Follow the Baby Moncada signs");
   await expect(page.locator(".diaper-raffle")).toContainText("Last call");
@@ -78,6 +83,7 @@ test("after the party the invitation settles into a thank you", async ({ page })
   await expect(page.locator(".arrival-strip")).toHaveCount(0);
   await expect(page.locator(".diaper-raffle")).toHaveCount(0);
   await expect(page.locator(".invite-screen > .day-of-actions")).toHaveCount(0);
+  await expect(page.locator(".invite-screen > .day-of-contact")).toHaveCount(0);
 
   const landed = page.locator(".landed-card");
   await expect(landed).toContainText("Thanks for flying with us");
@@ -102,10 +108,14 @@ test("travel and hotel screens answer the day's questions first", async ({ page 
   const banner = page.locator(".day-of-banner");
   await expect(banner).toContainText("Boarding now");
   await expect(banner).toContainText("5870 Labath Ave, Rohnert Park");
-  await expect(banner.getByRole("link", { name: "Apple Maps" })).toBeVisible();
+  await expect(banner.getByRole("link")).toHaveText(["Apple Maps", "Google Maps", "Waze"]);
+  await expect(banner.getByRole("button", { name: "Copy address" })).toBeVisible();
   await expect(page.getByText("Hilton currently lists parking at $8 per day")).toBeVisible();
 
   await nav.getByRole("button", { name: "Hotel", exact: true }).click();
-  await expect(page.getByText("Checking out Sunday, September 27")).toBeVisible();
+  await expect(page.getByText("Check out Sunday, September 27")).toBeVisible();
+  await expect(page.getByText("Still need a room tonight?")).toBeVisible();
+  await expect(page.locator(".room")).toHaveCount(0);
+  await expect(page.getByText("Check in")).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Check rooms & book with Hilton" })).toBeVisible();
 });

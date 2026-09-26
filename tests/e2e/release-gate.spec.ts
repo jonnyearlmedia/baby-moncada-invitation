@@ -31,6 +31,8 @@ test("every guest-facing control works and every destination is exact", async ({
 
   await nav.getByRole("button", { name: "Hotel", exact: true }).click();
   await expect(page.getByRole("link", { name: "Check rooms & book with Hilton" })).toHaveAttribute("href", /hilton\.com.*stsrhup/i);
+  await expect(page.locator(".room")).toHaveCount(2);
+  await expect(page.locator(".room-status")).toHaveCount(0);
 
   await nav.getByRole("button", { name: "Registry", exact: true }).click();
   const amazonHandoff = page.getByRole("link", { name: "See the full registry on Amazon" });

@@ -319,7 +319,11 @@ details[open] .household-body { animation:panel-in .24s ease-out; }
 
 .day-of-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:14px 24px 0}
 .day-of-actions .phone-action{min-height:50px;padding:10px 6px;border-radius:13px;font-size:12px;font-weight:700}
+.day-of-contact{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:8px 24px 0}
+.day-of-contact:has(>:only-child){grid-template-columns:1fr}
+.day-of-contact .phone-action{min-height:46px;padding:10px 6px;border-radius:13px;font-size:12px;font-weight:700}
 .day-of-banner .day-of-actions{margin:12px 0 0}
+.day-of-banner .day-of-contact{margin:8px 0 0}
 .invite-screen.day-of .ticket-hero{padding-top:20px}
 .invite-screen.day-of .ticket-hero h1{font-size:38px}
 
@@ -345,5 +349,5 @@ details[open] .household-body { animation:panel-in .24s ease-out; }
 .save-invite.compact{opacity:.9}
 .save-invite.compact p span,.save-invite.compact p small{display:none}
 
-@media(max-width:350px){.departure-board,.day-of-actions,.arrival-strip,.landed-card{margin-inline:18px}.board-grid{gap:7px}.board-grid dd{font-size:11px}.board-status{font-size:14px}}
+@media(max-width:350px){.departure-board,.day-of-actions,.day-of-contact,.arrival-strip,.landed-card{margin-inline:18px}.board-grid{gap:7px}.board-grid dd{font-size:11px}.board-status{font-size:14px}}
 @media(prefers-reduced-motion:reduce){.split-flap b,.departure-stamp{animation:none}.board-status i{animation:none}}

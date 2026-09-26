@@ -11,6 +11,7 @@ const REGISTRY_URL = "https://www.amazon.com/baby-reg/janelle-moncada-november-2
 const HOTEL_ADDRESS = "5870 Labath Ave, Rohnert Park, CA 94928";
 const HOTEL_APPLE_MAPS = "https://maps.apple.com/?daddr=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&dirflg=d";
 const HOTEL_GOOGLE_MAPS = "https://www.google.com/maps/dir/?api=1&destination=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&travelmode=driving&dir_action=navigate";
+const HOTEL_WAZE = "https://waze.com/ul?q=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&navigate=yes";
 const HOTEL_MAP_EMBED = "https://www.openstreetmap.org/export/embed.html?bbox=-122.7305%2C38.3456%2C-122.7105%2C38.3577&layer=mapnik&marker=38.3516523%2C-122.7205662";
 
 const EVENT_TIME_ZONE = "America/Los_Angeles";
@@ -284,12 +285,22 @@ function DepartureBoard({ phase, countdown }: { phase: Phase; countdown: Countdo
   </section>;
 }
 
-function DayOfActions({ phone }: { phone: string }) {
+function MapActions() {
   return <div className="day-of-actions">
     <ExternalLink href={HOTEL_APPLE_MAPS} primary>Apple Maps</ExternalLink>
     <ExternalLink href={HOTEL_GOOGLE_MAPS} primary>Google Maps</ExternalLink>
-    <a className="phone-action" href={`sms:${phone}`}>Text Janelle</a>
+    <ExternalLink href={HOTEL_WAZE} primary>Waze</ExternalLink>
   </div>;
+}
+
+function DayOfActions({ phone }: { phone: string }) {
+  return <>
+    <MapActions />
+    <div className="day-of-contact">
+      <a className="phone-action" href={`sms:${phone}`}>Text Janelle</a>
+      <a className="phone-action" href={`tel:${phone}`}>Call Janelle</a>
+    </div>
+  </>;
 }
 
 function ArrivalStrip() {
@@ -411,20 +422,22 @@ function StayScreen({ bookingUrl, phase }: { bookingUrl: string; phase: Phase })
   const dayOf = phase !== "scheduled";
   return <div className="feature-screen">
     <ScreenHeader kicker="Boarding Pass · Hotel Stay" title="Stay on site" subtitle="Hotel Centro Sonoma Wine Country · Tapestry by Hilton" mark="" />
-    {dayOf && <div className="day-of-banner"><span>Today</span><strong>You are already at the destination</strong><p>The shower room and the guest rooms are in the same building, so there is no drive between them.</p></div>}
+    {dayOf && <div className="day-of-banner"><span>Staying over</span><strong>Check out Sunday, September 27</strong><p>Ask the front desk if you need a later time. The shower is in this same building, so there is no drive between your room and the party.</p></div>}
     <div className="info-block venue-block"><strong>Hotel Centro Sonoma Wine Country</strong><p>Tapestry by Hilton<br />{HOTEL_ADDRESS}</p></div>
-    <div className="stay-facts two-up"><div><span>Check in</span><strong>Fri, Sep 25</strong></div><div><span>Check out</span><strong>Sun, Sep 27</strong></div></div>
-    <div className="room-list">
-      <Room name="1 King Bed" detail="Sleeps 2 · workspace · mini refrigerator" />
-      <Room name="2 Queen Beds" detail="Sleeps 4 · workspace · mini refrigerator" />
-    </div>
+    {!dayOf && <>
+      <div className="stay-facts two-up"><div><span>Check in</span><strong>Fri, Sep 25</strong></div><div><span>Check out</span><strong>Sun, Sep 27</strong></div></div>
+      <div className="room-list">
+        <Room name="1 King Bed" detail="Sleeps 2 · workspace · mini refrigerator" />
+        <Room name="2 Queen Beds" detail="Sleeps 4 · workspace · mini refrigerator" />
+      </div>
+    </>}
     <div className="amenities"><span>Free Wi-Fi</span><span>Outdoor pool</span><span>Restaurant</span><span>Fitness center</span><span>Pet friendly</span></div>
-    <div className="booking-panel"><div><span>Booking</span><strong>{dayOf ? "Checking out Sunday, September 27" : "Reserve directly with the hotel"}</strong><p>{dayOf ? "If you are staying over, the front desk handles checkout and can answer questions about a later time. Same day rooms depend on whatever Hilton still has open." : "Rooms are booked on your own for September 25 to 27. Hilton shows live availability, taxes and fees, and the final total before you confirm."}</p></div><ExternalLink href={bookingUrl} primary={!dayOf}>Check rooms &amp; book with Hilton</ExternalLink></div>
+    <div className="booking-panel"><div><span>Booking</span><strong>{dayOf ? "Still need a room tonight?" : "Reserve directly with the hotel"}</strong><p>{dayOf ? "Whatever Hilton still has open is what is left. Availability, taxes and fees, and the final total are live on their site." : "Rooms are booked on your own for September 25 to 27. Hilton shows live availability, taxes and fees, and the final total before you confirm."}</p></div><ExternalLink href={bookingUrl} primary={!dayOf}>Check rooms &amp; book with Hilton</ExternalLink></div>
   </div>;
 }
 
 function Room({ name, detail }: { name: string; detail: string }) {
-  return <article className="room"><div className="room-top"><h3>{name}</h3><span className="room-status">Available</span></div><p>{detail}</p></article>;
+  return <article className="room"><div className="room-top"><h3>{name}</h3></div><p>{detail}</p></article>;
 }
 
 function RegistryScreen({ category, setCategory, products: visible, registry, onGift }: { category: string; setCategory: (value: string) => void; products: RegistryItem[]; registry: RegistryState; onGift: (item: RegistryItem) => void }) {
@@ -484,10 +497,10 @@ function MapsScreen({ phase, countdown }: { phase: Phase; countdown: Countdown }
   const untilBoarding = phase === "today" ? `Boarding in ${countdown.days * 24 + countdown.hours}h ${String(countdown.minutes).padStart(2, "0")}m` : phase === "landed" ? "The shower has wrapped" : "Boarding now";
   return <div className="feature-screen">
     <ScreenHeader kicker="Boarding Pass · Travel" title="Shower & stay" subtitle="One destination — no travel between the shower and hotel." mark="" />
-    {dayOf && <div className="day-of-banner"><span>{untilBoarding}</span><strong>5870 Labath Ave, Rohnert Park</strong><div className="day-of-actions"><ExternalLink href={HOTEL_APPLE_MAPS} primary>Apple Maps</ExternalLink><ExternalLink href={HOTEL_GOOGLE_MAPS} primary>Google Maps</ExternalLink><button className="phone-action" onClick={copyAddress}>{copyLabel}</button></div></div>}
+    {dayOf && <div className="day-of-banner"><span>{untilBoarding}</span><strong>5870 Labath Ave, Rohnert Park</strong><MapActions /><div className="day-of-contact"><button className="phone-action" onClick={copyAddress}>{copyLabel}</button></div></div>}
     <div className="map-visual"><iframe title="Interactive map showing Hotel Centro Sonoma Wine Country at 5870 Labath Avenue" loading="lazy" src={HOTEL_MAP_EMBED} /></div>
     <div className="place-list">
-      <article className="place venue-place"><span>Your destination</span><h3>Hotel Centro Sonoma Wine Country</h3><p>{HOTEL_ADDRESS}</p><div><ExternalLink href={HOTEL_APPLE_MAPS}>Apple Maps</ExternalLink><ExternalLink href={HOTEL_GOOGLE_MAPS}>Google Maps</ExternalLink><ExternalLink href="https://waze.com/ul?q=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&navigate=yes">Waze</ExternalLink><button className="phone-action" onClick={copyAddress}>{copyLabel}</button></div></article>
+      <article className="place venue-place"><span>Your destination</span><h3>Hotel Centro Sonoma Wine Country</h3><p>{HOTEL_ADDRESS}</p><div><ExternalLink href={HOTEL_APPLE_MAPS}>Apple Maps</ExternalLink><ExternalLink href={HOTEL_GOOGLE_MAPS}>Google Maps</ExternalLink><ExternalLink href={HOTEL_WAZE}>Waze</ExternalLink><button className="phone-action" onClick={copyAddress}>{copyLabel}</button></div></article>
       <div className="arrival-card"><span>On arrival</span><ol><li>Use the hotel&apos;s on-site self-parking. Hilton currently lists parking at $8 per day.</li><li>Enter through the main hotel lobby.</li><li>Ask the front desk for the Baby Moncada shower location or follow any posted event signs.</li></ol></div>
       <div className="wear-note"><strong>What to wear</strong><p>Late September is typically warm during the day and cooler in the evening. Dress comfortably and bring a light layer.</p></div>
       <p className="travel-note">The shower and guest rooms share the same address.</p>
