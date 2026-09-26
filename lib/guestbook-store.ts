@@ -21,6 +21,9 @@ const CACHE_MS = 4_000;
 
 let bucketReady: Promise<void> | null = null;
 let cache: { at: number; entries: StoredEntry[] } | null = null;
+// Entry files only change when hidden or shown, so each one is downloaded once
+// and again only when its updated_at moves.
+const known = new Map<string, { version: string; entry: StoredEntry }>();
 
 function client() {
   return createAdminServerClient();
@@ -67,7 +70,14 @@ async function loadAll() {
   const { data, error } = await client().storage.from(GUESTBOOK_BUCKET).list(ENTRY_DIR, { limit: 1000, sortBy: { column: "created_at", order: "desc" } });
   if (error) throw error;
   const files = (data ?? []).filter((file) => file.name.endsWith(".json"));
-  const entries = (await Promise.all(files.map((file) => readEntry(`${ENTRY_DIR}/${file.name}`))))
+  const entries = (await Promise.all(files.map(async (file) => {
+    const version = file.updated_at ?? file.created_at ?? "";
+    const hit = known.get(file.name);
+    if (hit && hit.version === version) return hit.entry;
+    const entry = await readEntry(`${ENTRY_DIR}/${file.name}`);
+    if (entry) known.set(file.name, { version, entry });
+    return entry;
+  })))
     .filter((entry): entry is StoredEntry => Boolean(entry))
     .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
   cache = { at: Date.now(), entries };

@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 const RATE_WINDOW_MS = 10 * 60 * 1000;
 // Guests on the venue wifi share one public IP, so this only stops runaway spam.
-const RATE_LIMIT = 40;
+const RATE_LIMIT = 150;
 const recentByIp = new Map<string, number[]>();
 
 const entrySchema = z.object({
