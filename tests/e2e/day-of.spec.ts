@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { BOARDING, DAY_OF, IN_FLIGHT, LANDED } from "./event-clock";
+import { BEFORE_EVENT, BOARDING, DAY_OF, IN_FLIGHT, LANDED } from "./event-clock";
 
 const event = {
   title: "Baby Moncada Baby Shower",
@@ -68,6 +68,22 @@ test("the invitation turns into a live departure board on the day", async ({ pag
   await expect(page.locator(".pass-conf")).toHaveText(`Conf ${record}`);
   const details = page.locator(".ticket-details");
   for (const field of ["Gate", "The Reunion Room", "Group", "Family", "Seat", "Open"]) await expect(details).toContainText(field);
+});
+
+test("the shared album is offered through every day-of phase", async ({ page }) => {
+  for (const at of [DAY_OF, BOARDING, IN_FLIGHT, LANDED]) {
+    await openInvitation(page, at);
+    const album = page.locator(".album-card");
+    await expect(album).toContainText("Janelle & Fernando\u2019s Baby Shower");
+    await expect(album).toContainText("No Apple account needed");
+    await expect(album.getByRole("link", { name: "Add your photos" })).toHaveAttribute("href", "https://photos.icloud.com/shared/album/0eccWFCNcNKvZ0UPIb95aAiwg");
+    await expect(album.getByRole("link", { name: "Text Janelle" })).toHaveAttribute("href", "sms:+17073345988");
+  }
+});
+
+test("the shared album stays off the pre-event invitation", async ({ page }) => {
+  await openInvitation(page, BEFORE_EVENT);
+  await expect(page.locator(".album-card")).toHaveCount(0);
 });
 
 test("the departure checklist ticks, persists, and never asks for a gift", async ({ page }) => {

@@ -376,3 +376,13 @@ details[open] .household-body { animation:panel-in .24s ease-out; }
 .checklist-note{margin:12px 0 0;padding-top:11px;border-top:1px dashed var(--app-line);color:var(--app-muted);font-size:11px;line-height:1.5}
 
 @media(max-width:350px){.departure-checklist{margin-inline:18px}.barcode-code{margin-inline:18px}}
+
+/* Shared photo album */
+.album-card{display:grid;gap:6px;margin:0 24px 18px;padding:18px 20px;border:1.5px solid var(--app-accent);border-radius:16px;background:oklch(93% .025 232)}
+.album-card>span{color:var(--app-accent);font-family:var(--font-ticket-mono),'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.album-card>strong{font-family:var(--font-ticket-serif),'Instrument Serif',serif;font-size:19px;font-weight:400;line-height:1.2}
+.album-card>p{margin:2px 0 0;color:var(--app-muted);font-size:11px;line-height:1.5}
+.album-card .phone-action{margin-top:7px}
+.album-card>small{color:var(--app-muted);font-size:11px;line-height:1.5}
+.album-card>small a{color:var(--app-accent);font-weight:700}
+@media(max-width:350px){.album-card{margin-inline:18px}}

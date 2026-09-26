@@ -10,6 +10,8 @@ const FALLBACK_RSVP_DEADLINE = "2026-09-11";
 const REGISTRY_URL = "https://www.amazon.com/baby-reg/janelle-moncada-november-2026-rohnertpark/10AIJQD53FRAQ";
 const HOTEL_ADDRESS = "5870 Labath Ave, Rohnert Park, CA 94928";
 const EVENT_ROOM = "The Reunion Room";
+const PHOTO_ALBUM_URL = "https://photos.icloud.com/shared/album/0eccWFCNcNKvZ0UPIb95aAiwg";
+const PHOTO_ALBUM_NAME = "Janelle & Fernando\u2019s Baby Shower";
 const HOTEL_APPLE_MAPS = "https://maps.apple.com/?daddr=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&dirflg=d";
 const HOTEL_GOOGLE_MAPS = "https://www.google.com/maps/dir/?api=1&destination=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&travelmode=driving&dir_action=navigate";
 const HOTEL_WAZE = "https://waze.com/ul?q=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&navigate=yes";
@@ -77,7 +79,7 @@ function getPhase(startsAt: number, now: number): Phase {
 const CHECKLIST = [
   { id: "diapers", label: "Diapers, size 2 or up", detail: "One pack is one raffle entry" },
   { id: "layer", label: "A light layer", detail: "It cools off after sundown" },
-  { id: "phone", label: "Phone charged", detail: "For photos" },
+  { id: "phone", label: "Phone charged", detail: "Photos from today go in the shared album" },
   { id: "parking", label: "Card or cash for parking", detail: "$8 per day, on site" },
 ] as const;
 
@@ -413,6 +415,21 @@ function ArrivalStrip() {
   </section>;
 }
 
+function PhotoAlbumCard({ phase, phone }: { phase: Phase; phone: string }) {
+  const line = phase === "landed"
+    ? "The album stays open. Add yours whenever you get to them."
+    : phase === "today"
+      ? "Everything from today lands in one album. Open it, join, and add the ones you take."
+      : "Add your photos as you go. Everyone in the album sees them.";
+  return <section className="album-card" aria-label="Shared photo album">
+    <span>Shared album</span>
+    <strong>{PHOTO_ALBUM_NAME}</strong>
+    <p>{line}</p>
+    <ExternalLink href={PHOTO_ALBUM_URL} primary>Add your photos</ExternalLink>
+    <small>Anyone with the link can join and post. No Apple account needed, and it works on Android and in a browser. Stuck? <a href={`sms:${phone}`}>Text Janelle</a>.</small>
+  </section>;
+}
+
 function DayOfStatus({ phase, rsvp }: { phase: Phase; rsvp: RSVP }) {
   const attending = rsvp.guests.filter((guest) => guest.response === "yes").length;
   if (phase === "landed") return <div className="rsvp-deadline confirmed day-of-status">
@@ -491,6 +508,7 @@ function InviteScreen({ phase, countdown, rsvp, deadlinePassed, onRSVP, onCalend
         <div className="baby-on-board"><strong>✈ Baby On Board</strong><span>Moncada Airways</span></div>
         <div className="diaper-raffle"><strong>✈ Diaper Raffle</strong><span>{dayOf ? "Last call. Bring a pack of diapers, size 2 or up, and you are in the drawing. There is still time to grab one on the way." : "Bring a pack of diapers to enter. Sizes 2 and up are the biggest help, he\u2019ll grow into them fast."}</span></div>
       </>}
+    {dayOf && <PhotoAlbumCard phase={phase} phone={rsvp.event?.contactPhone ?? CONTACT_PHONE} />}
     {dayOf ? <DayOfStatus phase={phase} rsvp={rsvp} /> : rsvp.submitted ? <RSVPConfirmed rsvp={rsvp} /> : <RSVPDeadline value={rsvp.event?.rsvpDeadline ?? FALLBACK_RSVP_DEADLINE} urgent={deadlinePassed} />}
     <div className="home-actions">{dayOf ? <button className="phone-action full" onClick={onRSVP}>{rsvp.submitted ? "See your RSVP" : "RSVP now"}</button> : <><button className="phone-action primary" onClick={onRSVP}>RSVP</button><button className="phone-action" onClick={onCalendar}>Add to calendar</button></>}</div>
     <div className={`save-invite${dayOf ? " compact" : ""}`}><strong>📌 Save this invitation</strong><p>Add this invitation to your Home Screen for quick access to the registry, directions, and RSVP.<span><b>iPhone (Safari or Chrome):</b> Tap Share → Add to Home Screen.</span><small>Prefer a bookmark? Use Add Bookmark in Safari or Add to Bookmarks in Chrome.</small></p><button onClick={shareInvite}>{shareLabel}</button></div>
