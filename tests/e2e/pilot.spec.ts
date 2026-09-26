@@ -1,7 +1,9 @@
 import { expect, test } from "@playwright/test";
+import { BEFORE_EVENT } from "./event-clock";
 
 const browserErrors = new WeakMap<import("@playwright/test").Page, string[]>();
 test.beforeEach(async ({ page }) => {
+  await page.clock.setFixedTime(BEFORE_EVENT);
   const errors: string[] = [];
   browserErrors.set(page, errors);
   page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });

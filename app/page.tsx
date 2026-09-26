@@ -2,6 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element -- Amazon supplies live, variable registry image URLs; native lazy loading keeps the list resilient when an item image changes. */
 
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { EventSettings } from "@/lib/invitation-types";
 
@@ -9,20 +10,35 @@ const BOOKING_URL = "https://www.hilton.com/en/hotels/stsrhup-hotel-centro-sonom
 const FALLBACK_RSVP_DEADLINE = "2026-09-11";
 const REGISTRY_URL = "https://www.amazon.com/baby-reg/janelle-moncada-november-2026-rohnertpark/10AIJQD53FRAQ";
 const HOTEL_ADDRESS = "5870 Labath Ave, Rohnert Park, CA 94928";
+const EVENT_ROOM = "The Reunion Room";
+const PHOTO_ALBUM_URL = "https://photos.icloud.com/shared/album/0eccWFCNcNKvZ0UPIb95aAiwg";
+const PHOTO_ALBUM_NAME = "Janelle & Fernando\u2019s Baby Shower";
 const HOTEL_APPLE_MAPS = "https://maps.apple.com/?daddr=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&dirflg=d";
 const HOTEL_GOOGLE_MAPS = "https://www.google.com/maps/dir/?api=1&destination=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&travelmode=driving&dir_action=navigate";
+const HOTEL_WAZE = "https://waze.com/ul?q=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&navigate=yes";
 const HOTEL_MAP_EMBED = "https://www.openstreetmap.org/export/embed.html?bbox=-122.7305%2C38.3456%2C-122.7105%2C38.3577&layer=mapnik&marker=38.3516523%2C-122.7205662";
 
-const nav = [
-  ["invite", "home", "Invite"],
-  ["stay", "hotel", "Hotel"],
-  ["registry", "gift", "Registry"],
-  ["maps", "pin", "Travel"],
-  ["rsvp", "check", "RSVP"],
-] as const;
+const EVENT_TIME_ZONE = "America/Los_Angeles";
+const EVENT_START_ISO = "2026-09-26T23:00:00.000Z";
+const BOARDING_WINDOW_MS = 3600000;
+const EVENT_DURATION_MS = 18000000;
+const CONTACT_PHONE = "+17073345988";
 
-type View = (typeof nav)[number][0];
-type IconName = (typeof nav)[number][1] | "calendar";
+const NAV_ITEMS = {
+  invite: { icon: "home", label: "Invite", dayLabel: "Today" },
+  stay: { icon: "hotel", label: "Hotel", dayLabel: "Hotel" },
+  registry: { icon: "gift", label: "Registry", dayLabel: "Registry" },
+  maps: { icon: "pin", label: "Travel", dayLabel: "Travel" },
+  rsvp: { icon: "check", label: "RSVP", dayLabel: "RSVP" },
+} as const;
+
+const SCHEDULED_NAV = ["invite", "stay", "registry", "maps", "rsvp"] as const;
+const DAY_OF_NAV = ["invite", "maps", "registry", "rsvp", "stay"] as const;
+
+type View = keyof typeof NAV_ITEMS;
+type IconName = (typeof NAV_ITEMS)[View]["icon"] | "calendar";
+type Phase = "scheduled" | "today" | "boarding" | "inflight" | "landed";
+type Countdown = ReturnType<typeof getCountdown>;
 type RegistryOffer = { id: string | number; store: string; url: string; price: number | null; isRegistry: boolean; availability: string | null; availabilityText: string | null };
 type RegistryItem = { id: string | number; title: string; image: string; category: string; price: string | null; quantity: number; quantityNeeded: number; isFulfilled: boolean; reservedCount: number; offers: RegistryOffer[] };
 type RegistryState = { status: "loading" | "ready" | "handoff" | "error"; items: RegistryItem[]; updatedAt: string | null; refreshState: "current" | "refreshing" };
@@ -42,15 +58,55 @@ type RSVP = {
   event: EventSettings | null;
 };
 
-function getCountdown() {
-  const target = new Date(2026, 8, 26, 16, 0, 0).getTime();
-  const difference = Math.max(0, target - Date.now());
+const eventDayFormatter = new Intl.DateTimeFormat("en-CA", { timeZone: EVENT_TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" });
+
+function getCountdown(startsAt: number, now: number) {
+  const difference = Math.max(0, startsAt - now);
   return {
     days: Math.floor(difference / 86400000),
     hours: Math.floor((difference % 86400000) / 3600000),
     minutes: Math.floor((difference % 3600000) / 60000),
     seconds: Math.floor((difference % 60000) / 1000),
   };
+}
+
+function getPhase(startsAt: number, now: number): Phase {
+  if (now >= startsAt + EVENT_DURATION_MS) return "landed";
+  if (now >= startsAt + BOARDING_WINDOW_MS) return "inflight";
+  if (now >= startsAt) return "boarding";
+  return eventDayFormatter.format(now) === eventDayFormatter.format(startsAt) ? "today" : "scheduled";
+}
+
+function seedFrom(value: string) {
+  let seed = 2166136261;
+  for (let index = 0; index < value.length; index += 1) seed = Math.imul(seed ^ value.charCodeAt(index), 16777619) >>> 0;
+  return seed || 1;
+}
+
+function confirmationCode(slug: string) {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let seed = seedFrom(slug);
+  let code = "";
+  for (let index = 0; index < 6; index += 1) {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    code += alphabet[seed % alphabet.length];
+  }
+  return code;
+}
+
+function barcodePattern(slug: string) {
+  let seed = seedFrom(`${slug}-barcode`);
+  const next = () => (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0);
+  const stops: string[] = [];
+  let position = 0;
+  while (position < 100) {
+    const bar = Math.min(100, position + 0.35 + (next() % 5) * 0.3);
+    stops.push(`var(--app-text) ${position}% ${bar}%`);
+    const gap = Math.min(100, bar + 0.45 + (next() % 4) * 0.28);
+    stops.push(`transparent ${bar}% ${gap}%`);
+    position = gap;
+  }
+  return `linear-gradient(90deg, ${stops.join(",")})`;
 }
 
 function formatNameList(names: string[]) {
@@ -82,7 +138,7 @@ export default function Home({ inviteSlug = "murao" }: { inviteSlug?: string }) 
   const [registry, setRegistry] = useState<RegistryState>({ status: "loading", items: [], updatedAt: null, refreshState: "current" });
   const appPageRef = useRef<HTMLElement>(null);
   const phoneContentRef = useRef<HTMLDivElement>(null);
-  const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [clock, setClock] = useState<{ phase: Phase; countdown: Countdown }>({ phase: "scheduled", countdown: { days: 0, hours: 0, minutes: 0, seconds: 0 } });
   const [rsvp, setRsvp] = useState<RSVP>({ canonicalSlug: inviteSlug, household: "", invitationLabel: "", messageGreeting: "", guests: [], note: "", submitted: false, updatedAt: null, status: "loading", error: null, event: null });
 
   useEffect(() => {
@@ -117,16 +173,23 @@ export default function Home({ inviteSlug = "murao" }: { inviteSlug?: string }) 
     };
   }, []);
 
+  const startsAt = useMemo(() => {
+    const configured = rsvp.event ? Date.parse(rsvp.event.startsAt) : Number.NaN;
+    return Number.isNaN(configured) ? Date.parse(EVENT_START_ISO) : configured;
+  }, [rsvp.event]);
+
   useEffect(() => {
-    const initialFrame = window.requestAnimationFrame(() => {
-      setCountdown(getCountdown());
-    });
-    const timer = window.setInterval(() => setCountdown(getCountdown()), 1000);
+    const tick = () => {
+      const now = Date.now();
+      setClock({ phase: getPhase(startsAt, now), countdown: getCountdown(startsAt, now) });
+    };
+    const initialFrame = window.requestAnimationFrame(tick);
+    const timer = window.setInterval(tick, 1000);
     return () => {
       window.cancelAnimationFrame(initialFrame);
       window.clearInterval(timer);
     };
-  }, []);
+  }, [startsAt]);
 
   useEffect(() => {
     let active = true;
@@ -192,7 +255,7 @@ export default function Home({ inviteSlug = "murao" }: { inviteSlug?: string }) 
       "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Baby Moncada//Invitation//EN", "BEGIN:VEVENT",
       "UID:baby-moncada-20260926", "DTSTART;TZID=America/Los_Angeles:20260926T160000",
       "SUMMARY:Baby Moncada Baby Shower", `LOCATION:${HOTEL_ADDRESS}`,
-      "DESCRIPTION:Join Janelle and Fernando for the Baby Moncada baby shower at Hotel Centro Sonoma Wine Country. Attire is casual. Diaper raffle \u2014 bring a pack of diapers in size 2 or larger for a chance to win a prize.",
+      `DESCRIPTION:Join Janelle and Fernando for the Baby Moncada baby shower in the Reunion Room at Hotel Centro Sonoma Wine Country. Attire is casual. Diaper raffle: bring a pack of diapers in size 2 or larger for a chance to win a prize.`,
       "END:VEVENT", "END:VCALENDAR",
     ].join("\r\n");
     const link = document.createElement("a");
@@ -202,18 +265,22 @@ export default function Home({ inviteSlug = "murao" }: { inviteSlug?: string }) 
     URL.revokeObjectURL(link.href);
   }
 
+  const { phase, countdown } = clock;
+  const dayOf = phase !== "scheduled";
+  const navOrder = dayOf ? DAY_OF_NAV : SCHEDULED_NAV;
+
   return (
     <main className="app-page" ref={appPageRef}>
-      <section className="phone boarding-pass" aria-label="Baby Moncada invitation">
+      <section className="phone boarding-pass" data-phase={phase} aria-label="Baby Moncada invitation">
         <div className="phone-content" ref={phoneContentRef}>
-          {view === "invite" && <InviteScreen countdown={countdown} rsvp={rsvp} deadlinePassed={deadlinePassed} onRSVP={() => changeView("rsvp")} onCalendar={downloadCalendar} />}
-          {view === "stay" && <StayScreen bookingUrl={BOOKING_URL} />}
+          {view === "invite" && <InviteScreen phase={phase} countdown={countdown} rsvp={rsvp} deadlinePassed={deadlinePassed} onRSVP={() => changeView("rsvp")} onCalendar={downloadCalendar} />}
+          {view === "stay" && <StayScreen bookingUrl={BOOKING_URL} phase={phase} />}
           {view === "registry" && <RegistryScreen category={category} setCategory={setCategory} products={visibleProducts} registry={registry} onGift={(item) => setOverlay({ type: "gift", item })} />}
-          {view === "maps" && <MapsScreen />}
-          {view === "rsvp" && <RSVPScreen rsvp={rsvp} setRsvp={setRsvp} deadlinePassed={deadlinePassed} onSave={saveRSVP} />}
+          {view === "maps" && <MapsScreen phase={phase} countdown={countdown} />}
+          {view === "rsvp" && <RSVPScreen rsvp={rsvp} setRsvp={setRsvp} deadlinePassed={deadlinePassed} phase={phase} onSave={saveRSVP} />}
         </div>
         <nav className="phone-nav" aria-label="Invitation features">
-          {nav.map((item) => <button key={item[0]} className={view === item[0] ? "selected" : ""} aria-current={view === item[0] ? "page" : undefined} onClick={() => changeView(item[0])}><span className="nav-icon"><Icon name={item[1]} />{item[0] === "rsvp" && rsvp.submitted && <i aria-hidden="true" />}</span>{item[2]}</button>)}
+          {navOrder.map((key) => <button key={key} className={view === key ? "selected" : ""} aria-current={view === key ? "page" : undefined} onClick={() => changeView(key)}><span className="nav-icon"><Icon name={NAV_ITEMS[key].icon} />{key === "rsvp" && rsvp.submitted && <i aria-hidden="true" />}</span>{dayOf ? NAV_ITEMS[key].dayLabel : NAV_ITEMS[key].label}</button>)}
         </nav>
         {overlay && <HandoffSheet overlay={overlay} onClose={() => setOverlay(null)} />}
       </section>
@@ -221,48 +288,174 @@ export default function Home({ inviteSlug = "murao" }: { inviteSlug?: string }) 
   );
 }
 
-function InviteScreen({ countdown, rsvp, deadlinePassed, onRSVP, onCalendar }: { countdown: ReturnType<typeof getCountdown>; rsvp: RSVP; deadlinePassed: boolean; onRSVP: () => void; onCalendar: () => void }) {
+const PHASE_COPY: Record<Phase, { stamp: string; status: string; note: string; script: string }> = {
+  scheduled: { stamp: "ON TIME", status: "ON TIME", note: "Boarding pass issued", script: "the little one is coming \u2708" },
+  today: { stamp: "TODAY", status: "BOARDING SOON", note: "Doors open at 4:00 PM", script: "today is the day \u2708" },
+  boarding: { stamp: "BOARDING", status: "NOW BOARDING", note: "Come on in. We are in the Reunion Room.", script: "we are boarding \u2708" },
+  inflight: { stamp: "IN FLIGHT", status: "IN FLIGHT", note: "The shower is underway. Late arrivals still welcome.", script: "wheels up \u2708" },
+  landed: { stamp: "ARRIVED", status: "ARRIVED", note: "Thank you for flying Moncada Airways", script: "thank you for coming \u2708" },
+};
+
+function SplitFlap({ text }: { text: string }) {
+  return <span className="split-flap">
+    <span className="flap-text">{text}</span>
+    {Array.from(text).map((character, index) => <b key={`${text}-${index}`} aria-hidden="true" style={{ animationDelay: `${index * 40}ms` }}>{character === " " ? "\u00a0" : character}</b>)}
+  </span>;
+}
+
+function DepartureBoard({ phase, countdown }: { phase: Phase; countdown: Countdown }) {
+  const copy = PHASE_COPY[phase];
+  const hours = countdown.days * 24 + countdown.hours;
+  return <section className="departure-board" data-phase={phase} aria-label={`Flight status ${copy.status}`}>
+    <div className="board-head"><span>Moncada Airways</span><span>Flt JF926</span></div>
+    <dl className="board-grid">
+      <div><dt>Destination</dt><dd>Hotel Centro, Rohnert Park</dd></div>
+      <div><dt>Departs</dt><dd>4:00 PM</dd></div>
+      <div><dt>Gate</dt><dd>{EVENT_ROOM}</dd></div>
+    </dl>
+    <p className="board-status"><i aria-hidden="true" /><SplitFlap text={copy.status} /></p>
+    {phase === "today" && <div className="board-clock" aria-label={`${hours} hours ${countdown.minutes} minutes until boarding`}>
+      {([["Hrs", hours], ["Min", countdown.minutes], ["Sec", countdown.seconds]] as const).map(([label, value]) => <div key={label}><strong>{String(value).padStart(2, "0")}</strong><span>{label}</span></div>)}
+    </div>}
+    <p className="board-note">{copy.note}</p>
+  </section>;
+}
+
+function MapActions() {
+  return <div className="day-of-actions">
+    <ExternalLink href={HOTEL_APPLE_MAPS} primary>Apple Maps</ExternalLink>
+    <ExternalLink href={HOTEL_GOOGLE_MAPS} primary>Google Maps</ExternalLink>
+    <ExternalLink href={HOTEL_WAZE} primary>Waze</ExternalLink>
+  </div>;
+}
+
+function DayOfActions({ phone }: { phone: string }) {
+  return <>
+    <MapActions />
+    <div className="day-of-contact">
+      <a className="phone-action" href={`sms:${phone}`}>Text Janelle</a>
+      <a className="phone-action" href={`tel:${phone}`}>Call Janelle</a>
+    </div>
+  </>;
+}
+
+function ArrivalGuide() {
+  return <section className="arrival-guide" aria-label="When you arrive">
+    <h3>When you arrive&#8230;</h3>
+    <Image
+      className="arrival-map"
+      src="/arrival-map.png"
+      alt="Ground floor plan. A red arrow leaves the entrance at the bottom left, runs up into the lobby, then right across the lobby to a small pre function room that opens into the room marked Janelle and Fernando&#8217;s Baby Shower."
+      width={1448}
+      height={1086}
+      sizes="(max-width: 480px) 100vw, 430px"
+    />
+    <ol>
+      <li><span aria-hidden="true">01</span><div><strong>Park on site</strong><p>Hilton currently lists parking at $8 per day.</p></div></li>
+      <li><span aria-hidden="true">02</span><div><strong>In the main entrance</strong><p>Straight ahead into the lobby.</p></div></li>
+      <li><span aria-hidden="true">03</span><div><strong>Turn right and cross the lobby</strong><p>Follow it all the way to the far end.</p></div></li>
+      <li><span aria-hidden="true">04</span><div><strong>Through the pre function room</strong><p>The small room just before the space.</p></div></li>
+      <li><span aria-hidden="true">05</span><div><strong>The Reunion Room</strong><p>Janelle and Fernando&#8217;s Baby Shower.</p></div></li>
+    </ol>
+  </section>;
+}
+
+function PhotoAlbumCard({ phase, phone }: { phase: Phase; phone: string }) {
+  const line = phase === "landed"
+    ? "The album stays open. Add yours whenever you get to them."
+    : phase === "today"
+      ? "Everything from today lands in one album. Open it, join, and add the ones you take."
+      : "Add your photos as you go. Everyone in the album sees them.";
+  return <section className="album-card" aria-label="Shared photo album">
+    <span>Shared album</span>
+    <strong>{PHOTO_ALBUM_NAME}</strong>
+    <p>{line}</p>
+    <ExternalLink href={PHOTO_ALBUM_URL} primary>Add your photos</ExternalLink>
+    <small>Anyone with the link can join and post. No Apple account needed, and it works on Android and in a browser. Stuck? <a href={`sms:${phone}`}>Text Janelle</a>.</small>
+  </section>;
+}
+
+function DayOfStatus({ phase, rsvp }: { phase: Phase; rsvp: RSVP }) {
+  const attending = rsvp.guests.filter((guest) => guest.response === "yes").length;
+  if (phase === "landed") return <div className="rsvp-deadline confirmed day-of-status">
+    <span>Flight complete</span>
+    <strong>Thank you for celebrating</strong>
+    <p>Baby Moncada is due November 25, 2026. The registry stays open if you still want to send something.</p>
+  </div>;
+  if (!rsvp.submitted) return <div className="rsvp-deadline day-of-status urgent">
+    <span>No reply on file</span>
+    <strong>Come anyway</strong>
+    <p>We never heard back, but there is a seat with your name on it. Send Janelle a text if you are on your way.</p>
+  </div>;
+  if (attending === 0) return <div className="rsvp-deadline confirmed day-of-status">
+    <span>Reply received</span>
+    <strong>We will miss you today</strong>
+    <p>Thank you for letting us know. The registry stays open all the same.</p>
+  </div>;
+  return <div className="rsvp-deadline confirmed day-of-status">
+    <span>Checked in</span>
+    <strong>Party of {attending}, boarding at 4:00 PM</strong>
+    <p>{phase === "today" ? "See you in the Reunion Room." : "We are already in the Reunion Room. Come find us."}</p>
+  </div>;
+}
+
+function InviteScreen({ phase, countdown, rsvp, deadlinePassed, onRSVP, onCalendar }: { phase: Phase; countdown: Countdown; rsvp: RSVP; deadlinePassed: boolean; onRSVP: () => void; onCalendar: () => void }) {
   const [shareLabel, setShareLabel] = useState("Share invite");
   async function shareInvite() {
     try {
-      if (navigator.share) await navigator.share({ title: "Baby Moncada Baby Shower", text: "You’re invited to Janelle and Fernando’s baby shower", url: window.location.href });
+      if (navigator.share) await navigator.share({ title: "Baby Moncada Baby Shower", text: "You\u2019re invited to Janelle and Fernando\u2019s baby shower", url: window.location.href });
       else await navigator.clipboard.writeText(window.location.href);
-      setShareLabel("Link copied ✓");
+      setShareLabel("Link copied \u2713");
     } catch { return; }
     window.setTimeout(() => setShareLabel("Share invite"), 2000);
   }
+  const dayOf = phase !== "scheduled";
+  const copy = PHASE_COPY[phase];
+  const record = confirmationCode(rsvp.canonicalSlug);
   const passengerNames = rsvp.guests.map((guest) => guest.name).join(", ") || "Your invited party";
-  return <div className="invite-screen ticket-screen">
+  return <div className={`invite-screen ticket-screen${dayOf ? " day-of" : ""}`} data-phase={phase}>
     <header className="ticket-header">
-      <p>Boarding Pass<br />For {rsvp.invitationLabel || "your household"}</p>
-      <div className="paper-monogram" aria-hidden="true">J✦F</div>
+      <p>Boarding Pass<br />For {rsvp.invitationLabel || "your household"}<br /><span className="pass-conf">Conf {record}</span></p>
+      {dayOf ? <span className="departure-stamp" data-phase={phase}>{copy.stamp}</span> : <div className="paper-monogram" aria-hidden="true">J✦F</div>}
     </header>
+    {dayOf && <DepartureBoard phase={phase} countdown={countdown} />}
+    {dayOf && phase !== "landed" && <DayOfActions phone={rsvp.event?.contactPhone ?? CONTACT_PHONE} />}
     <section className="ticket-hero">
-      <p className="script-line">the little one is coming ✈</p>
+      <p className="script-line">{copy.script}</p>
       <h1>Baby<br />Moncada</h1>
       <p className="host-line">A baby shower honoring Janelle &amp; Fernando</p>
       <span className="boy-pill">A little boy is on the way</span>
-      <p className="recipient-line">{passengerNames} · Party of {rsvp.guests.length || "—"}</p>
+      <p className="recipient-line">{passengerNames} · Party of {rsvp.guests.length || "\u2014"}</p>
     </section>
-    <div className="flight-wrap"><svg className="flight-path" viewBox="0 0 300 56" aria-hidden="true"><path d="M6 44 C 80 10, 160 60, 230 18" /><text x="222" y="22">✈</text></svg></div>
+    {!dayOf && <div className="flight-wrap"><svg className="flight-path" viewBox="0 0 300 56" aria-hidden="true"><path d="M6 44 C 80 10, 160 60, 230 18" /><text x="222" y="22">✈</text></svg></div>}
     <TicketDivider />
     <section className="ticket-details">
       <TicketFact label="Departure" value="Sat, Sep 26 2026" />
       <TicketFact label="Boarding time" value="4:00 PM" />
+      <TicketFact label="Gate" value={EVENT_ROOM} />
+      <TicketFact label="Group" value="Family" />
+      <TicketFact label="Seat" value="Open" />
+      <TicketFact label="Parking" value="$8 per day" />
       <TicketFact full label="Destination" value="Hotel Centro Sonoma Wine Country" detail={HOTEL_ADDRESS} />
       <TicketFact full label="Passenger" value={passengerNames} />
       <TicketFact full label="Attire" value="Casual" detail="Dress comfortably" />
     </section>
     <TicketDivider />
-    <section className="countdown-wrap"><p className="phone-eyebrow">Time to boarding</p><div className="countdown" aria-label="Countdown to September 26, 2026">
+    {dayOf ? phase !== "landed" && <ArrivalGuide /> : <section className="countdown-wrap"><p className="phone-eyebrow">Time to boarding</p><div className="countdown" aria-label="Countdown to September 26, 2026">
       {Object.entries(countdown).map(([label, value]) => <div key={label}><strong>{label === "days" ? value : String(value).padStart(2, "0")}</strong><span>{label === "hours" ? "Hrs" : label === "minutes" ? "Min" : label === "seconds" ? "Sec" : "Days"}</span></div>)}
-    </div></section>
-    <div className="ticket-barcode" aria-hidden="true" />
-    <div className="baby-on-board"><strong>✈ Baby On Board</strong><span>Moncada Airways</span></div>
-    <div className="diaper-raffle"><strong>✈ Diaper Raffle</strong><span>Bring a pack of diapers to enter. Sizes 2 and up are the biggest help — he’ll grow into them fast.</span></div>
-    {rsvp.submitted ? <RSVPConfirmed rsvp={rsvp} /> : <RSVPDeadline value={rsvp.event?.rsvpDeadline ?? FALLBACK_RSVP_DEADLINE} urgent={deadlinePassed} />}
-    <div className="home-actions"><button className="phone-action primary" onClick={onRSVP}>RSVP</button><button className="phone-action" onClick={onCalendar}>Add to calendar</button></div>
-    <div className="save-invite"><strong>📌 Save this invitation</strong><p>Add this invitation to your Home Screen for quick access to the registry, directions, and RSVP.<span><b>iPhone (Safari or Chrome):</b> Tap Share → Add to Home Screen.</span><small>Prefer a bookmark? Use Add Bookmark in Safari or Add to Bookmarks in Chrome.</small></p><button onClick={shareInvite}>{shareLabel}</button></div>
+    </div></section>}
+    <div className="ticket-barcode" style={{ backgroundImage: barcodePattern(rsvp.canonicalSlug) }} aria-hidden="true" />
+    <p className="barcode-code" aria-hidden="true">{record}</p>
+    {phase === "landed"
+      ? <div className="landed-card"><strong>✈ Thanks for flying with us</strong><span>Janelle and Fernando are glad you made the trip. Gifts are still welcome whenever you get to them.</span><ExternalLink href={REGISTRY_URL} primary>Open the registry on Amazon</ExternalLink></div>
+      : <>
+        <div className="baby-on-board"><strong>✈ Baby On Board</strong><span>Moncada Airways</span></div>
+        <div className="diaper-raffle"><strong>✈ Diaper Raffle</strong><span>{dayOf ? "Last call. Bring a pack of diapers, size 2 or up, and you are in the drawing. There is still time to grab one on the way." : "Bring a pack of diapers to enter. Sizes 2 and up are the biggest help, he\u2019ll grow into them fast."}</span></div>
+      </>}
+    {dayOf && <PhotoAlbumCard phase={phase} phone={rsvp.event?.contactPhone ?? CONTACT_PHONE} />}
+    {dayOf ? <DayOfStatus phase={phase} rsvp={rsvp} /> : rsvp.submitted ? <RSVPConfirmed rsvp={rsvp} /> : <RSVPDeadline value={rsvp.event?.rsvpDeadline ?? FALLBACK_RSVP_DEADLINE} urgent={deadlinePassed} />}
+    <div className="home-actions">{dayOf ? <button className="phone-action full" onClick={onRSVP}>{rsvp.submitted ? "See your RSVP" : "RSVP now"}</button> : <><button className="phone-action primary" onClick={onRSVP}>RSVP</button><button className="phone-action" onClick={onCalendar}>Add to calendar</button></>}</div>
+    <div className={`save-invite${dayOf ? " compact" : ""}`}><strong>📌 Save this invitation</strong><p>Add this invitation to your Home Screen for quick access to the registry, directions, and RSVP.<span><b>iPhone (Safari or Chrome):</b> Tap Share → Add to Home Screen.</span><small>Prefer a bookmark? Use Add Bookmark in Safari or Add to Bookmarks in Chrome.</small></p><button onClick={shareInvite}>{shareLabel}</button></div>
   </div>;
 }
 
@@ -291,22 +484,27 @@ function ScreenHeader({ kicker, title, mark, subtitle }: { kicker: string; title
   return <header className="screen-header"><div><p className="phone-eyebrow">{kicker}</p><h2>{title}</h2>{subtitle && <p className="screen-subtitle">{subtitle}</p>}</div><span>{mark}</span></header>;
 }
 
-function StayScreen({ bookingUrl }: { bookingUrl: string }) {
+function StayScreen({ bookingUrl, phase }: { bookingUrl: string; phase: Phase }) {
+  const dayOf = phase !== "scheduled";
   return <div className="feature-screen">
     <ScreenHeader kicker="Boarding Pass · Hotel Stay" title="Stay on site" subtitle="Hotel Centro Sonoma Wine Country · Tapestry by Hilton" mark="" />
+    {dayOf && <div className="day-of-banner"><span>Today</span><strong>This is the venue</strong><p>The shower is in the Reunion Room inside this hotel. You do not need a guest room to be here. Park on site, walk in the main lobby, and ask for the Reunion Room.</p></div>}
     <div className="info-block venue-block"><strong>Hotel Centro Sonoma Wine Country</strong><p>Tapestry by Hilton<br />{HOTEL_ADDRESS}</p></div>
-    <div className="stay-facts two-up"><div><span>Check in</span><strong>Fri, Sep 25</strong></div><div><span>Check out</span><strong>Sun, Sep 27</strong></div></div>
-    <div className="room-list">
-      <Room name="1 King Bed" detail="Sleeps 2 · workspace · mini refrigerator" />
-      <Room name="2 Queen Beds" detail="Sleeps 4 · workspace · mini refrigerator" />
-    </div>
+    {!dayOf && <>
+      <div className="stay-facts two-up"><div><span>Check in</span><strong>Fri, Sep 25</strong></div><div><span>Check out</span><strong>Sun, Sep 27</strong></div></div>
+      <div className="room-list">
+        <Room name="1 King Bed" detail="Sleeps 2 · workspace · mini refrigerator" />
+        <Room name="2 Queen Beds" detail="Sleeps 4 · workspace · mini refrigerator" />
+      </div>
+    </>}
     <div className="amenities"><span>Free Wi-Fi</span><span>Outdoor pool</span><span>Restaurant</span><span>Fitness center</span><span>Pet friendly</span></div>
-    <div className="booking-panel"><div><span>Booking</span><strong>Reserve directly with the hotel</strong><p>Rooms are booked on your own for September 25–27. Hilton shows live availability, taxes and fees, and the final total before you confirm.</p></div><ExternalLink href={bookingUrl} primary>Check rooms &amp; book with Hilton</ExternalLink></div>
+    {dayOf && <div className="overnight-note"><span>Only if you booked a room</span><strong>Checkout is Sunday, September 27</strong><p>The front desk handles checkout and can tell you whether a later time is possible. Most guests are not staying over and can skip this.</p></div>}
+    <div className="booking-panel"><div><span>Booking</span><strong>{dayOf ? "Still need a room tonight?" : "Reserve directly with the hotel"}</strong><p>{dayOf ? "Whatever Hilton still has open is what is left. Availability, taxes and fees, and the final total are live on their site." : "Rooms are booked on your own for September 25 to 27. Hilton shows live availability, taxes and fees, and the final total before you confirm."}</p></div><ExternalLink href={bookingUrl} primary={!dayOf}>Check rooms &amp; book with Hilton</ExternalLink></div>
   </div>;
 }
 
 function Room({ name, detail }: { name: string; detail: string }) {
-  return <article className="room"><div className="room-top"><h3>{name}</h3><span className="room-status">Available</span></div><p>{detail}</p></article>;
+  return <article className="room"><div className="room-top"><h3>{name}</h3></div><p>{detail}</p></article>;
 }
 
 function RegistryScreen({ category, setCategory, products: visible, registry, onGift }: { category: string; setCategory: (value: string) => void; products: RegistryItem[]; registry: RegistryState; onGift: (item: RegistryItem) => void }) {
@@ -359,22 +557,26 @@ function RegistryScreen({ category, setCategory, products: visible, registry, on
   </div>;
 }
 
-function MapsScreen() {
+function MapsScreen({ phase, countdown }: { phase: Phase; countdown: Countdown }) {
   const [copyLabel, setCopyLabel] = useState("Copy address");
   async function copyAddress() { await navigator.clipboard.writeText(HOTEL_ADDRESS); setCopyLabel("Copied ✓"); window.setTimeout(() => setCopyLabel("Copy address"), 2000); }
+  const dayOf = phase !== "scheduled";
+  const untilBoarding = phase === "today" ? `Boarding in ${countdown.days * 24 + countdown.hours}h ${String(countdown.minutes).padStart(2, "0")}m` : phase === "landed" ? "The shower has wrapped" : "Boarding now";
   return <div className="feature-screen">
     <ScreenHeader kicker="Boarding Pass · Travel" title="Shower & stay" subtitle="One destination — no travel between the shower and hotel." mark="" />
+    {dayOf && <div className="day-of-banner"><span>{untilBoarding}</span><strong>5870 Labath Ave, Rohnert Park</strong><MapActions /><div className="day-of-contact"><button className="phone-action" onClick={copyAddress}>{copyLabel}</button></div></div>}
     <div className="map-visual"><iframe title="Interactive map showing Hotel Centro Sonoma Wine Country at 5870 Labath Avenue" loading="lazy" src={HOTEL_MAP_EMBED} /></div>
     <div className="place-list">
-      <article className="place venue-place"><span>Your destination</span><h3>Hotel Centro Sonoma Wine Country</h3><p>{HOTEL_ADDRESS}</p><div><ExternalLink href={HOTEL_APPLE_MAPS}>Apple Maps</ExternalLink><ExternalLink href={HOTEL_GOOGLE_MAPS}>Google Maps</ExternalLink><ExternalLink href="https://waze.com/ul?q=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&navigate=yes">Waze</ExternalLink><button className="phone-action" onClick={copyAddress}>{copyLabel}</button></div></article>
-      <div className="arrival-card"><span>On arrival</span><ol><li>Use the hotel&apos;s on-site self-parking. Hilton currently lists parking at $8 per day.</li><li>Enter through the main hotel lobby.</li><li>Ask the front desk for the Baby Moncada shower location or follow any posted event signs.</li></ol></div>
+      <article className="place venue-place"><span>Your destination</span><h3>Hotel Centro Sonoma Wine Country</h3><p>{HOTEL_ADDRESS}</p><div><ExternalLink href={HOTEL_APPLE_MAPS}>Apple Maps</ExternalLink><ExternalLink href={HOTEL_GOOGLE_MAPS}>Google Maps</ExternalLink><ExternalLink href={HOTEL_WAZE}>Waze</ExternalLink><button className="phone-action" onClick={copyAddress}>{copyLabel}</button></div></article>
+      <ArrivalGuide />
       <div className="wear-note"><strong>What to wear</strong><p>Late September is typically warm during the day and cooler in the evening. Dress comfortably and bring a light layer.</p></div>
       <p className="travel-note">The shower and guest rooms share the same address.</p>
     </div>
   </div>;
 }
 
-function RSVPScreen({ rsvp, setRsvp, deadlinePassed, onSave }: { rsvp: RSVP; setRsvp: React.Dispatch<React.SetStateAction<RSVP>>; deadlinePassed: boolean; onSave: () => void }) {
+function RSVPScreen({ rsvp, setRsvp, deadlinePassed, phase, onSave }: { rsvp: RSVP; setRsvp: React.Dispatch<React.SetStateAction<RSVP>>; deadlinePassed: boolean; phase: Phase; onSave: () => void }) {
+  const dayOf = phase !== "scheduled";
   if (rsvp.status === "loading") return <div className="feature-screen rsvp-screen"><ScreenHeader kicker="Your invitation" title="RSVP" mark="Loading" /><div className="registry-loading" role="status"><div className="loading-ring" /><strong>Finding your invitation</strong><p>Loading the people included in your party.</p></div></div>;
   if (rsvp.status === "error" && rsvp.guests.length === 0) return <div className="feature-screen rsvp-screen"><ScreenHeader kicker="Your invitation" title="RSVP" mark="Unavailable" /><div className="registry-empty"><strong>We couldn’t open this RSVP.</strong><p>{rsvp.error}</p><button className="phone-action primary full" onClick={() => window.location.reload()}>Try again</button></div></div>;
   const complete = rsvp.guests.every((guest) => guest.response !== null);
@@ -397,8 +599,8 @@ function RSVPScreen({ rsvp, setRsvp, deadlinePassed, onSave }: { rsvp: RSVP; set
         {rsvp.updatedAt && <span className="saved-time">Last updated {new Date(rsvp.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>}
         <button className="phone-action full" onClick={() => setRsvp({ ...rsvp, submitted: false, error: null })}>Change response</button>
         {attending.length > 0 && <section className="rsvp-next-steps" aria-label="Before the baby shower">
-          <header><strong>Before the shower</strong><span>Two quick reminders</span></header>
-          <div className="rsvp-next-step raffle-step"><span>Raffle</span><div><strong>Bring a pack of diapers</strong><p>Sizes 2 and up are the biggest help — one pack is one entry to win a prize.</p></div></div>
+          <header><strong>{dayOf ? "Today" : "Before the shower"}</strong><span>Two quick reminders</span></header>
+          <div className="rsvp-next-step raffle-step"><span>Raffle</span><div><strong>Bring a pack of diapers</strong><p>{dayOf ? "Size 2 and up. One pack is one entry, and there is still time to grab one on the way." : "Sizes 2 and up are the biggest help, one pack is one entry to win a prize."}</p></div></div>
           <div className="rsvp-next-step live-invite-step"><span>Live</span><div><strong>Save this invitation</strong><p>Add it to your Home Screen or bookmarks. Return anytime for current registry items, directions, hotel details, and event updates.</p></div></div>
         </section>}
       </div>
@@ -407,7 +609,7 @@ function RSVPScreen({ rsvp, setRsvp, deadlinePassed, onSave }: { rsvp: RSVP; set
 
   return <div className="feature-screen">
     <ScreenHeader kicker="Boarding Pass · RSVP" title="Who’s on board?" subtitle="Respond for each passenger named on this invitation." mark="" />
-    <RSVPDeadline value={rsvp.event?.rsvpDeadline ?? FALLBACK_RSVP_DEADLINE} urgent={deadlinePassed} compact />
+    {dayOf ? <DayOfStatus phase={phase} rsvp={rsvp} /> : <RSVPDeadline value={rsvp.event?.rsvpDeadline ?? FALLBACK_RSVP_DEADLINE} urgent={deadlinePassed} compact />}
     <div className="party-summary">
       <span>Invitation for</span>
       <strong>{rsvp.household}</strong>

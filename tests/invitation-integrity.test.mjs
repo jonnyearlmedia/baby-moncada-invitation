@@ -8,6 +8,7 @@ const read = (path) => readFile(new URL(path, root), "utf8");
 test("confirmed event facts are consistent in UI and database seed", async () => {
   const [page, layout, migration, deadlineMigration] = await Promise.all([read("app/page.tsx"), read("app/layout.tsx"), read("supabase/migrations/20260824073636_production_rsvp_pilot.sql"), read("supabase/migrations/20260824155828_add_rsvp_deadline.sql")]);
   assert.match(page, /Sat, Sep 26 2026/);
+  assert.match(page, /const EVENT_ROOM = "The Reunion Room"/);
   assert.match(page, /4:00 PM/);
   assert.match(page, /DTSTART;TZID=America\/Los_Angeles:20260926T160000/);
   assert.match(migration, /2026-09-26 16:00:00-07/);
@@ -134,7 +135,10 @@ test("travel view uses an interactive map at the exact venue coordinates", async
   assert.match(page, /<iframe title="Interactive map showing Hotel Centro/);
   assert.doesNotMatch(page, /<div className="map-visual"><svg/);
   assert.match(page, /Hilton currently lists parking at \$8 per day/);
-  assert.match(page, /Ask the front desk for the Baby Moncada shower location or follow any posted event signs/);
+  assert.match(page, /src="\/arrival-map\.png"/);
+  assert.match(page, /Through the pre function room/);
+  assert.match(page, /When you arrive/);
+  assert.doesNotMatch(page, /Ask the front desk for the Baby Moncada shower/);
   assert.match(page, /warm during the day and cooler in the evening/);
 });
 

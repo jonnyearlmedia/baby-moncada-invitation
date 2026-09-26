@@ -1,8 +1,10 @@
 import { expect, test } from "@playwright/test";
+import { BEFORE_EVENT } from "./event-clock";
 
 const address = "5870 Labath Ave, Rohnert Park, CA 94928";
 
 test.beforeEach(async ({ context, page }) => {
+  await page.clock.setFixedTime(BEFORE_EVENT);
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.addInitScript(() => Object.defineProperty(navigator, "share", { configurable: true, value: undefined }));
 });
@@ -29,6 +31,8 @@ test("every guest-facing control works and every destination is exact", async ({
 
   await nav.getByRole("button", { name: "Hotel", exact: true }).click();
   await expect(page.getByRole("link", { name: "Check rooms & book with Hilton" })).toHaveAttribute("href", /hilton\.com.*stsrhup/i);
+  await expect(page.locator(".room")).toHaveCount(2);
+  await expect(page.locator(".room-status")).toHaveCount(0);
 
   await nav.getByRole("button", { name: "Registry", exact: true }).click();
   const amazonHandoff = page.getByRole("link", { name: "See the full registry on Amazon" });

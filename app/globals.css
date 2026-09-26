@@ -280,8 +280,96 @@ details[open] .household-body { animation:panel-in .24s ease-out; }
 .boarding-pass .booking-panel{gap:0;margin:0;padding:16px}.boarding-pass .booking-panel>div>span{font-size:10px}.boarding-pass .booking-panel>div>strong{margin:4px 0 8px;font-size:15px}.boarding-pass .booking-panel p{margin:0 0 12px;font-size:12px}.boarding-pass .booking-panel .phone-action{padding:17px;font-size:16px}
 .boarding-pass .map-visual{height:240px;margin:0 0 16px;border-radius:14px}.boarding-pass .map-visual iframe{display:block;width:100%;height:100%;border:0;filter:none}
 .boarding-pass .place-list{gap:0}.boarding-pass .place{margin:0 0 14px;padding:16px}.boarding-pass .place>span,.arrival-card>span{font-size:9px}.boarding-pass .place h3{margin:4px 0 2px;font-size:14px}.boarding-pass .place p{margin:0 0 12px;font-size:12px}.boarding-pass .place>div{gap:10px}.boarding-pass .place .phone-action{min-height:0;padding:10px;border-radius:10px;font-size:12px;font-weight:400}
-.arrival-card{margin:0 0 14px;padding:16px}.arrival-card ol{gap:10px;margin-top:10px}.arrival-card li{font-size:12px}.wear-note{margin:0 0 14px;padding:14px 16px}.wear-note strong{font-size:12px}.wear-note p{font-size:11px}.boarding-pass .travel-note{margin:0 0 24px;font-size:11px;text-align:left}
+.wear-note{margin:0 0 14px;padding:14px 16px}.wear-note strong{font-size:12px}.wear-note p{font-size:11px}.boarding-pass .travel-note{margin:0 0 24px;font-size:11px;text-align:left}
 .boarding-pass .party-summary{margin:0 0 18px;padding:14px 16px;border-radius:12px;background:oklch(93% .025 232)}.boarding-pass .party-summary>span{font-size:10px}.boarding-pass .party-summary>strong{margin-top:2px;font-family:var(--font-ticket-mono),monospace;font-size:14px;font-weight:700}.boarding-pass .party-summary p{margin-top:2px;font-size:12px}
 .boarding-pass .invitee-list{gap:12px;margin-bottom:16px}.boarding-pass .invitee{padding:14px;border-radius:14px;background:var(--app-bg)}.boarding-pass .invitee-heading{gap:10px;margin-bottom:10px}.boarding-pass .guest-avatar{width:32px;height:32px;color:var(--app-accent-text);background:var(--app-text);font-family:var(--font-ticket-mono),monospace;font-size:13px}.boarding-pass .invitee-heading strong{font-size:13px}.boarding-pass .invitee-heading p{font-size:11px}.boarding-pass .attendance-options{display:flex;gap:8px;margin-top:0}.boarding-pass .attendance-options button{flex:1;padding:12px;border-radius:8px;font-size:13px}.boarding-pass .attendance-options button:nth-child(2)[aria-pressed=true]{background:var(--app-text)}
 .boarding-pass .rsvp-note{margin:0 0 16px}.boarding-pass .rsvp-note label{display:block;margin-bottom:6px;color:var(--app-muted);font-size:11px;font-weight:400}.boarding-pass .rsvp-note label span{display:inline;font-size:11px;text-transform:none;letter-spacing:0}.boarding-pass .rsvp-note textarea{min-height:70px;padding:10px;border-radius:10px;font-size:12px;resize:vertical}.boarding-pass .save-rsvp{margin:0 0 8px;padding:18px;font-size:16px;text-transform:uppercase}.boarding-pass .rsvp-guidance{margin:0 0 24px;text-align:left}.boarding-pass .contact-actions{margin:0 0 28px;padding-top:0;border:0}
 .boarding-pass .rsvp-success{padding:0;background:transparent}.boarding-pass .success-mark{width:64px;height:64px;border:2px dashed var(--app-accent);color:var(--app-accent);background:transparent}.boarding-pass .rsvp-success h3{font-size:18px}.boarding-pass .rsvp-success .phone-action{padding:16px;border:2px solid var(--app-accent);background:var(--app-surface);font-size:15px}
+
+/* Day-of departure mode */
+.boarding-pass[data-phase="boarding"],.boarding-pass[data-phase="inflight"]{--app-accent:#14364f}
+.invite-screen.day-of .ticket-header{align-items:center}
+.departure-stamp{transform:rotate(-8deg);padding:7px 11px;border:2px solid var(--board-ink,#b4722a);border-radius:6px;color:var(--board-ink,#b4722a);font-family:var(--font-ticket-mono),'IBM Plex Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.14em;opacity:.88;animation:stamp-in .45s cubic-bezier(.2,1.4,.4,1) both}
+.departure-stamp[data-phase="boarding"]{--board-ink:#1f6f4a}
+.departure-stamp[data-phase="inflight"]{--board-ink:#1d5179}
+.departure-stamp[data-phase="landed"]{--board-ink:#6b7f8d}
+@keyframes stamp-in{from{transform:rotate(-8deg) scale(1.9);opacity:0}to{transform:rotate(-8deg) scale(1);opacity:.88}}
+
+.departure-board{--board-ink:#f0b24a;margin:16px 24px 0;padding:16px 18px 14px;border-radius:16px;color:#e8f1f8;background:linear-gradient(170deg,#12293c,#0b1b28);box-shadow:0 14px 34px rgba(9,26,40,.34),inset 0 1px 0 rgba(255,255,255,.07);font-family:var(--font-ticket-mono),'IBM Plex Mono',monospace}
+.departure-board[data-phase="boarding"]{--board-ink:#5fd39b}
+.departure-board[data-phase="inflight"]{--board-ink:#7cc4f2}
+.departure-board[data-phase="landed"]{--board-ink:#9fb4c4}
+.board-head{display:flex;justify-content:space-between;gap:12px;padding-bottom:11px;border-bottom:1px dashed rgba(232,241,248,.22);font-size:9px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(232,241,248,.6)}
+.board-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 10px;margin:13px 0 0}
+.board-grid>div:first-child{grid-column:1/-1}
+.board-grid dt{color:rgba(232,241,248,.5);font-size:8px;font-weight:600;letter-spacing:.12em;text-transform:uppercase}
+.board-grid dd{margin:4px 0 0;font-size:12px;font-weight:600;line-height:1.25}
+.board-status{display:flex;align-items:center;gap:9px;margin:14px 0 0;padding:11px 12px;border-radius:10px;background:rgba(0,0,0,.28);color:var(--board-ink);font-size:16px;font-weight:700;letter-spacing:.1em}
+.board-status i{flex:none;width:9px;height:9px;border-radius:50%;background:var(--board-ink);box-shadow:0 0 0 0 var(--board-ink);animation:board-pulse 1.9s ease-out infinite}
+@keyframes board-pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--board-ink) 55%,transparent)}70%{box-shadow:0 0 0 9px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.split-flap{position:relative}
+.flap-text{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.split-flap b{display:inline-block;font-weight:700;transform-origin:50% 0;animation:flap .42s cubic-bezier(.3,.9,.3,1) both}
+@keyframes flap{from{transform:rotateX(-92deg);opacity:0}to{transform:rotateX(0);opacity:1}}
+.board-clock{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:11px}
+.board-clock div{padding:9px 4px;border-radius:9px;background:rgba(255,255,255,.07);text-align:center}
+.board-clock strong{display:block;font-size:21px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.board-clock span{display:block;margin-top:5px;color:rgba(232,241,248,.55);font-size:8px;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
+.board-note{margin:11px 0 0;color:rgba(232,241,248,.66);font-size:10px;line-height:1.5}
+
+.day-of-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:14px 24px 0}
+.day-of-actions .phone-action{min-height:50px;padding:10px 6px;border-radius:13px;font-size:12px;font-weight:700}
+.day-of-contact{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:8px 24px 0}
+.day-of-contact:has(>:only-child){grid-template-columns:1fr}
+.day-of-contact .phone-action{min-height:46px;padding:10px 6px;border-radius:13px;font-size:12px;font-weight:700}
+.day-of-banner .day-of-actions{margin:12px 0 0}
+.day-of-banner .day-of-contact{margin:8px 0 0}
+.invite-screen.day-of .ticket-hero{padding-top:20px}
+.invite-screen.day-of .ticket-hero h1{font-size:38px}
+
+.arrival-guide{margin:0 24px 20px;padding:18px 20px;border:1.5px dashed var(--app-line);border-radius:16px;background:var(--app-surface)}
+.feature-screen>.arrival-guide{margin:0 0 16px}
+.arrival-guide h3{margin:0 0 12px;font-family:var(--font-ticket-serif),'Instrument Serif',serif;font-size:26px;font-weight:400;line-height:1.05;letter-spacing:-.01em}
+.arrival-map{display:block;width:100%;height:auto;margin:-4px 0 13px}
+.arrival-guide ol{display:grid;gap:13px;margin:0;padding:0;list-style:none}
+.arrival-guide li{display:flex;gap:12px;align-items:flex-start}
+.arrival-guide li>span{flex:none;width:26px;height:26px;display:grid;place-items:center;border-radius:50%;color:var(--app-accent-text);background:var(--app-accent);font-family:var(--font-ticket-mono),'IBM Plex Mono',monospace;font-size:10px;font-weight:700}
+.arrival-guide strong{display:block;font-size:13px;line-height:1.3}
+.arrival-guide p{margin:3px 0 0;color:var(--app-muted);font-size:11px;line-height:1.45}
+
+.rsvp-deadline.day-of-status.urgent{border-style:solid;border-width:2px}
+.landed-card{display:grid;gap:9px;margin:0 24px 18px;padding:18px 20px;border-radius:16px;color:var(--app-accent-text);background:linear-gradient(165deg,#1d4463,#122d44)}
+.landed-card strong{font-family:var(--font-ticket-serif),'Instrument Serif',serif;font-size:21px;font-weight:400}
+.landed-card span{color:rgba(255,253,248,.76);font-size:12px;line-height:1.5}
+.landed-card .phone-action{margin-top:5px;color:#14364f;background:#fffdf8;border-color:transparent}
+
+.day-of-banner{margin:0 0 18px;padding:16px 18px;border-radius:16px;border:1.5px solid var(--app-accent);background:oklch(93% .025 232)}
+.day-of-banner>span{display:block;color:var(--app-accent);font-family:var(--font-ticket-mono),'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.day-of-banner>strong{display:block;margin-top:6px;font-family:var(--font-ticket-serif),'Instrument Serif',serif;font-size:19px;font-weight:400;line-height:1.2}
+.day-of-banner>p{margin:6px 0 0;color:var(--app-muted);font-size:11px;line-height:1.5}
+
+.overnight-note{display:grid;gap:5px;margin:0 0 16px;padding:14px 16px;border:1px dashed var(--app-line);border-radius:14px;background:transparent}
+.overnight-note>span{color:var(--app-muted);font-family:var(--font-ticket-mono),'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.overnight-note>strong{font-size:14px;font-weight:700;line-height:1.25}
+.overnight-note>p{margin:2px 0 0;color:var(--app-muted);font-size:11px;line-height:1.5}
+.save-invite.compact{opacity:.9}
+.save-invite.compact p span,.save-invite.compact p small{display:none}
+
+@media(max-width:350px){.departure-board,.day-of-actions,.day-of-contact,.arrival-guide,.landed-card{margin-inline:18px}.board-grid{gap:7px}.board-grid dd{font-size:11px}.board-status{font-size:14px}}
+@media(prefers-reduced-motion:reduce){.split-flap b,.departure-stamp{animation:none}.board-status i{animation:none}}
+
+/* Boarding pass detail */
+.pass-conf{display:inline-block;margin-top:5px;color:var(--app-accent);font-size:10px;font-weight:700;letter-spacing:.2em}
+.ticket-barcode{margin-bottom:8px;background-repeat:no-repeat}
+.barcode-code{margin:0 24px 20px;color:var(--app-muted);font-family:var(--font-ticket-mono),'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.34em;text-align:center}
+
+
+/* Shared photo album */
+.album-card{display:grid;gap:6px;margin:0 24px 18px;padding:18px 20px;border:1.5px solid var(--app-accent);border-radius:16px;background:oklch(93% .025 232)}
+.album-card>span{color:var(--app-accent);font-family:var(--font-ticket-mono),'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.album-card>strong{font-family:var(--font-ticket-serif),'Instrument Serif',serif;font-size:19px;font-weight:400;line-height:1.2}
+.album-card>p{margin:2px 0 0;color:var(--app-muted);font-size:11px;line-height:1.5}
+.album-card .phone-action{margin-top:7px}
+.album-card>small{color:var(--app-muted);font-size:11px;line-height:1.5}
+.album-card>small a{color:var(--app-accent);font-weight:700}
+@media(max-width:350px){.album-card{margin-inline:18px}}
