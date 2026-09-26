@@ -138,13 +138,13 @@ export default function GuestbookClient() {
       <input ref={cameraRef} className="gb-hidden-input" type="file" accept="image/*" capture="user" onChange={onPhoto} tabIndex={-1} aria-hidden="true" />
 
       {step === "welcome" && <section className="gb-screen gb-welcome">
-        <p className="gb-script">thank you for coming ✈</p>
-        <h1>Thank you for being here</h1>
-        <p className="gb-lede">Janelle and Fernando are so glad you made the trip. Before you go, leave the Moncadas a note they can keep.</p>
+        <p className="gb-script">thank you for coming! ✈</p>
+        <h1>So glad you’re here!</h1>
+        <p className="gb-lede">Janelle and Fernando are so happy you made it! Before you go, leave the Moncadas a note they can keep forever.</p>
         <div className="gb-actions">
           <button className="gb-button primary gb-feature" onClick={startEntry}>
             <strong>Sign the guestbook</strong>
-            <span>Snap a photo, pick a frame, leave a note</span>
+            <span>Snap a pic, pick a frame, leave some love!</span>
           </button>
           <button className="gb-button" onClick={() => setStep("wall")}>Read the guestbook{count ? ` · ${count} ${count === 1 ? "entry" : "entries"}` : ""}</button>
         </div>
@@ -153,29 +153,29 @@ export default function GuestbookClient() {
       {step === "welcome" && <nav className="gb-links" aria-label="More from today">
         <a href={PHOTO_ALBUM_URL} target="_blank" rel="noopener noreferrer">
           <span className="gb-link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="9" cy="10" r="1.6" /><path d="m21 16-5-5-8 8" /></svg></span>
-          <span><strong>Add your photos</strong><small>Drop what you took today into the {PHOTO_ALBUM_NAME} album. No Apple account needed.</small></span>
+          <span><strong>Add your photos!</strong><small>Drop everything you took today into the {PHOTO_ALBUM_NAME} album! No Apple account needed.</small></span>
           <i aria-hidden="true">›</i>
         </a>
         <a href={REGISTRY_URL} target="_blank" rel="noopener noreferrer">
           <span className="gb-link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="8" width="18" height="4" rx="1" /><path d="M5 12v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8M12 8v13" /><path d="M12 8C10.5 4.5 6.5 3.5 6.5 6.2 6.5 8 12 8 12 8Zm0 0c1.5-3.5 5.5-4.5 5.5-1.8C17.5 8 12 8 12 8Z" /></svg></span>
-          <span><strong>The registry</strong><small>Want to send something later? Everything is on Amazon.</small></span>
+          <span><strong>The registry</strong><small>Want to send something later? It’s all on Amazon!</small></span>
           <i aria-hidden="true">›</i>
         </a>
       </nav>}
 
       {step === "photo" && <section className="gb-screen">
-        <StepHeader index={1} title="Smile for Baby Moncada" onBack={() => setStep("welcome")} />
-        <p className="gb-lede">Take a quick selfie, or grab whoever you came with. You can retake it.</p>
+        <StepHeader index={1} title="Say cheese!" onBack={() => setStep("welcome")} />
+        <p className="gb-lede">Grab a selfie, or pull in whoever you came with! Retakes are totally fine.</p>
         <button className="gb-camera" onClick={() => cameraRef.current?.click()} disabled={preparing}>
           <span className="gb-camera-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg></span>
-          <strong>{preparing ? "Framing your photo…" : "Open the camera"}</strong>
+          <strong>{preparing ? "Framing you up…" : "Open the camera"}</strong>
         </button>
         {error && <p className="gb-error" role="alert">{error}</p>}
         <button className="gb-text-button" onClick={skipPhoto}>Skip the photo and just write</button>
       </section>}
 
       {step === "frame" && <section className="gb-screen">
-        <StepHeader index={2} title="Pick a frame" onBack={() => setStep("photo")} />
+        <StepHeader index={2} title="Pick your frame!" onBack={() => setStep("photo")} />
         {rendered[frame] && <img className="gb-preview" src={rendered[frame]?.url} alt={`You in the ${FRAME_OPTIONS.find((option) => option.id === frame)?.label} frame`} width={FRAME_WIDTH} height={FRAME_HEIGHT} />}
         <div className="gb-frames" role="radiogroup" aria-label="Photo frame">
           {FRAME_OPTIONS.map((option) => <button key={option.id} role="radio" aria-checked={frame === option.id} className={frame === option.id ? "selected" : ""} onClick={() => setFrame(option.id)}>
@@ -190,12 +190,12 @@ export default function GuestbookClient() {
       </section>}
 
       {step === "write" && <section className="gb-screen">
-        <StepHeader index={hasPhoto ? 3 : 2} title="Sign the guestbook" onBack={() => setStep(hasPhoto ? "frame" : "photo")} />
+        <StepHeader index={hasPhoto ? 3 : 2} title="Leave some love!" onBack={() => setStep(hasPhoto ? "frame" : "photo")} />
         <form className="gb-form" onSubmit={submit}>
           {hasPhoto && <img className="gb-thumb" src={rendered[frame]?.url} alt="You, framed" width={FRAME_WIDTH} height={FRAME_HEIGHT} />}
           <div className="gb-letter">
             <p className="gb-letter-greeting">Dear Moncada family,</p>
-            <textarea value={message} onChange={(event) => setMessage(event.target.value)} maxLength={GUESTBOOK_MESSAGE_MAX} placeholder="A wish for the little one, advice for the new parents, or just a hello." rows={7} aria-label="Your message" required />
+            <textarea value={message} onChange={(event) => setMessage(event.target.value)} maxLength={GUESTBOOK_MESSAGE_MAX} placeholder="A wish for the little one, advice for the new parents, or just a big hello!" rows={7} aria-label="Your message" required />
             <small className="gb-letter-count">{message.length}/{GUESTBOOK_MESSAGE_MAX}</small>
             <div className="gb-signoffs" role="radiogroup" aria-label="Sign off">
               {GUESTBOOK_SIGN_OFFS.map((option) => <button key={option} type="button" role="radio" aria-checked={signOff === option} onClick={() => setSignOff(option)}>{option}</button>)}
@@ -204,16 +204,16 @@ export default function GuestbookClient() {
             <input className="gb-letter-name" value={name} onChange={(event) => setName(event.target.value)} maxLength={GUESTBOOK_NAME_MAX} autoComplete="name" placeholder="Your name" aria-label="Your name" required />
           </div>
           {error && <p className="gb-error" role="alert">{error}</p>}
-          <button className="gb-button primary" type="submit" disabled={sending || !name.trim() || !message.trim()}>{sending ? "Signing…" : "Sign the guestbook"}</button>
+          <button className="gb-button primary" type="submit" disabled={sending || !name.trim() || !message.trim()}>{sending ? "Signing…" : "Sign the guestbook!"}</button>
         </form>
       </section>}
 
       {step === "wall" && <section className="gb-screen gb-wall-screen">
         <div className="gb-wall-head">
-          {justSigned ? <><p className="gb-script">you&apos;re in the book ✈</p><h1>Thank you!</h1></> : <><p className="gb-script">notes for the Moncadas</p><h1>The guestbook</h1></>}
-          <p className="gb-lede">{count ? `${count} ${count === 1 ? "entry" : "entries"} so far. New ones show up on their own.` : "No entries yet. Be the first."}</p>
+          {justSigned ? <><p className="gb-script">you&apos;re in the book! ✈</p><h1>Signed, sealed, delivered!</h1></> : <><p className="gb-script">love notes for the Moncadas</p><h1>The guestbook</h1></>}
+          <p className="gb-lede">{count ? `${count} ${count === 1 ? "entry" : "entries"} so far! New ones pop up live.` : "No entries yet. Be the first!"}</p>
           <div className="gb-row">
-            <button className="gb-button primary" onClick={startEntry}>{justSigned ? "Add another entry" : "Sign the guestbook"}</button>
+            <button className="gb-button primary" onClick={startEntry}>{justSigned ? "Add another entry!" : "Sign the guestbook!"}</button>
             <button className="gb-button" onClick={() => setStep("welcome")}>Back</button>
           </div>
         </div>
@@ -234,7 +234,7 @@ function StepHeader({ index, title, onBack }: { index: number; title: string; on
 
 export function EntryCard({ entry, highlight = false }: { entry: GuestbookEntry; highlight?: boolean }) {
   return <article className={`gb-card${highlight ? " highlight" : ""}${entry.photoUrl ? "" : " no-photo"}`}>
-    {highlight && <span className="gb-badge">Just signed</span>}
+    {highlight && <span className="gb-badge">Just signed!</span>}
     {entry.photoUrl && <img src={entry.photoUrl} alt={`${entry.name} at the shower`} width={FRAME_WIDTH} height={FRAME_HEIGHT} loading="lazy" decoding="async" />}
     <div className="gb-card-body">
       <time dateTime={entry.createdAt}>{timeFormatter.format(new Date(entry.createdAt))}</time>

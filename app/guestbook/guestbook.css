@@ -77,6 +77,7 @@
 .gb-card footer strong { font-family:var(--font-ticket-script),cursive;font-size:28px;font-weight:600;line-height:1.05;overflow-wrap:anywhere; }
 .gb-card.highlight { border-color:var(--gb-navy);box-shadow:0 0 0 3px rgba(24,62,93,.18),0 14px 30px rgba(24,62,93,.18); }
 .gb-badge { position:absolute;z-index:1;top:12px;left:12px;padding:6px 10px;border-radius:999px;color:var(--gb-paper);background:var(--gb-navy);font-family:var(--font-ticket-mono),monospace;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase; }
+.gb-card.no-photo .gb-badge { position:static;display:inline-block;margin:14px 0 0 16px; }
 @media (min-width:560px) { .gb-shell { width:min(100%,980px); } .gb-shell>.gb-screen:not(.gb-wall-screen) { max-width:520px;margin:0 auto; } .gb-wall { columns:2; } .gb-wall-head { max-width:520px; } }
 @media (min-width:900px) { .gb-wall { columns:3; } }
 

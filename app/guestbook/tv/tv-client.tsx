@@ -47,16 +47,16 @@ export default function GuestbookTv() {
 
   return <main className="gb-tv">
     <aside className="gb-tv-side">
-      <p className="gb-script">sign the guestbook ✈</p>
+      <p className="gb-script">sign the guestbook! ✈</p>
       <h1>Baby Moncada</h1>
-      <p>Tap your phone on any tag around the room. Snap a photo, pick a frame, and leave the Moncadas a note.</p>
+      <p>Tap your phone on any tag around the room! Snap a pic, pick a frame, and leave the Moncadas some love.</p>
       <strong>{entries.length} {entries.length === 1 ? "entry" : "entries"}</strong>
     </aside>
     <section className="gb-tv-stage" aria-live="polite">
       {current ? <article key={current.id} className={`gb-tv-card${current.photoUrl ? "" : " no-photo"}`}>
         {current.photoUrl && <img src={current.photoUrl} alt={`${current.name} at the shower`} width={FRAME_WIDTH} height={FRAME_HEIGHT} />}
         <div><p>{current.message}</p><span>{current.signOff}</span><strong>{current.name}</strong></div>
-      </article> : <p className="gb-tv-empty">The first entry will show up here.</p>}
+      </article> : <p className="gb-tv-empty">The first entry will pop up right here!</p>}
     </section>
   </main>;
 }
