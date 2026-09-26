@@ -26,6 +26,7 @@ The remaining households are intentionally not seeded until the pilot has been r
 - dashboard editing for event details, household labels, guest names, and short links
 - copy-link and copy-ready-message controls for every household
 - RLS on every public-schema table; no direct browser table access
+- a day-of departure mode that moves the invitation through boarding, in flight, and arrived
 
 Amazon is the checkout and fulfillment source of truth. A GitHub Actions browser job checks every still-needed and purchased registry page every six hours, validates the full result, preserves Amazon's registry-context item links, and atomically publishes the new snapshot through a narrowly scoped token-protected Supabase function. Guest requests only read the last complete verified snapshot, so an Amazon outage or incomplete scrape cannot replace it with partial data. The UI shows the verification time and keeps the exact official registry link above the products.
 
@@ -57,6 +58,8 @@ npm run passcode:hash
 - `HOST_SESSION_SECRET`
 - `NEXT_PUBLIC_SITE_URL=https://moncada-baby-shower.vercel.app`
 
+The invitation reads its own clock. Before the event day it stays the boarding pass it has always been. On the event day it becomes a live departure board: status, gate, a countdown to 4:00 PM, one-tap directions and a text to Janelle at the top, arrival steps in place of the countdown, and a diaper raffle last call. It flips to NOW BOARDING at 4:00 PM, IN FLIGHT an hour later, and ARRIVED at 9:00 PM, when the screen settles into a thank you with the registry still open. Phases come from `event_starts_at`, so moving the time in the dashboard moves the whole day.
+
 ## Verification contract
 
-`npm run verify` runs lint, integrity/security tests, and a production build. `npm run test:e2e` launches the real app and validates both desktop and iPhone-sized experiences, all six pilot rosters, exact external handoffs, and a real RSVP submit/reload/change cycle against Supabase. Automated test submissions must be deleted after verification so pilot households return to a clean state.
+`npm run verify` runs lint, integrity/security tests, and a production build. Every e2e spec pins a fixed clock from `tests/e2e/event-clock.ts`, so phase-dependent UI is asserted deliberately instead of drifting with the calendar. `npm run test:e2e` launches the real app and validates both desktop and iPhone-sized experiences, all six pilot rosters, exact external handoffs, and a real RSVP submit/reload/change cycle against Supabase. Automated test submissions must be deleted after verification so pilot households return to a clean state.

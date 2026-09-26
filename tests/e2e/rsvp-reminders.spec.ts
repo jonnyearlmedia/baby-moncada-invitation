@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { BEFORE_EVENT } from "./event-clock";
 
 const event = {
   title: "Baby Moncada Baby Shower",
@@ -17,6 +18,7 @@ const event = {
 };
 
 test.beforeEach(async ({ page }) => {
+  await page.clock.setFixedTime(BEFORE_EVENT);
   await page.route("**/api/rsvp?slug=*", async (route) => {
     const slug = new URL(route.request().url()).searchParams.get("slug") ?? "attending-reminder";
     const response = slug === "declined-reminder" ? "no" : "yes";

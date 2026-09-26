@@ -1,8 +1,10 @@
 import { expect, test } from "@playwright/test";
+import { BEFORE_EVENT } from "./event-clock";
 
 const address = "5870 Labath Ave, Rohnert Park, CA 94928";
 
 test.beforeEach(async ({ context, page }) => {
+  await page.clock.setFixedTime(BEFORE_EVENT);
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.addInitScript(() => Object.defineProperty(navigator, "share", { configurable: true, value: undefined }));
 });

@@ -1,4 +1,9 @@
 import { expect, test } from "@playwright/test";
+import { BEFORE_EVENT } from "./event-clock";
+
+test.beforeEach(async ({ page }) => {
+  await page.clock.setFixedTime(BEFORE_EVENT);
+});
 
 test("boarding-pass design preserves Claude handoff geometry and typography", async ({ page }) => {
   await page.goto("/invite/murao");

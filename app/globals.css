@@ -285,3 +285,65 @@ details[open] .household-body { animation:panel-in .24s ease-out; }
 .boarding-pass .invitee-list{gap:12px;margin-bottom:16px}.boarding-pass .invitee{padding:14px;border-radius:14px;background:var(--app-bg)}.boarding-pass .invitee-heading{gap:10px;margin-bottom:10px}.boarding-pass .guest-avatar{width:32px;height:32px;color:var(--app-accent-text);background:var(--app-text);font-family:var(--font-ticket-mono),monospace;font-size:13px}.boarding-pass .invitee-heading strong{font-size:13px}.boarding-pass .invitee-heading p{font-size:11px}.boarding-pass .attendance-options{display:flex;gap:8px;margin-top:0}.boarding-pass .attendance-options button{flex:1;padding:12px;border-radius:8px;font-size:13px}.boarding-pass .attendance-options button:nth-child(2)[aria-pressed=true]{background:var(--app-text)}
 .boarding-pass .rsvp-note{margin:0 0 16px}.boarding-pass .rsvp-note label{display:block;margin-bottom:6px;color:var(--app-muted);font-size:11px;font-weight:400}.boarding-pass .rsvp-note label span{display:inline;font-size:11px;text-transform:none;letter-spacing:0}.boarding-pass .rsvp-note textarea{min-height:70px;padding:10px;border-radius:10px;font-size:12px;resize:vertical}.boarding-pass .save-rsvp{margin:0 0 8px;padding:18px;font-size:16px;text-transform:uppercase}.boarding-pass .rsvp-guidance{margin:0 0 24px;text-align:left}.boarding-pass .contact-actions{margin:0 0 28px;padding-top:0;border:0}
 .boarding-pass .rsvp-success{padding:0;background:transparent}.boarding-pass .success-mark{width:64px;height:64px;border:2px dashed var(--app-accent);color:var(--app-accent);background:transparent}.boarding-pass .rsvp-success h3{font-size:18px}.boarding-pass .rsvp-success .phone-action{padding:16px;border:2px solid var(--app-accent);background:var(--app-surface);font-size:15px}
+
+/* Day-of departure mode */
+.boarding-pass[data-phase="boarding"],.boarding-pass[data-phase="inflight"]{--app-accent:#14364f}
+.invite-screen.day-of .ticket-header{align-items:center}
+.departure-stamp{transform:rotate(-8deg);padding:7px 11px;border:2px solid var(--board-ink,#b4722a);border-radius:6px;color:var(--board-ink,#b4722a);font-family:var(--font-ticket-mono),'IBM Plex Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.14em;opacity:.88;animation:stamp-in .45s cubic-bezier(.2,1.4,.4,1) both}
+.departure-stamp[data-phase="boarding"]{--board-ink:#1f6f4a}
+.departure-stamp[data-phase="inflight"]{--board-ink:#1d5179}
+.departure-stamp[data-phase="landed"]{--board-ink:#6b7f8d}
+@keyframes stamp-in{from{transform:rotate(-8deg) scale(1.9);opacity:0}to{transform:rotate(-8deg) scale(1);opacity:.88}}
+
+.departure-board{--board-ink:#f0b24a;margin:16px 24px 0;padding:16px 18px 14px;border-radius:16px;color:#e8f1f8;background:linear-gradient(170deg,#12293c,#0b1b28);box-shadow:0 14px 34px rgba(9,26,40,.34),inset 0 1px 0 rgba(255,255,255,.07);font-family:var(--font-ticket-mono),'IBM Plex Mono',monospace}
+.departure-board[data-phase="boarding"]{--board-ink:#5fd39b}
+.departure-board[data-phase="inflight"]{--board-ink:#7cc4f2}
+.departure-board[data-phase="landed"]{--board-ink:#9fb4c4}
+.board-head{display:flex;justify-content:space-between;gap:12px;padding-bottom:11px;border-bottom:1px dashed rgba(232,241,248,.22);font-size:9px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(232,241,248,.6)}
+.board-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 10px;margin:13px 0 0}
+.board-grid>div:first-child{grid-column:1/-1}
+.board-grid dt{color:rgba(232,241,248,.5);font-size:8px;font-weight:600;letter-spacing:.12em;text-transform:uppercase}
+.board-grid dd{margin:4px 0 0;font-size:12px;font-weight:600;line-height:1.25}
+.board-status{display:flex;align-items:center;gap:9px;margin:14px 0 0;padding:11px 12px;border-radius:10px;background:rgba(0,0,0,.28);color:var(--board-ink);font-size:16px;font-weight:700;letter-spacing:.1em}
+.board-status i{flex:none;width:9px;height:9px;border-radius:50%;background:var(--board-ink);box-shadow:0 0 0 0 var(--board-ink);animation:board-pulse 1.9s ease-out infinite}
+@keyframes board-pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--board-ink) 55%,transparent)}70%{box-shadow:0 0 0 9px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.split-flap{position:relative}
+.flap-text{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.split-flap b{display:inline-block;font-weight:700;transform-origin:50% 0;animation:flap .42s cubic-bezier(.3,.9,.3,1) both}
+@keyframes flap{from{transform:rotateX(-92deg);opacity:0}to{transform:rotateX(0);opacity:1}}
+.board-clock{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:11px}
+.board-clock div{padding:9px 4px;border-radius:9px;background:rgba(255,255,255,.07);text-align:center}
+.board-clock strong{display:block;font-size:21px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.board-clock span{display:block;margin-top:5px;color:rgba(232,241,248,.55);font-size:8px;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
+.board-note{margin:11px 0 0;color:rgba(232,241,248,.66);font-size:10px;line-height:1.5}
+
+.day-of-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:14px 24px 0}
+.day-of-actions .phone-action{min-height:50px;padding:10px 6px;border-radius:13px;font-size:12px;font-weight:700}
+.day-of-banner .day-of-actions{margin:12px 0 0}
+.invite-screen.day-of .ticket-hero{padding-top:20px}
+.invite-screen.day-of .ticket-hero h1{font-size:38px}
+
+.arrival-strip{margin:0 24px 20px;padding:18px 20px;border:1.5px dashed var(--app-line);border-radius:16px;background:var(--app-surface)}
+.arrival-strip>.phone-eyebrow{margin-bottom:13px;font-size:10px;letter-spacing:.12em}
+.arrival-strip ol{display:grid;gap:13px;margin:0;padding:0;list-style:none}
+.arrival-strip li{display:flex;gap:12px;align-items:flex-start}
+.arrival-strip li>span{flex:none;width:26px;height:26px;display:grid;place-items:center;border-radius:50%;color:var(--app-accent-text);background:var(--app-accent);font-family:var(--font-ticket-mono),'IBM Plex Mono',monospace;font-size:10px;font-weight:700}
+.arrival-strip strong{display:block;font-size:13px;line-height:1.3}
+.arrival-strip p{margin:3px 0 0;color:var(--app-muted);font-size:11px;line-height:1.45}
+
+.rsvp-deadline.day-of-status.urgent{border-style:solid;border-width:2px}
+.landed-card{display:grid;gap:9px;margin:0 24px 18px;padding:18px 20px;border-radius:16px;color:var(--app-accent-text);background:linear-gradient(165deg,#1d4463,#122d44)}
+.landed-card strong{font-family:var(--font-ticket-serif),'Instrument Serif',serif;font-size:21px;font-weight:400}
+.landed-card span{color:rgba(255,253,248,.76);font-size:12px;line-height:1.5}
+.landed-card .phone-action{margin-top:5px;color:#14364f;background:#fffdf8;border-color:transparent}
+
+.day-of-banner{margin:0 0 18px;padding:16px 18px;border-radius:16px;border:1.5px solid var(--app-accent);background:oklch(93% .025 232)}
+.day-of-banner>span{display:block;color:var(--app-accent);font-family:var(--font-ticket-mono),'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.day-of-banner>strong{display:block;margin-top:6px;font-family:var(--font-ticket-serif),'Instrument Serif',serif;font-size:19px;font-weight:400;line-height:1.2}
+.day-of-banner>p{margin:6px 0 0;color:var(--app-muted);font-size:11px;line-height:1.5}
+
+.save-invite.compact{opacity:.9}
+.save-invite.compact p span,.save-invite.compact p small{display:none}
+
+@media(max-width:350px){.departure-board,.day-of-actions,.arrival-strip,.landed-card{margin-inline:18px}.board-grid{gap:7px}.board-grid dd{font-size:11px}.board-status{font-size:14px}}
+@media(prefers-reduced-motion:reduce){.split-flap b,.departure-stamp{animation:none}.board-status i{animation:none}}
