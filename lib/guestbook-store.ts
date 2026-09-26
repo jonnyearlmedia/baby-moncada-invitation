@@ -54,8 +54,10 @@ async function writeEntry(entry: StoredEntry) {
   cache = null;
 }
 
-async function readEntry(path: string) {
-  const { data, error } = await client().storage.from(GUESTBOOK_BUCKET).download(path);
+// Supabase's CDN caches object downloads, so every read carries a nonce
+// (the file's version, or a fresh one) to never get a stale copy back.
+async function readEntry(path: string, nonce: string) {
+  const { data, error } = await client().storage.from(GUESTBOOK_BUCKET).download(path, { cacheNonce: nonce });
   if (error) return null;
   try {
     return JSON.parse(await data.text()) as StoredEntry;
@@ -71,10 +73,12 @@ async function loadAll() {
   if (error) throw error;
   const files = (data ?? []).filter((file) => file.name.endsWith(".json"));
   const entries = (await Promise.all(files.map(async (file) => {
-    const version = file.updated_at ?? file.created_at ?? "";
+    // The eTag changes with the contents; updated_at alone may not move on an upsert.
+    const meta = (file.metadata ?? {}) as { eTag?: string; lastModified?: string };
+    const version = [meta.eTag, meta.lastModified, file.updated_at].filter(Boolean).join("|");
     const hit = known.get(file.name);
     if (hit && hit.version === version) return hit.entry;
-    const entry = await readEntry(`${ENTRY_DIR}/${file.name}`);
+    const entry = await readEntry(`${ENTRY_DIR}/${file.name}`, version || randomUUID());
     if (entry) known.set(file.name, { version, entry });
     return entry;
   })))
@@ -124,7 +128,7 @@ export async function createGuestbookEntry(input: { name: string; message: strin
 
 export async function setGuestbookEntryHidden(id: string, hidden: boolean) {
   await ensureBucket();
-  const entry = await readEntry(entryPath(id));
+  const entry = await readEntry(entryPath(id), randomUUID());
   if (!entry) return false;
   await writeEntry({ ...entry, hidden });
   return true;
