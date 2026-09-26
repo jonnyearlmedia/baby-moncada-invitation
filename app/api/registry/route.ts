@@ -2,7 +2,12 @@ import { createAdminServerClient } from "@/lib/supabase-server";
 
 const REGISTRY_URL = "https://www.amazon.com/baby-reg/janelle-moncada-november-2026-rohnertpark/10AIJQD53FRAQ";
 const SCHEDULE_INTERVAL_MS = 6 * 60 * 60 * 1000;
-const SCHEDULE_GRACE_MS = 90 * 60 * 1000;
+// GitHub's scheduler runs the six-hourly job late, and the overnight gap is the worst of it:
+// measured gaps between consecutive successful runs over Sep 8-10 ranged from 4.3h to 7.8h, so a
+// 90 minute grace put the "Amazon sync is delayed" banner in front of guests on two of three
+// nights while the sync was perfectly healthy. A missed cycle is 12h or more, so this still
+// catches a real stall without crying wolf at normal drift.
+const SCHEDULE_GRACE_MS = 4 * 60 * 60 * 1000;
 
 type RegistryItem = {
   id: string;
