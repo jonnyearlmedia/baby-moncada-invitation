@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { joinGuestNames, parseGuestNames, suggestMessageGreeting, suggestSlug } from "@/lib/invitation-builder";
+import GuestbookModeration from "./guestbook-moderation";
 
 type EventRow = {
   event_title: string; hosts_display: string; event_starts_at: string; rsvp_deadline: string; venue_name: string; venue_address: string;
@@ -197,6 +198,7 @@ export default function DashboardClient() {
           </div></details>;
       })}</div>
     </section>
+    <GuestbookModeration />
     <section className="admin-card registry-admin"><p className="admin-kicker">Registry accuracy</p><h2>Amazon is the live source</h2><p>An automated browser checks every needed and purchased page on the Amazon registry every six hours. A new snapshot is published only after every product, quantity, image, and registry-linked Amazon URL passes validation. If a check fails, invitations keep the last complete verified list instead of showing partial or invented data.</p><p><strong>Latest automatic check:</strong> {data.registrySync ? `${data.registrySync.status === "succeeded" ? "Succeeded" : "Needs attention"} · ${formatDateTime(data.registrySync.finished_at)}${data.registrySync.item_count ? ` · ${data.registrySync.item_count} products` : ""}` : "No check recorded yet"}{data.registrySync?.detail ? <><br /><small>{data.registrySync.detail}</small></> : null}</p><a href={event.registry_url} target="_blank" rel="noreferrer">Open and verify the live Amazon registry</a></section>
   </main>;
 }

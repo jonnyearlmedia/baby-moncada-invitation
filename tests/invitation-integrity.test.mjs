@@ -170,3 +170,23 @@ test("save instructions preserve the household-specific invitation link", async 
   assert.match(dashboardLayout, /manifest: "\/dashboard\/manifest\.webmanifest"/);
   assert.match(dashboardManifest, /dashboardManifest\(\)/);
 });
+
+test("guestbook validates uploads server side and lets hosts hide entries", async () => {
+  const [store, route, adminRoute, dashboard, frames] = await Promise.all([
+    read("lib/guestbook-store.ts"),
+    read("app/api/guestbook/route.ts"),
+    read("app/api/admin/guestbook/route.ts"),
+    read("app/dashboard/dashboard-client.tsx"),
+    read("lib/guestbook-frames.ts"),
+  ]);
+  assert.match(store, /createBucket\(GUESTBOOK_BUCKET/);
+  assert.match(store, /allowedMimeTypes: \["image\/jpeg", "application\/json"\]/);
+  assert.match(store, /includeHidden \|\| !entry\.hidden/);
+  assert.match(store, /storage\.remove\(\[photoPath\]\)/);
+  assert.match(route, /isJpeg\(photo\)/);
+  assert.match(route, /signOff: z\.enum\(GUESTBOOK_SIGN_OFFS\)/);
+  assert.match(route, /RATE_LIMIT/);
+  assert.match(adminRoute, /hasHostSession/);
+  assert.match(dashboard, /<GuestbookModeration \/>/);
+  for (const frame of ["boarding", "polaroid", "stamp", "none"]) assert.match(frames, new RegExp(`id: "${frame}"`));
+});

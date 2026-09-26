@@ -373,3 +373,11 @@ details[open] .household-body { animation:panel-in .24s ease-out; }
 .album-card>small{color:var(--app-muted);font-size:11px;line-height:1.5}
 .album-card>small a{color:var(--app-accent);font-weight:700}
 @media(max-width:350px){.album-card{margin-inline:18px}}
+.guestbook-admin-list { display:grid;gap:10px; }
+.guestbook-admin-list article { display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:14px;align-items:center;padding:10px 12px;border:1px solid #d5e2e9;border-radius:12px;background:#fbfdfe; }
+.guestbook-admin-list article.hidden-entry { opacity:.55;background:#f1f4f6; }
+.guestbook-admin-list img,.guestbook-admin-list article>span { width:64px;height:80px;border-radius:8px;object-fit:cover; }
+.guestbook-admin-list article>span { display:grid;place-items:center;color:#59798f;background:#e6eff4;font-size:24px; }
+.guestbook-admin-list strong { display:block;font-size:14px; }
+.guestbook-admin-list p { margin:3px 0 4px;color:#38556a!important;font-size:13px;line-height:1.4;white-space:pre-wrap;overflow-wrap:anywhere; }
+.guestbook-admin-list time { color:#647b8a;font-size:11px; }
