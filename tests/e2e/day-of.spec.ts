@@ -41,7 +41,7 @@ test("the invitation turns into a live departure board on the day", async ({ pag
   await expect(board).toHaveAttribute("data-phase", "today");
   await expect(board.locator(".flap-text")).toHaveText("BOARDING SOON");
   await expect(board).toContainText("Hotel Centro, Rohnert Park");
-  await expect(board).toContainText("Hotel lobby");
+  await expect(board).toContainText("The Reunion Room");
   await expect(board).toContainText("Doors open at 4:00 PM");
   await expect(board.locator(".board-clock div")).toHaveCount(3);
   await expect(page.locator(".departure-stamp")).toHaveText("TODAY");
@@ -56,23 +56,52 @@ test("the invitation turns into a live departure board on the day", async ({ pag
   await expect(contact.getByRole("link", { name: "Text Janelle" })).toHaveAttribute("href", "sms:+17073345988");
   await expect(contact.getByRole("link", { name: "Call Janelle" })).toHaveAttribute("href", "tel:+17073345988");
 
-  await expect(page.locator(".arrival-strip")).toContainText("Follow the Baby Moncada signs");
+  await expect(page.locator(".arrival-strip")).toContainText("Ask for the Reunion Room");
   await expect(page.locator(".diaper-raffle")).toContainText("Last call");
   await expect(page.locator(".day-of-status")).toContainText("Party of 2, boarding at 4:00 PM");
+  await expect(page.locator(".day-of-status")).toContainText("See you in the Reunion Room.");
   await expect(page.getByText("RSVP as soon as possible")).toHaveCount(0);
   await expect(page.locator(".countdown-wrap")).toHaveCount(0);
+
+  const record = await page.locator(".barcode-code").innerText();
+  expect(record).toMatch(/^[A-Z2-9]{6}$/);
+  await expect(page.locator(".pass-conf")).toHaveText(`Conf ${record}`);
+  const details = page.locator(".ticket-details");
+  for (const field of ["Gate", "The Reunion Room", "Group", "Family", "Seat", "Open"]) await expect(details).toContainText(field);
+});
+
+test("the departure checklist ticks, persists, and never asks for a gift", async ({ page }) => {
+  await openInvitation(page, DAY_OF);
+  const items = page.locator(".departure-checklist button");
+  await expect(items).toHaveCount(4);
+  await expect(page.locator(".departure-checklist")).toContainText("Diapers, size 2 or up");
+  await expect(page.locator(".checklist-note")).toHaveText("Gifts ship straight from Amazon. There is nothing to carry in.");
+
+  await items.first().click();
+  await expect(items.first()).toHaveAttribute("aria-pressed", "true");
+  await page.reload();
+  await expect(page.locator('.departure-checklist button[aria-pressed="true"]')).toHaveCount(1);
+
+  await items.first().click();
+  await expect(page.locator('.departure-checklist button[aria-pressed="true"]')).toHaveCount(0);
+});
+
+test("the checklist is only for people who have not left yet", async ({ page }) => {
+  await openInvitation(page, BOARDING);
+  await expect(page.locator(".departure-checklist")).toHaveCount(0);
+  await expect(page.locator(".arrival-strip")).toBeVisible();
 });
 
 test("the board follows the party from boarding through arrival", async ({ page }) => {
   await openInvitation(page, BOARDING);
   await expect(page.locator(".departure-board .flap-text")).toHaveText("NOW BOARDING");
   await expect(page.locator(".departure-stamp")).toHaveText("BOARDING");
-  await expect(page.locator(".departure-board")).toContainText("The hotel lobby is the gate");
+  await expect(page.locator(".departure-board")).toContainText("We are in the Reunion Room");
   await expect(page.locator(".board-clock")).toHaveCount(0);
 
   await openInvitation(page, IN_FLIGHT);
   await expect(page.locator(".departure-board .flap-text")).toHaveText("IN FLIGHT");
-  await expect(page.locator(".day-of-status")).toContainText("We are already there");
+  await expect(page.locator(".day-of-status")).toContainText("We are already in the Reunion Room");
 });
 
 test("after the party the invitation settles into a thank you", async ({ page }) => {
@@ -115,7 +144,8 @@ test("travel and hotel screens answer the day's questions first", async ({ page 
   await nav.getByRole("button", { name: "Hotel", exact: true }).click();
   const hotelBanner = page.locator(".day-of-banner");
   await expect(hotelBanner).toContainText("This is the venue");
-  await expect(hotelBanner).toContainText("You do not need a room to be here");
+  await expect(hotelBanner).toContainText("the Reunion Room");
+  await expect(hotelBanner).toContainText("You do not need a guest room to be here");
   const overnight = page.locator(".overnight-note");
   await expect(overnight).toContainText("Only if you booked a room");
   await expect(overnight).toContainText("Checkout is Sunday, September 27");

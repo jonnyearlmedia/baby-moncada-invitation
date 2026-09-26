@@ -2,13 +2,14 @@
 
 /* eslint-disable @next/next/no-img-element -- Amazon supplies live, variable registry image URLs; native lazy loading keeps the list resilient when an item image changes. */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { EventSettings } from "@/lib/invitation-types";
 
 const BOOKING_URL = "https://www.hilton.com/en/hotels/stsrhup-hotel-centro-sonoma-wine-country/?SEO_id=GMB-AMER-UP-STSRHUP";
 const FALLBACK_RSVP_DEADLINE = "2026-09-11";
 const REGISTRY_URL = "https://www.amazon.com/baby-reg/janelle-moncada-november-2026-rohnertpark/10AIJQD53FRAQ";
 const HOTEL_ADDRESS = "5870 Labath Ave, Rohnert Park, CA 94928";
+const EVENT_ROOM = "The Reunion Room";
 const HOTEL_APPLE_MAPS = "https://maps.apple.com/?daddr=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&dirflg=d";
 const HOTEL_GOOGLE_MAPS = "https://www.google.com/maps/dir/?api=1&destination=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&travelmode=driving&dir_action=navigate";
 const HOTEL_WAZE = "https://waze.com/ul?q=5870%20Labath%20Ave%2C%20Rohnert%20Park%2C%20CA%2094928&navigate=yes";
@@ -71,6 +72,45 @@ function getPhase(startsAt: number, now: number): Phase {
   if (now >= startsAt + BOARDING_WINDOW_MS) return "inflight";
   if (now >= startsAt) return "boarding";
   return eventDayFormatter.format(now) === eventDayFormatter.format(startsAt) ? "today" : "scheduled";
+}
+
+const CHECKLIST = [
+  { id: "diapers", label: "Diapers, size 2 or up", detail: "One pack is one raffle entry" },
+  { id: "layer", label: "A light layer", detail: "It cools off after sundown" },
+  { id: "phone", label: "Phone charged", detail: "For photos" },
+  { id: "parking", label: "Card or cash for parking", detail: "$8 per day, on site" },
+] as const;
+
+function seedFrom(value: string) {
+  let seed = 2166136261;
+  for (let index = 0; index < value.length; index += 1) seed = Math.imul(seed ^ value.charCodeAt(index), 16777619) >>> 0;
+  return seed || 1;
+}
+
+function confirmationCode(slug: string) {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let seed = seedFrom(slug);
+  let code = "";
+  for (let index = 0; index < 6; index += 1) {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    code += alphabet[seed % alphabet.length];
+  }
+  return code;
+}
+
+function barcodePattern(slug: string) {
+  let seed = seedFrom(`${slug}-barcode`);
+  const next = () => (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0);
+  const stops: string[] = [];
+  let position = 0;
+  while (position < 100) {
+    const bar = Math.min(100, position + 0.35 + (next() % 5) * 0.3);
+    stops.push(`var(--app-text) ${position}% ${bar}%`);
+    const gap = Math.min(100, bar + 0.45 + (next() % 4) * 0.28);
+    stops.push(`transparent ${bar}% ${gap}%`);
+    position = gap;
+  }
+  return `linear-gradient(90deg, ${stops.join(",")})`;
 }
 
 function formatNameList(names: string[]) {
@@ -219,7 +259,7 @@ export default function Home({ inviteSlug = "murao" }: { inviteSlug?: string }) 
       "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Baby Moncada//Invitation//EN", "BEGIN:VEVENT",
       "UID:baby-moncada-20260926", "DTSTART;TZID=America/Los_Angeles:20260926T160000",
       "SUMMARY:Baby Moncada Baby Shower", `LOCATION:${HOTEL_ADDRESS}`,
-      "DESCRIPTION:Join Janelle and Fernando for the Baby Moncada baby shower at Hotel Centro Sonoma Wine Country. Attire is casual. Diaper raffle \u2014 bring a pack of diapers in size 2 or larger for a chance to win a prize.",
+      `DESCRIPTION:Join Janelle and Fernando for the Baby Moncada baby shower in the Reunion Room at Hotel Centro Sonoma Wine Country. Attire is casual. Diaper raffle: bring a pack of diapers in size 2 or larger for a chance to win a prize.`,
       "END:VEVENT", "END:VCALENDAR",
     ].join("\r\n");
     const link = document.createElement("a");
@@ -255,7 +295,7 @@ export default function Home({ inviteSlug = "murao" }: { inviteSlug?: string }) 
 const PHASE_COPY: Record<Phase, { stamp: string; status: string; note: string; script: string }> = {
   scheduled: { stamp: "ON TIME", status: "ON TIME", note: "Boarding pass issued", script: "the little one is coming \u2708" },
   today: { stamp: "TODAY", status: "BOARDING SOON", note: "Doors open at 4:00 PM", script: "today is the day \u2708" },
-  boarding: { stamp: "BOARDING", status: "NOW BOARDING", note: "Come on in. The hotel lobby is the gate.", script: "we are boarding \u2708" },
+  boarding: { stamp: "BOARDING", status: "NOW BOARDING", note: "Come on in. We are in the Reunion Room.", script: "we are boarding \u2708" },
   inflight: { stamp: "IN FLIGHT", status: "IN FLIGHT", note: "The shower is underway. Late arrivals still welcome.", script: "wheels up \u2708" },
   landed: { stamp: "ARRIVED", status: "ARRIVED", note: "Thank you for flying Moncada Airways", script: "thank you for coming \u2708" },
 };
@@ -275,7 +315,7 @@ function DepartureBoard({ phase, countdown }: { phase: Phase; countdown: Countdo
     <dl className="board-grid">
       <div><dt>Destination</dt><dd>Hotel Centro, Rohnert Park</dd></div>
       <div><dt>Departs</dt><dd>4:00 PM</dd></div>
-      <div><dt>Gate</dt><dd>Hotel lobby</dd></div>
+      <div><dt>Gate</dt><dd>{EVENT_ROOM}</dd></div>
     </dl>
     <p className="board-status"><i aria-hidden="true" /><SplitFlap text={copy.status} /></p>
     {phase === "today" && <div className="board-clock" aria-label={`${hours} hours ${countdown.minutes} minutes until boarding`}>
@@ -303,13 +343,72 @@ function DayOfActions({ phone }: { phone: string }) {
   </>;
 }
 
+const checklistCache = new Map<string, string>();
+const checklistListeners = new Set<() => void>();
+
+function readChecklist(key: string) {
+  const cached = checklistCache.get(key);
+  if (cached !== undefined) return cached;
+  let stored = "[]";
+  try { stored = window.localStorage.getItem(key) ?? "[]"; } catch { /* private mode or blocked site data */ }
+  checklistCache.set(key, stored);
+  return stored;
+}
+
+function writeChecklist(key: string, value: string) {
+  checklistCache.set(key, value);
+  try { window.localStorage.setItem(key, value); } catch { /* ticks still hold for this visit */ }
+  for (const listener of checklistListeners) listener();
+}
+
+function subscribeChecklist(onChange: () => void) {
+  checklistListeners.add(onChange);
+  const onStorage = () => { checklistCache.clear(); onChange(); };
+  window.addEventListener("storage", onStorage);
+  return () => { checklistListeners.delete(onChange); window.removeEventListener("storage", onStorage); };
+}
+
+function DepartureChecklist({ slug }: { slug: string }) {
+  const storageKey = `baby-moncada-checklist-${slug}`;
+  const stored = useSyncExternalStore(subscribeChecklist, () => readChecklist(storageKey), () => "[]");
+  const done = useMemo(() => {
+    try {
+      const parsed = JSON.parse(stored) as unknown;
+      return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
+    } catch {
+      return [];
+    }
+  }, [stored]);
+
+  function toggle(id: string) {
+    const next = done.includes(id) ? done.filter((item) => item !== id) : [...done, id];
+    writeChecklist(storageKey, JSON.stringify(next));
+  }
+
+  return <section className="departure-checklist" aria-label="Before you leave">
+    <p className="phone-eyebrow">Before you leave</p>
+    <ul>
+      {CHECKLIST.map((item) => {
+        const checked = done.includes(item.id);
+        return <li key={item.id}>
+          <button type="button" aria-pressed={checked} onClick={() => toggle(item.id)}>
+            <i aria-hidden="true" data-checked={checked || undefined} />
+            <span><strong>{item.label}</strong><small>{item.detail}</small></span>
+          </button>
+        </li>;
+      })}
+    </ul>
+    <p className="checklist-note">Gifts ship straight from Amazon. There is nothing to carry in.</p>
+  </section>;
+}
+
 function ArrivalStrip() {
   return <section className="arrival-strip" aria-label="When you get there">
     <p className="phone-eyebrow">When you get there</p>
     <ol>
       <li><span aria-hidden="true">01</span><div><strong>Self park on site</strong><p>Hilton lists parking at $8 per day.</p></div></li>
       <li><span aria-hidden="true">02</span><div><strong>Walk in the main lobby</strong><p>The shower and the guest rooms share one address.</p></div></li>
-      <li><span aria-hidden="true">03</span><div><strong>Follow the Baby Moncada signs</strong><p>The front desk can point you to the room.</p></div></li>
+      <li><span aria-hidden="true">03</span><div><strong>Ask for the Reunion Room</strong><p>It is one half of the hotel\u2019s Rendezvous event space. The front desk can point you straight to it.</p></div></li>
     </ol>
   </section>;
 }
@@ -334,7 +433,7 @@ function DayOfStatus({ phase, rsvp }: { phase: Phase; rsvp: RSVP }) {
   return <div className="rsvp-deadline confirmed day-of-status">
     <span>Checked in</span>
     <strong>Party of {attending}, boarding at 4:00 PM</strong>
-    <p>{phase === "today" ? "See you in the hotel lobby." : "We are already there. Come find us."}</p>
+    <p>{phase === "today" ? "See you in the Reunion Room." : "We are already in the Reunion Room. Come find us."}</p>
   </div>;
 }
 
@@ -350,10 +449,11 @@ function InviteScreen({ phase, countdown, rsvp, deadlinePassed, onRSVP, onCalend
   }
   const dayOf = phase !== "scheduled";
   const copy = PHASE_COPY[phase];
+  const record = confirmationCode(rsvp.canonicalSlug);
   const passengerNames = rsvp.guests.map((guest) => guest.name).join(", ") || "Your invited party";
   return <div className={`invite-screen ticket-screen${dayOf ? " day-of" : ""}`} data-phase={phase}>
     <header className="ticket-header">
-      <p>Boarding Pass<br />For {rsvp.invitationLabel || "your household"}</p>
+      <p>Boarding Pass<br />For {rsvp.invitationLabel || "your household"}<br /><span className="pass-conf">Conf {record}</span></p>
       {dayOf ? <span className="departure-stamp" data-phase={phase}>{copy.stamp}</span> : <div className="paper-monogram" aria-hidden="true">J✦F</div>}
     </header>
     {dayOf && <DepartureBoard phase={phase} countdown={countdown} />}
@@ -370,17 +470,21 @@ function InviteScreen({ phase, countdown, rsvp, deadlinePassed, onRSVP, onCalend
     <section className="ticket-details">
       <TicketFact label="Departure" value="Sat, Sep 26 2026" />
       <TicketFact label="Boarding time" value="4:00 PM" />
-      {dayOf && <TicketFact label="Gate" value="Hotel lobby" />}
-      {dayOf && <TicketFact label="Parking" value="$8 per day" />}
+      <TicketFact label="Gate" value={EVENT_ROOM} />
+      <TicketFact label="Group" value="Family" />
+      <TicketFact label="Seat" value="Open" />
+      <TicketFact label="Parking" value="$8 per day" />
       <TicketFact full label="Destination" value="Hotel Centro Sonoma Wine Country" detail={HOTEL_ADDRESS} />
       <TicketFact full label="Passenger" value={passengerNames} />
       <TicketFact full label="Attire" value="Casual" detail="Dress comfortably" />
     </section>
     <TicketDivider />
+    {phase === "today" && <DepartureChecklist slug={rsvp.canonicalSlug} />}
     {dayOf ? phase !== "landed" && <ArrivalStrip /> : <section className="countdown-wrap"><p className="phone-eyebrow">Time to boarding</p><div className="countdown" aria-label="Countdown to September 26, 2026">
       {Object.entries(countdown).map(([label, value]) => <div key={label}><strong>{label === "days" ? value : String(value).padStart(2, "0")}</strong><span>{label === "hours" ? "Hrs" : label === "minutes" ? "Min" : label === "seconds" ? "Sec" : "Days"}</span></div>)}
     </div></section>}
-    <div className="ticket-barcode" aria-hidden="true" />
+    <div className="ticket-barcode" style={{ backgroundImage: barcodePattern(rsvp.canonicalSlug) }} aria-hidden="true" />
+    <p className="barcode-code" aria-hidden="true">{record}</p>
     {phase === "landed"
       ? <div className="landed-card"><strong>✈ Thanks for flying with us</strong><span>Janelle and Fernando are glad you made the trip. Gifts are still welcome whenever you get to them.</span><ExternalLink href={REGISTRY_URL} primary>Open the registry on Amazon</ExternalLink></div>
       : <>
@@ -422,7 +526,7 @@ function StayScreen({ bookingUrl, phase }: { bookingUrl: string; phase: Phase })
   const dayOf = phase !== "scheduled";
   return <div className="feature-screen">
     <ScreenHeader kicker="Boarding Pass · Hotel Stay" title="Stay on site" subtitle="Hotel Centro Sonoma Wine Country · Tapestry by Hilton" mark="" />
-    {dayOf && <div className="day-of-banner"><span>Today</span><strong>This is the venue</strong><p>The shower is inside this hotel. You do not need a room to be here. Park on site, walk in the main lobby, and follow the signs.</p></div>}
+    {dayOf && <div className="day-of-banner"><span>Today</span><strong>This is the venue</strong><p>The shower is in the Reunion Room inside this hotel. You do not need a guest room to be here. Park on site, walk in the main lobby, and ask for the Reunion Room.</p></div>}
     <div className="info-block venue-block"><strong>Hotel Centro Sonoma Wine Country</strong><p>Tapestry by Hilton<br />{HOTEL_ADDRESS}</p></div>
     {!dayOf && <>
       <div className="stay-facts two-up"><div><span>Check in</span><strong>Fri, Sep 25</strong></div><div><span>Check out</span><strong>Sun, Sep 27</strong></div></div>
@@ -502,7 +606,7 @@ function MapsScreen({ phase, countdown }: { phase: Phase; countdown: Countdown }
     <div className="map-visual"><iframe title="Interactive map showing Hotel Centro Sonoma Wine Country at 5870 Labath Avenue" loading="lazy" src={HOTEL_MAP_EMBED} /></div>
     <div className="place-list">
       <article className="place venue-place"><span>Your destination</span><h3>Hotel Centro Sonoma Wine Country</h3><p>{HOTEL_ADDRESS}</p><div><ExternalLink href={HOTEL_APPLE_MAPS}>Apple Maps</ExternalLink><ExternalLink href={HOTEL_GOOGLE_MAPS}>Google Maps</ExternalLink><ExternalLink href={HOTEL_WAZE}>Waze</ExternalLink><button className="phone-action" onClick={copyAddress}>{copyLabel}</button></div></article>
-      <div className="arrival-card"><span>On arrival</span><ol><li>Use the hotel&apos;s on-site self-parking. Hilton currently lists parking at $8 per day.</li><li>Enter through the main hotel lobby.</li><li>Ask the front desk for the Baby Moncada shower location or follow any posted event signs.</li></ol></div>
+      <div className="arrival-card"><span>On arrival</span><ol><li>Use the hotel&apos;s on-site self-parking. Hilton currently lists parking at $8 per day.</li><li>Enter through the main hotel lobby.</li><li>Ask the front desk for the Baby Moncada shower in the Reunion Room, or follow any posted event signs.</li></ol></div>
       <div className="wear-note"><strong>What to wear</strong><p>Late September is typically warm during the day and cooler in the evening. Dress comfortably and bring a light layer.</p></div>
       <p className="travel-note">The shower and guest rooms share the same address.</p>
     </div>
