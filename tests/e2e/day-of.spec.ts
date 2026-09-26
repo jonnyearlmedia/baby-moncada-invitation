@@ -56,7 +56,10 @@ test("the invitation turns into a live departure board on the day", async ({ pag
   await expect(contact.getByRole("link", { name: "Text Janelle" })).toHaveAttribute("href", "sms:+17073345988");
   await expect(contact.getByRole("link", { name: "Call Janelle" })).toHaveAttribute("href", "tel:+17073345988");
 
-  await expect(page.locator(".arrival-strip")).toContainText("Ask for the Reunion Room");
+  const arrival = page.locator(".arrival-guide");
+  await expect(arrival.getByRole("heading", { name: /When you arrive/ })).toBeVisible();
+  await expect(arrival).toContainText("Through the pre function room");
+  await expect(arrival.getByRole("img")).toHaveAttribute("src", /arrival-map/);
   await expect(page.locator(".diaper-raffle")).toContainText("Last call");
   await expect(page.locator(".day-of-status")).toContainText("Party of 2, boarding at 4:00 PM");
   await expect(page.locator(".day-of-status")).toContainText("See you in the Reunion Room.");
@@ -105,7 +108,7 @@ test("the departure checklist ticks, persists, and never asks for a gift", async
 test("the checklist is only for people who have not left yet", async ({ page }) => {
   await openInvitation(page, BOARDING);
   await expect(page.locator(".departure-checklist")).toHaveCount(0);
-  await expect(page.locator(".arrival-strip")).toBeVisible();
+  await expect(page.locator(".arrival-guide")).toBeVisible();
 });
 
 test("the board follows the party from boarding through arrival", async ({ page }) => {
@@ -125,7 +128,7 @@ test("after the party the invitation settles into a thank you", async ({ page })
   await expect(page.locator(".departure-board .flap-text")).toHaveText("ARRIVED");
   await expect(page.locator(".departure-stamp")).toHaveText("ARRIVED");
 
-  await expect(page.locator(".arrival-strip")).toHaveCount(0);
+  await expect(page.locator(".invite-screen .arrival-guide")).toHaveCount(0);
   await expect(page.locator(".diaper-raffle")).toHaveCount(0);
   await expect(page.locator(".invite-screen > .day-of-actions")).toHaveCount(0);
   await expect(page.locator(".invite-screen > .day-of-contact")).toHaveCount(0);
@@ -155,7 +158,8 @@ test("travel and hotel screens answer the day's questions first", async ({ page 
   await expect(banner).toContainText("5870 Labath Ave, Rohnert Park");
   await expect(banner.getByRole("link")).toHaveText(["Apple Maps", "Google Maps", "Waze"]);
   await expect(banner.getByRole("button", { name: "Copy address" })).toBeVisible();
-  await expect(page.getByText("Hilton currently lists parking at $8 per day")).toBeVisible();
+  await expect(page.locator(".arrival-guide")).toContainText("Hilton currently lists parking at $8 per day");
+  await expect(page.locator(".arrival-guide").getByRole("img")).toBeVisible();
 
   await nav.getByRole("button", { name: "Hotel", exact: true }).click();
   const hotelBanner = page.locator(".day-of-banner");

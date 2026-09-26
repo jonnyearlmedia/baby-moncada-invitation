@@ -2,6 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element -- Amazon supplies live, variable registry image URLs; native lazy loading keeps the list resilient when an item image changes. */
 
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { EventSettings } from "@/lib/invitation-types";
 
@@ -404,13 +405,23 @@ function DepartureChecklist({ slug }: { slug: string }) {
   </section>;
 }
 
-function ArrivalStrip() {
-  return <section className="arrival-strip" aria-label="When you get there">
-    <p className="phone-eyebrow">When you get there</p>
+function ArrivalGuide() {
+  return <section className="arrival-guide" aria-label="When you arrive">
+    <h3>When you arrive&#8230;</h3>
+    <Image
+      className="arrival-map"
+      src="/arrival-map.png"
+      alt="Ground floor plan. A red arrow leaves the entrance at the bottom left, runs up into the lobby, then right across the lobby to a small pre function room that opens into the room marked Janelle and Fernando&#8217;s Baby Shower."
+      width={1448}
+      height={1086}
+      sizes="(max-width: 480px) 100vw, 430px"
+    />
     <ol>
-      <li><span aria-hidden="true">01</span><div><strong>Self park on site</strong><p>Hilton lists parking at $8 per day.</p></div></li>
-      <li><span aria-hidden="true">02</span><div><strong>Walk in the main lobby</strong><p>The shower and the guest rooms share one address.</p></div></li>
-      <li><span aria-hidden="true">03</span><div><strong>Ask for the Reunion Room</strong><p>It is one half of the hotel\u2019s Rendezvous event space. The front desk can point you straight to it.</p></div></li>
+      <li><span aria-hidden="true">01</span><div><strong>Park on site</strong><p>Hilton currently lists parking at $8 per day.</p></div></li>
+      <li><span aria-hidden="true">02</span><div><strong>In the main entrance</strong><p>Straight ahead into the lobby.</p></div></li>
+      <li><span aria-hidden="true">03</span><div><strong>Turn right and cross the lobby</strong><p>Follow it all the way to the far end.</p></div></li>
+      <li><span aria-hidden="true">04</span><div><strong>Through the pre function room</strong><p>The small room just before the space.</p></div></li>
+      <li><span aria-hidden="true">05</span><div><strong>The Reunion Room</strong><p>Janelle and Fernando&#8217;s Baby Shower.</p></div></li>
     </ol>
   </section>;
 }
@@ -497,7 +508,7 @@ function InviteScreen({ phase, countdown, rsvp, deadlinePassed, onRSVP, onCalend
     </section>
     <TicketDivider />
     {phase === "today" && <DepartureChecklist slug={rsvp.canonicalSlug} />}
-    {dayOf ? phase !== "landed" && <ArrivalStrip /> : <section className="countdown-wrap"><p className="phone-eyebrow">Time to boarding</p><div className="countdown" aria-label="Countdown to September 26, 2026">
+    {dayOf ? phase !== "landed" && <ArrivalGuide /> : <section className="countdown-wrap"><p className="phone-eyebrow">Time to boarding</p><div className="countdown" aria-label="Countdown to September 26, 2026">
       {Object.entries(countdown).map(([label, value]) => <div key={label}><strong>{label === "days" ? value : String(value).padStart(2, "0")}</strong><span>{label === "hours" ? "Hrs" : label === "minutes" ? "Min" : label === "seconds" ? "Sec" : "Days"}</span></div>)}
     </div></section>}
     <div className="ticket-barcode" style={{ backgroundImage: barcodePattern(rsvp.canonicalSlug) }} aria-hidden="true" />
@@ -624,7 +635,7 @@ function MapsScreen({ phase, countdown }: { phase: Phase; countdown: Countdown }
     <div className="map-visual"><iframe title="Interactive map showing Hotel Centro Sonoma Wine Country at 5870 Labath Avenue" loading="lazy" src={HOTEL_MAP_EMBED} /></div>
     <div className="place-list">
       <article className="place venue-place"><span>Your destination</span><h3>Hotel Centro Sonoma Wine Country</h3><p>{HOTEL_ADDRESS}</p><div><ExternalLink href={HOTEL_APPLE_MAPS}>Apple Maps</ExternalLink><ExternalLink href={HOTEL_GOOGLE_MAPS}>Google Maps</ExternalLink><ExternalLink href={HOTEL_WAZE}>Waze</ExternalLink><button className="phone-action" onClick={copyAddress}>{copyLabel}</button></div></article>
-      <div className="arrival-card"><span>On arrival</span><ol><li>Use the hotel&apos;s on-site self-parking. Hilton currently lists parking at $8 per day.</li><li>Enter through the main hotel lobby.</li><li>Ask the front desk for the Baby Moncada shower in the Reunion Room, or follow any posted event signs.</li></ol></div>
+      <ArrivalGuide />
       <div className="wear-note"><strong>What to wear</strong><p>Late September is typically warm during the day and cooler in the evening. Dress comfortably and bring a light layer.</p></div>
       <p className="travel-note">The shower and guest rooms share the same address.</p>
     </div>

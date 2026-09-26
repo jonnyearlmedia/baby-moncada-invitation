@@ -135,7 +135,10 @@ test("travel view uses an interactive map at the exact venue coordinates", async
   assert.match(page, /<iframe title="Interactive map showing Hotel Centro/);
   assert.doesNotMatch(page, /<div className="map-visual"><svg/);
   assert.match(page, /Hilton currently lists parking at \$8 per day/);
-  assert.match(page, /Ask the front desk for the Baby Moncada shower in the Reunion Room, or follow any posted event signs/);
+  assert.match(page, /src="\/arrival-map\.png"/);
+  assert.match(page, /Through the pre function room/);
+  assert.match(page, /When you arrive/);
+  assert.doesNotMatch(page, /Ask the front desk for the Baby Moncada shower/);
   assert.match(page, /warm during the day and cooler in the evening/);
 });
 
