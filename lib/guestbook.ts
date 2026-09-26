@@ -18,16 +18,3 @@ export type GuestbookEntry = {
   createdAt: string;
   hidden?: boolean;
 };
-
-export type GuestbookRow = {
-  id: string;
-  guest_name: string;
-  message: string;
-  sign_off: GuestbookSignOff;
-  frame: GuestbookFrame;
-  photo_path: string | null;
-  hidden: boolean;
-  created_at: string;
-};
-
-export const GUESTBOOK_COLUMNS = "id, guest_name, message, sign_off, frame, photo_path, hidden, created_at";
