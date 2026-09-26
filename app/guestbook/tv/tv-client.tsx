@@ -49,7 +49,7 @@ export default function GuestbookTv() {
     <aside className="gb-tv-side">
       <p className="gb-script">sign the guestbook ✈</p>
       <h1>Baby Moncada</h1>
-      <p>Tap your phone on any tag around the room. Snap a photo, pick a frame, and leave the little one a note.</p>
+      <p>Tap your phone on any tag around the room. Snap a photo, pick a frame, and leave the Moncadas a note.</p>
       <strong>{entries.length} {entries.length === 1 ? "entry" : "entries"}</strong>
     </aside>
     <section className="gb-tv-stage" aria-live="polite">

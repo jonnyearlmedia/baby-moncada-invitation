@@ -139,7 +139,7 @@ export default function GuestbookClient() {
       {step === "welcome" && <section className="gb-screen gb-welcome">
         <p className="gb-script">thank you for coming ✈</p>
         <h1>Thank you for being here</h1>
-        <p className="gb-lede">Janelle and Fernando are so glad you made the trip. Before you go, leave Baby Moncada a note he can read one day.</p>
+        <p className="gb-lede">Janelle and Fernando are so glad you made the trip. Before you go, leave the Moncadas a note they can keep.</p>
         <div className="gb-actions">
           <button className="gb-button primary gb-feature" onClick={startEntry}>
             <strong>Sign the guestbook</strong>
@@ -180,7 +180,7 @@ export default function GuestbookClient() {
         <form className="gb-form" onSubmit={submit}>
           {hasPhoto && <img className="gb-thumb" src={rendered[frame]?.url} alt="You, framed" width={FRAME_WIDTH} height={FRAME_HEIGHT} />}
           <div className="gb-letter">
-            <p className="gb-letter-greeting">Dear Baby Moncada,</p>
+            <p className="gb-letter-greeting">Dear Moncada family,</p>
             <textarea value={message} onChange={(event) => setMessage(event.target.value)} maxLength={GUESTBOOK_MESSAGE_MAX} placeholder="A wish for the little one, advice for the new parents, or just a hello." rows={7} aria-label="Your message" required />
             <small className="gb-letter-count">{message.length}/{GUESTBOOK_MESSAGE_MAX}</small>
             <div className="gb-signoffs" role="radiogroup" aria-label="Sign off">
@@ -196,7 +196,7 @@ export default function GuestbookClient() {
 
       {step === "wall" && <section className="gb-screen gb-wall-screen">
         <div className="gb-wall-head">
-          {justSigned ? <><p className="gb-script">you&apos;re in the book ✈</p><h1>Thank you!</h1></> : <><p className="gb-script">notes for the little one</p><h1>The guestbook</h1></>}
+          {justSigned ? <><p className="gb-script">you&apos;re in the book ✈</p><h1>Thank you!</h1></> : <><p className="gb-script">notes for the Moncadas</p><h1>The guestbook</h1></>}
           <p className="gb-lede">{count ? `${count} ${count === 1 ? "entry" : "entries"} so far. New ones show up on their own.` : "No entries yet. Be the first."}</p>
           <div className="gb-row">
             <button className="gb-button primary" onClick={startEntry}>{justSigned ? "Add another entry" : "Sign the guestbook"}</button>
