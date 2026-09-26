@@ -132,25 +132,46 @@ export default function GuestbookClient() {
   const hasPhoto = Boolean(rendered[frame]);
   const count = entries?.length ?? 0;
 
+  const photos = entries?.filter((entry) => entry.photoUrl).slice(0, 5) ?? [];
+
   return <main className="gb-page">
+    <div className="gb-sky" aria-hidden="true">
+      <span className="gb-cloud one" /><span className="gb-cloud two" /><span className="gb-cloud three" />
+      <span className="gb-plane"><svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5Z" /></svg></span>
+    </div>
     <div ref={topRef} className="gb-shell">
-      <header className="gb-topbar"><span>Moncada Airways</span><span>Flt JF926</span></header>
+      <header className="gb-topbar"><span>Moncada Airways</span><span className="gb-live"><i />Flt JF926</span></header>
       <input ref={cameraRef} className="gb-hidden-input" type="file" accept="image/*" capture="user" onChange={onPhoto} tabIndex={-1} aria-hidden="true" />
 
-      {step === "welcome" && <section className="gb-screen gb-welcome">
+      {step === "welcome" && <section className="gb-screen gb-hero">
+        <div className="gb-board" role="img" aria-label="Flight JF926 has arrived">
+          <div className="gb-board-meta"><span>Flt JF926</span><span>From all over</span><span>Gate: Guestbook</span></div>
+          <SplitFlap text="ARRIVED" />
+        </div>
         <p className="gb-script">thank you for coming! ✈</p>
-        <h1>So glad you’re here!</h1>
+        <h1>So glad <em>you’re here!</em></h1>
         <p className="gb-lede">Janelle and Fernando are so happy you made it! Before you go, leave the Moncadas a note they can keep forever.</p>
-        <div className="gb-actions">
-          <button className="gb-button primary gb-feature" onClick={startEntry}>
+        <button className="gb-pass" onClick={startEntry}>
+          <span className="gb-pass-main">
+            <small>Boarding now</small>
             <strong>Sign the guestbook</strong>
             <span>Snap a pic, pick a frame, leave some love!</span>
-          </button>
-          <button className="gb-button" onClick={() => setStep("wall")}>Read the guestbook{count ? ` · ${count} ${count === 1 ? "entry" : "entries"}` : ""}</button>
-        </div>
+          </span>
+          <span className="gb-pass-stub" aria-hidden="true">
+            <small>Gate</small><b>GB</b>
+            <small>Seat</small><b>Any</b>
+            <i className="gb-barcode" />
+          </span>
+        </button>
+        {photos.length > 0 && <button className="gb-strip" onClick={() => setStep("wall")}>
+          <span className="gb-strip-photos" aria-hidden="true">{photos.map((entry) => <img key={entry.id} src={entry.photoUrl ?? ""} alt="" width={FRAME_WIDTH} height={FRAME_HEIGHT} loading="lazy" decoding="async" />)}</span>
+          <span className="gb-strip-caption">{count} {count === 1 ? "guest has" : "guests have"} signed! Tap to read</span>
+        </button>}
+        {photos.length === 0 && <button className="gb-button" onClick={() => setStep("wall")}>Read the guestbook{count ? ` · ${count} ${count === 1 ? "entry" : "entries"}` : ""}</button>}
       </section>}
 
       {step === "welcome" && <nav className="gb-links" aria-label="More from today">
+        <p className="gb-section-label">Before you fly home</p>
         <a href={PHOTO_ALBUM_URL} target="_blank" rel="noopener noreferrer">
           <span className="gb-link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="9" cy="10" r="1.6" /><path d="m21 16-5-5-8 8" /></svg></span>
           <span><strong>Add your photos!</strong><small>Drop everything you took today into the {PHOTO_ALBUM_NAME} album! No Apple account needed.</small></span>
@@ -208,6 +229,7 @@ export default function GuestbookClient() {
         </form>
       </section>}
 
+      {step === "wall" && justSigned && <Confetti key={justSigned} />}
       {step === "wall" && <section className="gb-screen gb-wall-screen">
         <div className="gb-wall-head">
           {justSigned ? <><p className="gb-script">you&apos;re in the book! ✈</p><h1>Signed, sealed, delivered!</h1></> : <><p className="gb-script">love notes for the Moncadas</p><h1>The guestbook</h1></>}
@@ -223,6 +245,24 @@ export default function GuestbookClient() {
       </section>}
     </div>
   </main>;
+}
+
+function SplitFlap({ text }: { text: string }) {
+  return <span className="gb-flaps">{Array.from(text).map((character, index) => <b key={`${character}-${index}`} style={{ animationDelay: `${300 + index * 90}ms` }}>{character}</b>)}</span>;
+}
+
+const CONFETTI_COLORS = ["#f2c46d", "#fffdf8", "#8ec1e6", "#f4a7b9"];
+
+function Confetti() {
+  return <div className="gb-confetti" aria-hidden="true">{Array.from({ length: 42 }, (_, index) => <i key={index} style={{
+    left: `${(index * 37) % 100}%`,
+    background: CONFETTI_COLORS[index % CONFETTI_COLORS.length],
+    width: `${6 + (index % 3) * 3}px`,
+    height: `${index % 2 ? 6 + (index % 3) * 3 : 14}px`,
+    borderRadius: index % 5 === 0 ? "50%" : "2px",
+    animationDelay: `${(index % 12) * 70}ms`,
+    animationDuration: `${2200 + (index % 5) * 300}ms`,
+  }} />)}</div>;
 }
 
 function StepHeader({ index, title, onBack }: { index: number; title: string; onBack: () => void }) {
