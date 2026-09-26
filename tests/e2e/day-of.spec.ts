@@ -89,28 +89,6 @@ test("the shared album stays off the pre-event invitation", async ({ page }) => 
   await expect(page.locator(".album-card")).toHaveCount(0);
 });
 
-test("the departure checklist ticks, persists, and never asks for a gift", async ({ page }) => {
-  await openInvitation(page, DAY_OF);
-  const items = page.locator(".departure-checklist button");
-  await expect(items).toHaveCount(4);
-  await expect(page.locator(".departure-checklist")).toContainText("Diapers, size 2 or up");
-  await expect(page.locator(".checklist-note")).toHaveText("Gifts ship straight from Amazon. There is nothing to carry in.");
-
-  await items.first().click();
-  await expect(items.first()).toHaveAttribute("aria-pressed", "true");
-  await page.reload();
-  await expect(page.locator('.departure-checklist button[aria-pressed="true"]')).toHaveCount(1);
-
-  await items.first().click();
-  await expect(page.locator('.departure-checklist button[aria-pressed="true"]')).toHaveCount(0);
-});
-
-test("the checklist is only for people who have not left yet", async ({ page }) => {
-  await openInvitation(page, BOARDING);
-  await expect(page.locator(".departure-checklist")).toHaveCount(0);
-  await expect(page.locator(".arrival-guide")).toBeVisible();
-});
-
 test("the board follows the party from boarding through arrival", async ({ page }) => {
   await openInvitation(page, BOARDING);
   await expect(page.locator(".departure-board .flap-text")).toHaveText("NOW BOARDING");

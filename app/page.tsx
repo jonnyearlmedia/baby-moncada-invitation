@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element -- Amazon supplies live, variable registry image URLs; native lazy loading keeps the list resilient when an item image changes. */
 
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { EventSettings } from "@/lib/invitation-types";
 
 const BOOKING_URL = "https://www.hilton.com/en/hotels/stsrhup-hotel-centro-sonoma-wine-country/?SEO_id=GMB-AMER-UP-STSRHUP";
@@ -76,13 +76,6 @@ function getPhase(startsAt: number, now: number): Phase {
   if (now >= startsAt) return "boarding";
   return eventDayFormatter.format(now) === eventDayFormatter.format(startsAt) ? "today" : "scheduled";
 }
-
-const CHECKLIST = [
-  { id: "diapers", label: "Diapers, size 2 or up", detail: "One pack is one raffle entry" },
-  { id: "layer", label: "A light layer", detail: "It cools off after sundown" },
-  { id: "phone", label: "Phone charged", detail: "Photos from today go in the shared album" },
-  { id: "parking", label: "Card or cash for parking", detail: "$8 per day, on site" },
-] as const;
 
 function seedFrom(value: string) {
   let seed = 2166136261;
@@ -346,65 +339,6 @@ function DayOfActions({ phone }: { phone: string }) {
   </>;
 }
 
-const checklistCache = new Map<string, string>();
-const checklistListeners = new Set<() => void>();
-
-function readChecklist(key: string) {
-  const cached = checklistCache.get(key);
-  if (cached !== undefined) return cached;
-  let stored = "[]";
-  try { stored = window.localStorage.getItem(key) ?? "[]"; } catch { /* private mode or blocked site data */ }
-  checklistCache.set(key, stored);
-  return stored;
-}
-
-function writeChecklist(key: string, value: string) {
-  checklistCache.set(key, value);
-  try { window.localStorage.setItem(key, value); } catch { /* ticks still hold for this visit */ }
-  for (const listener of checklistListeners) listener();
-}
-
-function subscribeChecklist(onChange: () => void) {
-  checklistListeners.add(onChange);
-  const onStorage = () => { checklistCache.clear(); onChange(); };
-  window.addEventListener("storage", onStorage);
-  return () => { checklistListeners.delete(onChange); window.removeEventListener("storage", onStorage); };
-}
-
-function DepartureChecklist({ slug }: { slug: string }) {
-  const storageKey = `baby-moncada-checklist-${slug}`;
-  const stored = useSyncExternalStore(subscribeChecklist, () => readChecklist(storageKey), () => "[]");
-  const done = useMemo(() => {
-    try {
-      const parsed = JSON.parse(stored) as unknown;
-      return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
-    } catch {
-      return [];
-    }
-  }, [stored]);
-
-  function toggle(id: string) {
-    const next = done.includes(id) ? done.filter((item) => item !== id) : [...done, id];
-    writeChecklist(storageKey, JSON.stringify(next));
-  }
-
-  return <section className="departure-checklist" aria-label="Before you leave">
-    <p className="phone-eyebrow">Before you leave</p>
-    <ul>
-      {CHECKLIST.map((item) => {
-        const checked = done.includes(item.id);
-        return <li key={item.id}>
-          <button type="button" aria-pressed={checked} onClick={() => toggle(item.id)}>
-            <i aria-hidden="true" data-checked={checked || undefined} />
-            <span><strong>{item.label}</strong><small>{item.detail}</small></span>
-          </button>
-        </li>;
-      })}
-    </ul>
-    <p className="checklist-note">Gifts ship straight from Amazon. There is nothing to carry in.</p>
-  </section>;
-}
-
 function ArrivalGuide() {
   return <section className="arrival-guide" aria-label="When you arrive">
     <h3>When you arrive&#8230;</h3>
@@ -507,7 +441,6 @@ function InviteScreen({ phase, countdown, rsvp, deadlinePassed, onRSVP, onCalend
       <TicketFact full label="Attire" value="Casual" detail="Dress comfortably" />
     </section>
     <TicketDivider />
-    {phase === "today" && <DepartureChecklist slug={rsvp.canonicalSlug} />}
     {dayOf ? phase !== "landed" && <ArrivalGuide /> : <section className="countdown-wrap"><p className="phone-eyebrow">Time to boarding</p><div className="countdown" aria-label="Countdown to September 26, 2026">
       {Object.entries(countdown).map(([label, value]) => <div key={label}><strong>{label === "days" ? value : String(value).padStart(2, "0")}</strong><span>{label === "hours" ? "Hrs" : label === "minutes" ? "Min" : label === "seconds" ? "Sec" : "Days"}</span></div>)}
     </div></section>}
