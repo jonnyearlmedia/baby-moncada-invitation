@@ -6,6 +6,7 @@ export function toGuestbookEntry(client: SupabaseClient, row: GuestbookRow, incl
     id: row.id,
     name: row.guest_name,
     message: row.message,
+    signOff: row.sign_off,
     frame: row.frame,
     photoUrl: row.photo_path ? client.storage.from(GUESTBOOK_BUCKET).getPublicUrl(row.photo_path).data.publicUrl : null,
     createdAt: row.created_at,

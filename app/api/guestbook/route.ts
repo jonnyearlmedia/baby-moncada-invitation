@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { hashIp } from "@/lib/admin-session";
-import { GUESTBOOK_BUCKET, GUESTBOOK_COLUMNS, GUESTBOOK_FRAMES, GUESTBOOK_MESSAGE_MAX, GUESTBOOK_NAME_MAX, GUESTBOOK_PHOTO_MAX_BYTES, type GuestbookRow } from "@/lib/guestbook";
+import { GUESTBOOK_BUCKET, GUESTBOOK_COLUMNS, GUESTBOOK_FRAMES, GUESTBOOK_MESSAGE_MAX, GUESTBOOK_NAME_MAX, GUESTBOOK_PHOTO_MAX_BYTES, GUESTBOOK_SIGN_OFFS, type GuestbookRow } from "@/lib/guestbook";
 import { toGuestbookEntry } from "@/lib/guestbook-server";
 import { createAdminServerClient } from "@/lib/supabase-server";
 
@@ -15,6 +15,7 @@ const RATE_LIMIT = 40;
 const entrySchema = z.object({
   name: z.string().trim().min(1, "Add your name.").max(GUESTBOOK_NAME_MAX),
   message: z.string().trim().min(1, "Write a little something first.").max(GUESTBOOK_MESSAGE_MAX),
+  signOff: z.enum(GUESTBOOK_SIGN_OFFS),
   frame: z.enum(GUESTBOOK_FRAMES),
 });
 
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
   const admin = createAdminServerClient();
   try {
     const form = await request.formData();
-    const parsed = entrySchema.safeParse({ name: form.get("name") ?? "", message: form.get("message") ?? "", frame: form.get("frame") ?? "none" });
+    const parsed = entrySchema.safeParse({ name: form.get("name") ?? "", message: form.get("message") ?? "", signOff: form.get("signOff") ?? "Love,", frame: form.get("frame") ?? "none" });
     if (!parsed.success) return Response.json({ error: parsed.error.issues[0]?.message ?? "Check your entry." }, { status: 400 });
 
     const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
@@ -66,6 +67,7 @@ export async function POST(request: Request) {
     const { data, error } = await admin.from("guestbook_entries").insert({
       guest_name: parsed.data.name,
       message: parsed.data.message,
+      sign_off: parsed.data.signOff,
       frame: uploadedPath ? parsed.data.frame : "none",
       photo_path: uploadedPath,
       ip_hash: ipHash,

@@ -1,4 +1,4 @@
-create table public.guestbook_entries (
+create table if not exists public.guestbook_entries (
   id uuid primary key default gen_random_uuid(),
   guest_name text not null check (char_length(guest_name) between 1 and 60),
   message text not null check (char_length(message) between 1 and 500),
@@ -9,8 +9,11 @@ create table public.guestbook_entries (
   created_at timestamptz not null default now()
 );
 
-create index guestbook_entries_visible_idx on public.guestbook_entries(created_at desc) where not hidden;
-create index guestbook_entries_ip_time_idx on public.guestbook_entries(ip_hash, created_at desc);
+alter table public.guestbook_entries
+  add column if not exists sign_off text not null default 'Love,' check (sign_off in ('Love,', 'With love,', 'Sincerely,', 'Hugs,'));
+
+create index if not exists guestbook_entries_visible_idx on public.guestbook_entries(created_at desc) where not hidden;
+create index if not exists guestbook_entries_ip_time_idx on public.guestbook_entries(ip_hash, created_at desc);
 
 alter table public.guestbook_entries enable row level security;
 revoke all on public.guestbook_entries from public, anon, authenticated;

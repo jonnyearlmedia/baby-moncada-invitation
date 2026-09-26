@@ -184,6 +184,8 @@ test("guestbook validates uploads server side and lets hosts hide entries", asyn
   assert.match(migration, /allowed_mime_types[\s\S]*'image\/jpeg'/);
   assert.match(route, /\.eq\("hidden", false\)/);
   assert.match(route, /isJpeg\(bytes\)/);
+  assert.match(route, /signOff: z\.enum\(GUESTBOOK_SIGN_OFFS\)/);
+  assert.match(migration, /add column if not exists sign_off/);
   assert.match(route, /RATE_LIMIT/);
   assert.match(route, /remove\(\[uploadedPath\]\)/);
   assert.match(adminRoute, /hasHostSession/);

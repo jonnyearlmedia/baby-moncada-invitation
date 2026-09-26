@@ -55,7 +55,7 @@ export default function GuestbookTv() {
     <section className="gb-tv-stage" aria-live="polite">
       {current ? <article key={current.id} className={`gb-tv-card${current.photoUrl ? "" : " no-photo"}`}>
         {current.photoUrl && <img src={current.photoUrl} alt={`${current.name} at the shower`} width={FRAME_WIDTH} height={FRAME_HEIGHT} />}
-        <div><p>{current.message}</p><strong>{current.name}</strong></div>
+        <div><p>{current.message}</p><span>{current.signOff}</span><strong>{current.name}</strong></div>
       </article> : <p className="gb-tv-empty">The first entry will show up here.</p>}
     </section>
   </main>;

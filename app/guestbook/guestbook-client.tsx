@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element -- guest photos are local blobs or public storage URLs rendered at their native 4:5 size. */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { GUESTBOOK_MESSAGE_MAX, GUESTBOOK_NAME_MAX, GUESTBOOK_PHOTO_MAX_BYTES, type GuestbookEntry, type GuestbookFrame } from "@/lib/guestbook";
+import { GUESTBOOK_MESSAGE_MAX, GUESTBOOK_NAME_MAX, GUESTBOOK_PHOTO_MAX_BYTES, GUESTBOOK_SIGN_OFFS, type GuestbookEntry, type GuestbookFrame, type GuestbookSignOff } from "@/lib/guestbook";
 import { FRAME_HEIGHT, FRAME_OPTIONS, FRAME_WIDTH, loadPhoto, renderFrame } from "@/lib/guestbook-frames";
 
 type Step = "welcome" | "photo" | "frame" | "write" | "wall";
@@ -42,6 +42,7 @@ export default function GuestbookClient() {
   const [preparing, setPreparing] = useState(false);
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
+  const [signOff, setSignOff] = useState<GuestbookSignOff>("Love,");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const [justSigned, setJustSigned] = useState<string | null>(null);
@@ -64,6 +65,7 @@ export default function GuestbookClient() {
     setFrame("boarding");
     setName("");
     setMessage("");
+    setSignOff("Love,");
     setError("");
     setJustSigned(null);
     setStep("photo");
@@ -106,6 +108,7 @@ export default function GuestbookClient() {
     const form = new FormData();
     form.set("name", name.trim());
     form.set("message", message.trim());
+    form.set("signOff", signOff);
     form.set("frame", frame);
     const photo = rendered[frame];
     if (photo) form.set("photo", photo.blob, "photo.jpg");
@@ -176,8 +179,16 @@ export default function GuestbookClient() {
         <StepHeader index={hasPhoto ? 3 : 2} title="Sign the guestbook" onBack={() => setStep(hasPhoto ? "frame" : "photo")} />
         <form className="gb-form" onSubmit={submit}>
           {hasPhoto && <img className="gb-thumb" src={rendered[frame]?.url} alt="You, framed" width={FRAME_WIDTH} height={FRAME_HEIGHT} />}
-          <label>Your name<input value={name} onChange={(event) => setName(event.target.value)} maxLength={GUESTBOOK_NAME_MAX} autoComplete="name" placeholder="Auntie Grace" required /></label>
-          <label><span className="gb-label-row">Your message<small>{message.length}/{GUESTBOOK_MESSAGE_MAX}</small></span><textarea value={message} onChange={(event) => setMessage(event.target.value)} maxLength={GUESTBOOK_MESSAGE_MAX} placeholder="A wish for the little one, advice for the new parents, or just a hello." rows={6} required /></label>
+          <div className="gb-letter">
+            <p className="gb-letter-greeting">Dear Baby Moncada,</p>
+            <textarea value={message} onChange={(event) => setMessage(event.target.value)} maxLength={GUESTBOOK_MESSAGE_MAX} placeholder="A wish for the little one, advice for the new parents, or just a hello." rows={7} aria-label="Your message" required />
+            <small className="gb-letter-count">{message.length}/{GUESTBOOK_MESSAGE_MAX}</small>
+            <div className="gb-signoffs" role="radiogroup" aria-label="Sign off">
+              {GUESTBOOK_SIGN_OFFS.map((option) => <button key={option} type="button" role="radio" aria-checked={signOff === option} onClick={() => setSignOff(option)}>{option}</button>)}
+            </div>
+            <p className="gb-letter-signoff">{signOff}</p>
+            <input className="gb-letter-name" value={name} onChange={(event) => setName(event.target.value)} maxLength={GUESTBOOK_NAME_MAX} autoComplete="name" placeholder="Your name" aria-label="Your name" required />
+          </div>
           {error && <p className="gb-error" role="alert">{error}</p>}
           <button className="gb-button primary" type="submit" disabled={sending || !name.trim() || !message.trim()}>{sending ? "Signing…" : "Sign the guestbook"}</button>
         </form>
@@ -212,8 +223,9 @@ export function EntryCard({ entry, highlight = false }: { entry: GuestbookEntry;
     {highlight && <span className="gb-badge">Just signed</span>}
     {entry.photoUrl && <img src={entry.photoUrl} alt={`${entry.name} at the shower`} width={FRAME_WIDTH} height={FRAME_HEIGHT} loading="lazy" decoding="async" />}
     <div className="gb-card-body">
+      <time dateTime={entry.createdAt}>{timeFormatter.format(new Date(entry.createdAt))}</time>
       <p>{entry.message}</p>
-      <footer><strong>{entry.name}</strong><time dateTime={entry.createdAt}>{timeFormatter.format(new Date(entry.createdAt))}</time></footer>
+      <footer><span>{entry.signOff}</span><strong>{entry.name}</strong></footer>
     </div>
   </article>;
 }
