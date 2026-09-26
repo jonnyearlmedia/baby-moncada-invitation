@@ -170,3 +170,23 @@ test("save instructions preserve the household-specific invitation link", async 
   assert.match(dashboardLayout, /manifest: "\/dashboard\/manifest\.webmanifest"/);
   assert.match(dashboardManifest, /dashboardManifest\(\)/);
 });
+
+test("guestbook validates uploads server side and lets hosts hide entries", async () => {
+  const [migration, route, adminRoute, dashboard, frames] = await Promise.all([
+    read("supabase/migrations/20260926140000_guestbook.sql"),
+    read("app/api/guestbook/route.ts"),
+    read("app/api/admin/guestbook/route.ts"),
+    read("app/dashboard/dashboard-client.tsx"),
+    read("lib/guestbook-frames.ts"),
+  ]);
+  assert.match(migration, /alter table public\.guestbook_entries enable row level security/);
+  assert.match(migration, /revoke all on public\.guestbook_entries from public, anon, authenticated/);
+  assert.match(migration, /allowed_mime_types[\s\S]*'image\/jpeg'/);
+  assert.match(route, /\.eq\("hidden", false\)/);
+  assert.match(route, /isJpeg\(bytes\)/);
+  assert.match(route, /RATE_LIMIT/);
+  assert.match(route, /remove\(\[uploadedPath\]\)/);
+  assert.match(adminRoute, /hasHostSession/);
+  assert.match(dashboard, /<GuestbookModeration \/>/);
+  for (const frame of ["boarding", "polaroid", "stamp", "none"]) assert.match(frames, new RegExp(`id: "${frame}"`));
+});
