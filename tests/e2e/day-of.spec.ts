@@ -113,9 +113,18 @@ test("travel and hotel screens answer the day's questions first", async ({ page 
   await expect(page.getByText("Hilton currently lists parking at $8 per day")).toBeVisible();
 
   await nav.getByRole("button", { name: "Hotel", exact: true }).click();
-  await expect(page.getByText("Check out Sunday, September 27")).toBeVisible();
+  const hotelBanner = page.locator(".day-of-banner");
+  await expect(hotelBanner).toContainText("This is the venue");
+  await expect(hotelBanner).toContainText("You do not need a room to be here");
+  const overnight = page.locator(".overnight-note");
+  await expect(overnight).toContainText("Only if you booked a room");
+  await expect(overnight).toContainText("Checkout is Sunday, September 27");
   await expect(page.getByText("Still need a room tonight?")).toBeVisible();
   await expect(page.locator(".room")).toHaveCount(0);
   await expect(page.getByText("Check in")).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Check rooms & book with Hilton" })).toBeVisible();
+
+  const bannerBox = await hotelBanner.boundingBox();
+  const overnightBox = await overnight.boundingBox();
+  expect(bannerBox!.y).toBeLessThan(overnightBox!.y);
 });

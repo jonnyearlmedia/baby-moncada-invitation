@@ -346,6 +346,10 @@ details[open] .household-body { animation:panel-in .24s ease-out; }
 .day-of-banner>strong{display:block;margin-top:6px;font-family:var(--font-ticket-serif),'Instrument Serif',serif;font-size:19px;font-weight:400;line-height:1.2}
 .day-of-banner>p{margin:6px 0 0;color:var(--app-muted);font-size:11px;line-height:1.5}
 
+.overnight-note{display:grid;gap:5px;margin:0 0 16px;padding:14px 16px;border:1px dashed var(--app-line);border-radius:14px;background:transparent}
+.overnight-note>span{color:var(--app-muted);font-family:var(--font-ticket-mono),'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.overnight-note>strong{font-size:14px;font-weight:700;line-height:1.25}
+.overnight-note>p{margin:2px 0 0;color:var(--app-muted);font-size:11px;line-height:1.5}
 .save-invite.compact{opacity:.9}
 .save-invite.compact p span,.save-invite.compact p small{display:none}
 

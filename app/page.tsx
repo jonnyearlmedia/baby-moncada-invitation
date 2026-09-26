@@ -422,7 +422,7 @@ function StayScreen({ bookingUrl, phase }: { bookingUrl: string; phase: Phase })
   const dayOf = phase !== "scheduled";
   return <div className="feature-screen">
     <ScreenHeader kicker="Boarding Pass · Hotel Stay" title="Stay on site" subtitle="Hotel Centro Sonoma Wine Country · Tapestry by Hilton" mark="" />
-    {dayOf && <div className="day-of-banner"><span>Staying over</span><strong>Check out Sunday, September 27</strong><p>Ask the front desk if you need a later time. The shower is in this same building, so there is no drive between your room and the party.</p></div>}
+    {dayOf && <div className="day-of-banner"><span>Today</span><strong>This is the venue</strong><p>The shower is inside this hotel. You do not need a room to be here. Park on site, walk in the main lobby, and follow the signs.</p></div>}
     <div className="info-block venue-block"><strong>Hotel Centro Sonoma Wine Country</strong><p>Tapestry by Hilton<br />{HOTEL_ADDRESS}</p></div>
     {!dayOf && <>
       <div className="stay-facts two-up"><div><span>Check in</span><strong>Fri, Sep 25</strong></div><div><span>Check out</span><strong>Sun, Sep 27</strong></div></div>
@@ -432,6 +432,7 @@ function StayScreen({ bookingUrl, phase }: { bookingUrl: string; phase: Phase })
       </div>
     </>}
     <div className="amenities"><span>Free Wi-Fi</span><span>Outdoor pool</span><span>Restaurant</span><span>Fitness center</span><span>Pet friendly</span></div>
+    {dayOf && <div className="overnight-note"><span>Only if you booked a room</span><strong>Checkout is Sunday, September 27</strong><p>The front desk handles checkout and can tell you whether a later time is possible. Most guests are not staying over and can skip this.</p></div>}
     <div className="booking-panel"><div><span>Booking</span><strong>{dayOf ? "Still need a room tonight?" : "Reserve directly with the hotel"}</strong><p>{dayOf ? "Whatever Hilton still has open is what is left. Availability, taxes and fees, and the final total are live on their site." : "Rooms are booked on your own for September 25 to 27. Hilton shows live availability, taxes and fees, and the final total before you confirm."}</p></div><ExternalLink href={bookingUrl} primary={!dayOf}>Check rooms &amp; book with Hilton</ExternalLink></div>
   </div>;
 }
