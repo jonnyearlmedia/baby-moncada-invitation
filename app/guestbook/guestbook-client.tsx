@@ -2,6 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element -- guest photos are local blobs or public storage URLs rendered at their native 4:5 size. */
 
+import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GUESTBOOK_MESSAGE_MAX, GUESTBOOK_NAME_MAX, GUESTBOOK_PHOTO_MAX_BYTES, GUESTBOOK_SIGN_OFFS, type GuestbookEntry, type GuestbookFrame, type GuestbookSignOff } from "@/lib/guestbook";
 import { PHOTO_ALBUM_NAME, PHOTO_ALBUM_URL, REGISTRY_URL } from "@/lib/event-links";
@@ -150,7 +151,11 @@ export default function GuestbookClient() {
         </div>
         <p className="gb-script">thank you for coming! ✈</p>
         <h1>So glad <em>you’re here!</em></h1>
-        <p className="gb-lede">Janelle and Fernando are so happy you made it! Before you go, leave the Moncadas a note they can keep forever.</p>
+        <figure className="gb-parents">
+          <Image src="/guestbook-parents.jpg" alt="Janelle and Fernando smiling and holding up the ultrasound of their baby boy" width={1284} height={944} sizes="(max-width: 560px) 90vw, 480px" priority />
+          <figcaption>Janelle, Fernando &amp; baby boy</figcaption>
+        </figure>
+        <p className="gb-lede">They are so happy you made it! Before you go, leave the Moncadas a note they can keep forever.</p>
         <button className="gb-pass" onClick={startEntry}>
           <span className="gb-pass-main">
             <small>Boarding now</small>

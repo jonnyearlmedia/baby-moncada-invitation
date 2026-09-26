@@ -28,11 +28,15 @@
 .gb-lede { margin:0 0 24px;color:var(--gb-cream);font-size:16px;line-height:1.55; }
 
 .gb-hero>* { animation:gb-rise .7s cubic-bezier(.2,.8,.2,1) both; }
-.gb-hero>*:nth-child(2) { animation-delay:.15s; } .gb-hero>*:nth-child(3) { animation-delay:.25s; } .gb-hero>*:nth-child(4) { animation-delay:.35s; } .gb-hero>*:nth-child(5) { animation-delay:.5s; } .gb-hero>*:nth-child(6) { animation-delay:.65s; }
+.gb-hero>*:nth-child(2) { animation-delay:.15s; } .gb-hero>*:nth-child(3) { animation-delay:.25s; } .gb-hero>*:nth-child(4) { animation-delay:.4s; } .gb-hero>*:nth-child(5) { animation-delay:.55s; } .gb-hero>*:nth-child(6) { animation-delay:.65s; } .gb-hero>*:nth-child(7) { animation-delay:.75s; }
 @keyframes gb-rise { from { opacity:0;transform:translateY(22px); } to { opacity:1;transform:none; } }
 .gb-hero h1 { font-size:clamp(50px,15vw,64px);line-height:.92; }
 .gb-hero h1 em { display:block; }
 .gb-hero .gb-button { width:100%; }
+.gb-parents { position:relative;margin:28px 6px 26px;padding:10px 10px 0;border-radius:4px;color:var(--gb-navy);background:var(--gb-paper);box-shadow:0 26px 60px rgba(0,0,0,.5);transform:rotate(-2deg); }
+.gb-parents::before { content:"";position:absolute;z-index:2;top:-12px;left:50%;width:104px;height:26px;background:rgba(242,196,109,.85);transform:translateX(-50%) rotate(3deg);box-shadow:0 2px 6px rgba(0,0,0,.2); }
+.gb-parents img { display:block;width:100%;height:auto;border-radius:2px; }
+.gb-parents figcaption { padding:12px 4px 14px;font-family:var(--font-ticket-script),cursive;font-size:28px;line-height:1.1;text-align:center; }
 
 .gb-board { margin:4px 0 26px;padding:12px 14px 14px;border:1px solid rgba(255,253,248,.1);border-radius:14px;background:linear-gradient(180deg,#0a1726,#06111c);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 18px 40px rgba(0,0,0,.35); }
 .gb-board-meta { display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 8px;margin-bottom:10px;color:rgba(242,196,109,.8);font-family:var(--font-ticket-mono),monospace;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase; }
