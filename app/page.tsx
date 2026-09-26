@@ -4,6 +4,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { barcodePattern, confirmationCode } from "@/lib/pass-code";
 import type { EventSettings } from "@/lib/invitation-types";
 
 const BOOKING_URL = "https://www.hilton.com/en/hotels/stsrhup-hotel-centro-sonoma-wine-country/?SEO_id=GMB-AMER-UP-STSRHUP";
@@ -75,38 +76,6 @@ function getPhase(startsAt: number, now: number): Phase {
   if (now >= startsAt + BOARDING_WINDOW_MS) return "inflight";
   if (now >= startsAt) return "boarding";
   return eventDayFormatter.format(now) === eventDayFormatter.format(startsAt) ? "today" : "scheduled";
-}
-
-function seedFrom(value: string) {
-  let seed = 2166136261;
-  for (let index = 0; index < value.length; index += 1) seed = Math.imul(seed ^ value.charCodeAt(index), 16777619) >>> 0;
-  return seed || 1;
-}
-
-function confirmationCode(slug: string) {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let seed = seedFrom(slug);
-  let code = "";
-  for (let index = 0; index < 6; index += 1) {
-    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
-    code += alphabet[seed % alphabet.length];
-  }
-  return code;
-}
-
-function barcodePattern(slug: string) {
-  let seed = seedFrom(`${slug}-barcode`);
-  const next = () => (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0);
-  const stops: string[] = [];
-  let position = 0;
-  while (position < 100) {
-    const bar = Math.min(100, position + 0.35 + (next() % 5) * 0.3);
-    stops.push(`var(--app-text) ${position}% ${bar}%`);
-    const gap = Math.min(100, bar + 0.45 + (next() % 4) * 0.28);
-    stops.push(`transparent ${bar}% ${gap}%`);
-    position = gap;
-  }
-  return `linear-gradient(90deg, ${stops.join(",")})`;
 }
 
 function formatNameList(names: string[]) {
