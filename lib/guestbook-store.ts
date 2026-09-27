@@ -133,3 +133,22 @@ export async function updateGuestbookEntry(id: string, changes: Partial<Pick<Sto
   await writeEntry({ ...entry, ...changes });
   return true;
 }
+
+// A fresh path per upload, so the long lived CDN cache on photos never shows an old one.
+export async function setGuestbookEntryPhoto(id: string, photo: Uint8Array, frame: GuestbookFrame) {
+  await ensureBucket();
+  const entry = await readEntry(entryPath(id), randomUUID());
+  if (!entry) return false;
+  const storage = client().storage.from(GUESTBOOK_BUCKET);
+  const photoPath = `${PHOTO_DIR}/${id}-${randomUUID().slice(0, 8)}.jpg`;
+  const { error } = await storage.upload(photoPath, photo, { contentType: "image/jpeg", cacheControl: "31536000", upsert: false });
+  if (error) throw error;
+  try {
+    await writeEntry({ ...entry, photoPath, frame });
+  } catch (writeError) {
+    await storage.remove([photoPath]);
+    throw writeError;
+  }
+  if (entry.photoPath) await storage.remove([entry.photoPath]);
+  return true;
+}
