@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element -- guest photos are local blobs or public storage URLs rendered at their native 4:5 size. */
 
 import Image from "next/image";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GUESTBOOK_MESSAGE_MAX, GUESTBOOK_NAME_MAX, GUESTBOOK_PHOTO_MAX_BYTES, GUESTBOOK_SIGN_OFFS, type GuestbookEntry, type GuestbookFrame, type GuestbookSignOff } from "@/lib/guestbook";
 import { PHOTO_ALBUM_NAME, PHOTO_ALBUM_URL, REGISTRY_URL } from "@/lib/event-links";
@@ -243,6 +244,7 @@ export default function GuestbookClient() {
             <button className="gb-button primary" onClick={startEntry}>{justSigned ? "Add another entry!" : "Sign the guestbook!"}</button>
             <button className="gb-button" onClick={() => setStep("welcome")}>Back</button>
           </div>
+          {count > 0 && <Link className="gb-text-button" href="/guestbook/book">Flip through it like a book ›</Link>}
         </div>
         {wallError && !entries && <p className="gb-error" role="alert">{wallError}</p>}
         {!entries && !wallError && <p className="gb-loading">Loading the guestbook…</p>}
