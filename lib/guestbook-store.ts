@@ -126,10 +126,10 @@ export async function createGuestbookEntry(input: { name: string; message: strin
   return toPublic(entry, false);
 }
 
-export async function setGuestbookEntryHidden(id: string, hidden: boolean) {
+export async function updateGuestbookEntry(id: string, changes: Partial<Pick<StoredEntry, "hidden" | "name" | "message">>) {
   await ensureBucket();
   const entry = await readEntry(entryPath(id), randomUUID());
   if (!entry) return false;
-  await writeEntry({ ...entry, hidden });
+  await writeEntry({ ...entry, ...changes });
   return true;
 }
