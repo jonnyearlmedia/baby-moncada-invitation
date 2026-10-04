@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { GuestbookEntry } from "@/lib/guestbook";
 import { FRAME_HEIGHT, FRAME_WIDTH } from "@/lib/guestbook-frames";
+import { SITE_CONFIG } from "@/lib/site-config";
 
 const NO_ENTRIES: GuestbookEntry[] = [];
 const timeFormatter = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles" });
@@ -118,13 +119,13 @@ export default function GuestbookBook({ entries }: { entries: GuestbookEntry[] |
 
 function Cover({ count, onOpen }: { count: number; onOpen?: () => void }) {
   return <section className="bk-sheet bk-cover">
-    <p className="bk-kicker">Moncada Airways · Flight log</p>
-    <h1>Dear <em>Baby Moncada</em></h1>
+    <p className="bk-kicker">{SITE_CONFIG.guestbook.airlineName} · Flight log</p>
+    <h1>Dear <em>{SITE_CONFIG.babyLabel}</em></h1>
     <p className="bk-cover-script">love notes from your baby shower</p>
     <figure className="bk-cover-photo">
-      <Image src="/guestbook-parents.jpg" alt="Janelle and Fernando holding up the ultrasound of their baby boy" width={1284} height={944} sizes="(max-width: 560px) 80vw, 420px" priority />
+      <Image src="/guestbook-parents.jpg" alt={`${SITE_CONFIG.hosts.displayName} holding up the ultrasound of their baby boy`} width={1284} height={944} sizes="(max-width: 560px) 80vw, 420px" priority />
     </figure>
-    <p className="bk-cover-meta">September 26, 2026 · {count} {count === 1 ? "letter" : "letters"}</p>
+    <p className="bk-cover-meta">{SITE_CONFIG.event.dateLabel} · {count} {count === 1 ? "letter" : "letters"}</p>
     {onOpen && <button className="bk-open" onClick={onOpen}>Open the book</button>}
   </section>;
 }
@@ -137,7 +138,7 @@ function Spread({ entry, number }: { entry: GuestbookEntry; number: number }) {
     </div>}
     <div className="bk-leaf bk-leaf-letter">
       <header><span>No. {String(number).padStart(2, "0")}</span><time dateTime={entry.createdAt}>{timeFormatter.format(new Date(entry.createdAt))}</time></header>
-      <p className="bk-greeting">Dear Moncada family,</p>
+      <p className="bk-greeting">Dear {SITE_CONFIG.family.label},</p>
       <p className={`bk-message${size}`}>{entry.message}</p>
       <footer><span>{entry.signOff}</span><strong>{entry.name}</strong></footer>
     </div>

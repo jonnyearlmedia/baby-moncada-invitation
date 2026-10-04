@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { GuestbookEntry } from "@/lib/guestbook";
 import { FRAME_HEIGHT, FRAME_WIDTH } from "@/lib/guestbook-frames";
+import { SITE_CONFIG } from "@/lib/site-config";
 
 const POLL_MS = 10_000;
 const SLIDE_MS = 8_000;
@@ -48,8 +49,8 @@ export default function GuestbookTv() {
   return <main className="gb-tv">
     <aside className="gb-tv-side">
       <p className="gb-script">sign the guestbook! ✈</p>
-      <h1>Baby Moncada</h1>
-      <p>Tap your phone on any tag around the room! Snap a pic, pick a frame, and leave the Moncadas some love.</p>
+      <h1>{SITE_CONFIG.babyLabel}</h1>
+      <p>Tap your phone on any tag around the room! Snap a pic, pick a frame, and leave {SITE_CONFIG.family.pluralLabel} some love.</p>
       <strong>{entries.length} {entries.length === 1 ? "entry" : "entries"}</strong>
     </aside>
     <section className="gb-tv-stage" aria-live="polite">

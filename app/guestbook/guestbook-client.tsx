@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { GUESTBOOK_MESSAGE_MAX, GUESTBOOK_NAME_MAX, GUESTBOOK_PHOTO_MAX_BYTES, GUESTBOOK_SIGN_OFFS, type GuestbookEntry, type GuestbookFrame, type GuestbookSignOff } from "@/lib/guestbook";
 import { PHOTO_ALBUM_NAME, PHOTO_ALBUM_URL, REGISTRY_URL } from "@/lib/event-links";
 import { FRAME_HEIGHT, FRAME_OPTIONS, FRAME_WIDTH, loadPhoto, renderFrame } from "@/lib/guestbook-frames";
+import { SITE_CONFIG } from "@/lib/site-config";
 
 type Step = "welcome" | "photo" | "frame" | "write" | "wall";
 type Rendered = Partial<Record<GuestbookFrame, { blob: Blob; url: string }>>;
@@ -142,21 +143,21 @@ export default function GuestbookClient() {
       <span className="gb-plane"><svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5Z" /></svg></span>
     </div>
     <div ref={topRef} className="gb-shell">
-      <header className="gb-topbar"><span>Moncada Airways</span><span className="gb-live"><i />Flt JF926</span></header>
+      <header className="gb-topbar"><span>{SITE_CONFIG.guestbook.airlineName}</span><span className="gb-live"><i />{SITE_CONFIG.guestbook.flightCode}</span></header>
       <input ref={cameraRef} className="gb-hidden-input" type="file" accept="image/*" capture="user" onChange={onPhoto} tabIndex={-1} aria-hidden="true" />
 
       {step === "welcome" && <section className="gb-screen gb-hero">
-        <div className="gb-board" role="img" aria-label="Flight JF926 has arrived">
-          <div className="gb-board-meta"><span>Flt JF926</span><span>From all over</span><span>Gate: Guestbook</span></div>
+        <div className="gb-board" role="img" aria-label={`Flight ${SITE_CONFIG.guestbook.flightCode.replace("Flt ", "")} has arrived`}>
+          <div className="gb-board-meta"><span>{SITE_CONFIG.guestbook.flightCode}</span><span>From all over</span><span>Gate: Guestbook</span></div>
           <SplitFlap text="ARRIVED" />
         </div>
         <p className="gb-script">thank you for coming! ✈</p>
         <h1>So glad <em>you’re here!</em></h1>
         <figure className="gb-parents">
-          <Image src="/guestbook-parents.jpg" alt="Janelle and Fernando smiling and holding up the ultrasound of their baby boy" width={1284} height={944} sizes="(max-width: 560px) 90vw, 480px" priority />
-          <figcaption>Janelle, Fernando &amp; baby boy</figcaption>
+          <Image src="/guestbook-parents.jpg" alt={`${SITE_CONFIG.hosts.displayName} smiling and holding up the ultrasound of their baby boy`} width={1284} height={944} sizes="(max-width: 560px) 90vw, 480px" priority />
+          <figcaption>{SITE_CONFIG.guestbook.parentsPhotoCaption}</figcaption>
         </figure>
-        <p className="gb-lede">They are so happy you made it! Before you go, leave the Moncadas a note they can keep forever.</p>
+        <p className="gb-lede">They are so happy you made it! Before you go, leave {SITE_CONFIG.family.pluralLabel} a note they can keep forever.</p>
         <button className="gb-pass" onClick={startEntry}>
           <span className="gb-pass-main">
             <small>Boarding now</small>
@@ -221,7 +222,7 @@ export default function GuestbookClient() {
         <form className="gb-form" onSubmit={submit}>
           {hasPhoto && <img className="gb-thumb" src={rendered[frame]?.url} alt="You, framed" width={FRAME_WIDTH} height={FRAME_HEIGHT} />}
           <div className="gb-letter">
-            <p className="gb-letter-greeting">Dear Moncada family,</p>
+            <p className="gb-letter-greeting">Dear {SITE_CONFIG.family.label},</p>
             <textarea value={message} onChange={(event) => setMessage(event.target.value)} maxLength={GUESTBOOK_MESSAGE_MAX} placeholder="A wish for the little one, advice for the new parents, or just a big hello!" rows={7} aria-label="Your message" required />
             <small className="gb-letter-count">{message.length}/{GUESTBOOK_MESSAGE_MAX}</small>
             <div className="gb-signoffs" role="radiogroup" aria-label="Sign off">
@@ -238,7 +239,7 @@ export default function GuestbookClient() {
       {step === "wall" && justSigned && <Confetti key={justSigned} />}
       {step === "wall" && <section className="gb-screen gb-wall-screen">
         <div className="gb-wall-head">
-          {justSigned ? <><p className="gb-script">you&apos;re in the book! ✈</p><h1>Signed, sealed, delivered!</h1></> : <><p className="gb-script">love notes for the Moncadas</p><h1>The guestbook</h1></>}
+          {justSigned ? <><p className="gb-script">you&apos;re in the book! ✈</p><h1>Signed, sealed, delivered!</h1></> : <><p className="gb-script">love notes for {SITE_CONFIG.family.pluralLabel}</p><h1>The guestbook</h1></>}
           <p className="gb-lede">{count ? `${count} ${count === 1 ? "entry" : "entries"} so far! New ones pop up live.` : "No entries yet. Be the first!"}</p>
           <div className="gb-row">
             <button className="gb-button primary" onClick={startEntry}>{justSigned ? "Add another entry!" : "Sign the guestbook!"}</button>

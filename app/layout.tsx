@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { Caveat, Geist, Geist_Mono, IBM_Plex_Mono, Instrument_Serif } from "next/font/google";
+import { SITE_CONFIG } from "@/lib/site-config";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -28,20 +29,20 @@ export async function generateMetadata(): Promise<Metadata> {
   const host = requestHeaders.get("x-forwarded-host") || requestHeaders.get("host") || "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") || (host.startsWith("localhost") ? "http" : "https");
   const origin = `${protocol}://${host}`;
-  const title = "Baby Moncada Baby Shower · September 26, 2026";
-  const description = "You’re invited to celebrate Janelle and Fernando at the Baby Moncada baby shower.";
+  const title = `${SITE_CONFIG.event.title} · ${SITE_CONFIG.event.dateLabel}`;
+  const description = `You’re invited to celebrate ${SITE_CONFIG.hosts.displayName} at the ${SITE_CONFIG.siteName} baby shower.`;
   return {
     title,
     description,
-    applicationName: "Baby Moncada",
+    applicationName: SITE_CONFIG.siteName,
     manifest: "/manifest.webmanifest",
-    appleWebApp: { capable: true, title: "Baby Moncada", statusBarStyle: "default" },
+    appleWebApp: { capable: true, title: SITE_CONFIG.siteName, statusBarStyle: "default" },
     icons: {
       icon: [{ url: "/favicon.ico", sizes: "any" }, { url: "/icon.png", type: "image/png", sizes: "512x512" }],
       shortcut: "/favicon.ico",
       apple: [{ url: "/apple-icon.png", type: "image/png", sizes: "180x180" }],
     },
-    openGraph: { title, description, type: "website", siteName: "Baby Moncada", images: [{ url: `${origin}/opengraph-image.png`, width: 1200, height: 630, alt: "Baby Moncada baby shower boarding pass invitation" }] },
+    openGraph: { title, description, type: "website", siteName: SITE_CONFIG.siteName, images: [{ url: `${origin}/opengraph-image.png`, width: 1200, height: 630, alt: `${SITE_CONFIG.siteName} baby shower boarding pass invitation` }] },
     twitter: { card: "summary_large_image", title, description, images: [`${origin}/twitter-image.png`] },
   };
 }

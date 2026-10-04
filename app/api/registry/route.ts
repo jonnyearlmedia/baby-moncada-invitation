@@ -1,6 +1,7 @@
 import { createAdminServerClient } from "@/lib/supabase-server";
+import { SITE_CONFIG } from "@/lib/site-config";
 
-const REGISTRY_URL = "https://www.amazon.com/baby-reg/janelle-moncada-november-2026-rohnertpark/10AIJQD53FRAQ";
+const REGISTRY_URL = SITE_CONFIG.registry.url;
 const SCHEDULE_INTERVAL_MS = 6 * 60 * 60 * 1000;
 const SCHEDULE_GRACE_MS = 90 * 60 * 1000;
 

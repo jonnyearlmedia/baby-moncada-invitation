@@ -5,19 +5,24 @@ import test from "node:test";
 const root = new URL("../", import.meta.url);
 const read = (path) => readFile(new URL(path, root), "utf8");
 
-test("confirmed event facts are consistent in UI and database seed", async () => {
-  const [page, layout, migration, deadlineMigration] = await Promise.all([read("app/page.tsx"), read("app/layout.tsx"), read("supabase/migrations/20260824073636_production_rsvp_pilot.sql"), read("supabase/migrations/20260824155828_add_rsvp_deadline.sql")]);
+test("confirmed event facts are consistent in UI, config, and database seed", async () => {
+  const [page, layout, siteConfig, migration, deadlineMigration] = await Promise.all([read("app/page.tsx"), read("app/layout.tsx"), read("lib/site-config.ts"), read("supabase/migrations/20260824073636_production_rsvp_pilot.sql"), read("supabase/migrations/20260824155828_add_rsvp_deadline.sql")]);
   assert.match(page, /Sat, Sep 26 2026/);
-  assert.match(page, /const EVENT_ROOM = "The Reunion Room"/);
+  assert.match(page, /const EVENT_ROOM = SITE_CONFIG\.event\.gateLabel/);
+  assert.match(siteConfig, /gateLabel: "The Reunion Room"/);
   assert.match(page, /4:00 PM/);
   assert.match(page, /DTSTART;TZID=America\/Los_Angeles:20260926T160000/);
   assert.match(migration, /2026-09-26 16:00:00-07/);
   assert.match(migration, /5870 Labath Ave, Rohnert Park, CA 94928/);
+  assert.match(siteConfig, /address: "5870 Labath Ave, Rohnert Park, CA 94928"/);
   assert.match(migration, /2026-09-11/);
   assert.match(migration, /groupCode=905/);
-  assert.match(page, /A baby shower honoring Janelle/);
-  assert.match(page, /Baby Moncada Baby Shower/);
-  assert.match(layout, /Baby Moncada Baby Shower · September 26, 2026/);
+  assert.match(page, /A baby shower honoring \{SITE_CONFIG\.hosts\.names\.join/);
+  assert.match(siteConfig, /names: \["Janelle", "Fernando"\]/);
+  assert.match(page, /SITE_CONFIG\.event\.title/);
+  assert.match(siteConfig, /title: "Baby Moncada Baby Shower"/);
+  assert.match(layout, /SITE_CONFIG\.event\.title.*SITE_CONFIG\.event\.dateLabel/);
+  assert.match(siteConfig, /dateLabel: "September 26, 2026"/);
   assert.match(deadlineMigration, /rsvp_deadline date not null default date '2026-09-11'/);
   assert.match(deadlineMigration, /'rsvpDeadline', e\.rsvp_deadline/);
 });
@@ -129,10 +134,12 @@ test("registry refreshes every current Amazon page and preserves registry-linked
 });
 
 test("travel view uses an interactive map at the exact venue coordinates", async () => {
-  const page = await read("app/page.tsx");
-  assert.match(page, /openstreetmap\.org\/export\/embed\.html/);
-  assert.match(page, /marker=38\.3516523%2C-122\.7205662/);
-  assert.match(page, /<iframe title="Interactive map showing Hotel Centro/);
+  const [page, siteConfig] = await Promise.all([read("app/page.tsx"), read("lib/site-config.ts")]);
+  assert.match(siteConfig, /openstreetmap\.org\/export\/embed\.html/);
+  assert.match(siteConfig, /marker=38\.3516523%2C-122\.7205662/);
+  assert.match(page, /mapEmbedUrl/);
+  assert.match(page, /<iframe title=\{`Interactive map showing \$\{VENUE_NAME\}/);
+  assert.match(siteConfig, /name: "Hotel Centro Sonoma Wine Country"/);
   assert.doesNotMatch(page, /<div className="map-visual"><svg/);
   assert.match(page, /Hilton currently lists parking at \$8 per day/);
   assert.match(page, /src="\/arrival-map\.png"/);

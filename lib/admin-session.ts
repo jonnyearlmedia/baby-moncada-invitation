@@ -1,7 +1,8 @@
 import { createHash, createHmac, scryptSync, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
+import { SITE_CONFIG } from "@/lib/site-config";
 
-export const HOST_COOKIE = "baby_moncada_host";
+export const HOST_COOKIE = `${SITE_CONFIG.branding.cookiePrefix}_host`;
 const SESSION_SECONDS = 60 * 60 * 12;
 
 function secret() {

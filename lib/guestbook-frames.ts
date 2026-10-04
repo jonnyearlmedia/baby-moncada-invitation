@@ -1,4 +1,5 @@
 import type { GuestbookFrame } from "@/lib/guestbook";
+import { SITE_CONFIG } from "@/lib/site-config";
 
 export const FRAME_WIDTH = 1080;
 export const FRAME_HEIGHT = 1350;
@@ -112,11 +113,11 @@ function drawBoarding(ctx: CanvasRenderingContext2D, image: HTMLImageElement, fo
   ctx.fillStyle = NAVY;
   ctx.font = `400 84px ${fonts.serif}`;
   spaced(ctx, "0px");
-  ctx.fillText("Baby Moncada", 60, 1226);
+  ctx.fillText(SITE_CONFIG.babyLabel, 60, 1226);
   ctx.fillStyle = MUTED;
   ctx.font = `600 24px ${fonts.mono}`;
   spaced(ctx, "4px");
-  ctx.fillText("09.26.26 · GATE REUNION ROOM · SEAT OPEN", 64, 1290);
+  ctx.fillText(`${SITE_CONFIG.event.dateShort} · GATE ${SITE_CONFIG.event.gateLabel.toUpperCase()} · SEAT OPEN`, 64, 1290);
 
   ctx.fillStyle = NAVY;
   const bars = [3, 1, 2, 1, 1, 2, 3, 1, 1, 3, 2, 1];
@@ -140,11 +141,11 @@ function drawPolaroid(ctx: CanvasRenderingContext2D, image: HTMLImageElement, fo
   ctx.fillStyle = NAVY;
   ctx.font = `600 104px ${fonts.script}`;
   spaced(ctx, "0px");
-  ctx.fillText("Baby Moncada", FRAME_WIDTH / 2, 1200);
+  ctx.fillText(SITE_CONFIG.babyLabel, FRAME_WIDTH / 2, 1200);
   ctx.fillStyle = MUTED;
   ctx.font = `600 28px ${fonts.mono}`;
   spaced(ctx, "10px");
-  ctx.fillText("09 · 26 · 26", FRAME_WIDTH / 2, 1276);
+  ctx.fillText(SITE_CONFIG.event.dateShort.replace(/\./g, " · "), FRAME_WIDTH / 2, 1276);
 }
 
 function drawStamp(ctx: CanvasRenderingContext2D, image: HTMLImageElement, fonts: Fonts) {
