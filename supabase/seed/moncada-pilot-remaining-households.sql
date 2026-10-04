@@ -1,3 +1,7 @@
+-- Moncada baby shower pilot data only. Not a migration — run after
+-- moncada-pilot-core-seed.sql, by hand, against a project that already has
+-- every migration applied. A new client has no equivalent of this file.
+
 do $seed$
 declare
   item jsonb;

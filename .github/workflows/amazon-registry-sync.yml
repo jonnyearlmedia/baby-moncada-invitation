@@ -37,6 +37,9 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           REGISTRY_SYNC_TOKEN: ${{ secrets.REGISTRY_SYNC_TOKEN }}
+          # A new client sets this as a repo variable. Unset, it falls back
+          # to the Moncada pilot's registry (see scripts/sync-amazon-registry.mjs).
+          REGISTRY_URL: ${{ vars.REGISTRY_URL }}
       - name: Upload Amazon diagnostics after a failed read
         if: failure()
         uses: actions/upload-artifact@v4

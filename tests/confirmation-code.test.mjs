@@ -7,8 +7,8 @@ const root = new URL("../", import.meta.url);
 
 async function householdSlugs() {
   const [pilot, expansion] = await Promise.all([
-    readFile(new URL("supabase/migrations/20260824073636_production_rsvp_pilot.sql", root), "utf8"),
-    readFile(new URL("supabase/migrations/20260824090509_seed_remaining_guest_households.sql", root), "utf8"),
+    readFile(new URL("supabase/seed/moncada-pilot-core-seed.sql", root), "utf8"),
+    readFile(new URL("supabase/seed/moncada-pilot-remaining-households.sql", root), "utf8"),
   ]);
   const slugs = new Set(["murao", "ponticelle", "cabrera", "sainz", "morales-diaz", "castro"]);
   for (const match of expansion.matchAll(/"slug":"([a-z0-9-]+)"/g)) slugs.add(match[1]);

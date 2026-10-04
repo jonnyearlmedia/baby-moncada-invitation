@@ -15,6 +15,28 @@ The pilot contains six deliberately varied households:
 
 The remaining households are intentionally not seeded until the pilot has been reviewed and battle-tested.
 
+## Starting a new client from this repo
+
+This repo is meant to be reused: use GitHub's "Use this template" on it (or
+clone it fresh) for every new party, with its own Vercel project and its own
+Supabase project — never shared with any other client.
+
+1. Edit `lib/site-config.ts` with the new client's names, venue, dates,
+   links, and contact info. That one file is the single source of truth for
+   everything that changes between clients.
+2. Create a new Supabase project and run every file in
+   `supabase/migrations/` against it, in order. Those files are schema
+   only — no client's data is in them.
+3. Seed that client's event and guest list by following
+   `supabase/seed/README.md` (start from `supabase/seed/TEMPLATE-core-seed.sql`).
+4. Create a new Vercel project, point it at the new repo, and set the
+   [Required Vercel environment variables](#required-vercel-environment-variables)
+   to the new Supabase project's values.
+5. If this client is using the Amazon registry sync job, set a `REGISTRY_URL`
+   repo variable and new `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY` /
+   `REGISTRY_SYNC_TOKEN` secrets on the new repo (see the Amazon registry
+   section below).
+
 ## Architecture
 
 - Next.js App Router deployed to Vercel

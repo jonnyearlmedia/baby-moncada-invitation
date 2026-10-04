@@ -5,8 +5,11 @@ import * as cheerio from "cheerio";
 import { chromium } from "playwright";
 import { createClient } from "@supabase/supabase-js";
 
-const REGISTRY_ID = "10AIJQD53FRAQ";
-const REGISTRY_URL = "https://www.amazon.com/baby-reg/janelle-moncada-november-2026-rohnertpark/10AIJQD53FRAQ";
+// Defaults are the Moncada pilot's registry. A new client sets REGISTRY_URL
+// in the environment (a GitHub Actions variable or secret) instead of
+// editing this file.
+const REGISTRY_URL = process.env.REGISTRY_URL || "https://www.amazon.com/baby-reg/janelle-moncada-november-2026-rohnertpark/10AIJQD53FRAQ";
+const REGISTRY_ID = REGISTRY_URL.replace(/\/$/, "").split("/").pop();
 const ITEMS_ENDPOINT = "https://www.amazon.com/baby-reg/visitor-view-load-more-items";
 const MAX_PAGES_PER_FILTER = 10;
 const dryRun = process.env.DRY_RUN === "true";
@@ -201,7 +204,7 @@ async function loadAmazonRegistry() {
       stateBlocks: cheerio.load(firstHtml)("script[type='a-state']").length,
     };
     console.log("amazon_registry_page_loaded", diagnostics);
-    if (!firstHtml.includes("Janelle Moncada") || !firstHtml.includes(REGISTRY_ID)) throw new Error(`Amazon returned the wrong page: ${await page.title()}`);
+    if (!firstHtml.includes(REGISTRY_ID)) throw new Error(`Amazon returned the wrong page: ${await page.title()}`);
     const $ = cheerio.load(firstHtml);
     const csrf = $("#generic-registry-anticsrf-token").attr("content");
     if (!csrf) throw new Error("Amazon registry CSRF token is unavailable");

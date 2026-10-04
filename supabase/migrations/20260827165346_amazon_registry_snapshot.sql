@@ -15,9 +15,4 @@ create table public.registry_sync_state (
 alter table public.registry_sync_state enable row level security;
 revoke all on public.registry_sync_state from public, anon, authenticated;
 
-insert into public.registry_sync_state (id, registry_url)
-values (true, 'https://www.amazon.com/baby-reg/janelle-moncada-november-2026-rohnertpark/10AIJQD53FRAQ');
-
-update public.event_settings
-set registry_url = 'https://www.amazon.com/baby-reg/janelle-moncada-november-2026-rohnertpark/10AIJQD53FRAQ'
-where id = true;
+-- No seed data here on purpose; see supabase/seed/.

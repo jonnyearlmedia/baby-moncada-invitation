@@ -6,17 +6,17 @@ const root = new URL("../", import.meta.url);
 const read = (path) => readFile(new URL(path, root), "utf8");
 
 test("confirmed event facts are consistent in UI, config, and database seed", async () => {
-  const [page, layout, siteConfig, migration, deadlineMigration] = await Promise.all([read("app/page.tsx"), read("app/layout.tsx"), read("lib/site-config.ts"), read("supabase/migrations/20260824073636_production_rsvp_pilot.sql"), read("supabase/migrations/20260824155828_add_rsvp_deadline.sql")]);
+  const [page, layout, siteConfig, seed, deadlineMigration] = await Promise.all([read("app/page.tsx"), read("app/layout.tsx"), read("lib/site-config.ts"), read("supabase/seed/moncada-pilot-core-seed.sql"), read("supabase/migrations/20260824155828_add_rsvp_deadline.sql")]);
   assert.match(page, /Sat, Sep 26 2026/);
   assert.match(page, /const EVENT_ROOM = SITE_CONFIG\.event\.gateLabel/);
   assert.match(siteConfig, /gateLabel: "The Reunion Room"/);
   assert.match(page, /4:00 PM/);
   assert.match(page, /DTSTART;TZID=America\/Los_Angeles:20260926T160000/);
-  assert.match(migration, /2026-09-26 16:00:00-07/);
-  assert.match(migration, /5870 Labath Ave, Rohnert Park, CA 94928/);
+  assert.match(seed, /2026-09-26 16:00:00-07/);
+  assert.match(seed, /5870 Labath Ave, Rohnert Park, CA 94928/);
   assert.match(siteConfig, /address: "5870 Labath Ave, Rohnert Park, CA 94928"/);
-  assert.match(migration, /2026-09-11/);
-  assert.match(migration, /groupCode=905/);
+  assert.match(seed, /2026-09-11/);
+  assert.match(seed, /groupCode=905/);
   assert.match(page, /A baby shower honoring \{SITE_CONFIG\.hosts\.names\.join/);
   assert.match(siteConfig, /names: \["Janelle", "Fernando"\]/);
   assert.match(page, /SITE_CONFIG\.event\.title/);
@@ -28,8 +28,8 @@ test("confirmed event facts are consistent in UI, config, and database seed", as
 });
 
 test("all 58 households and readable links are seeded", async () => {
-  const migration = await read("supabase/migrations/20260824073636_production_rsvp_pilot.sql");
-  const expansion = await read("supabase/migrations/20260824090509_seed_remaining_guest_households.sql");
+  const migration = await read("supabase/seed/moncada-pilot-core-seed.sql");
+  const expansion = await read("supabase/seed/moncada-pilot-remaining-households.sql");
   for (const slug of ["murao", "ponticelle", "cabrera", "sainz", "morales-diaz", "castro", "murao-jeff-joyce", "murao-jerome", "murao-juliet-ferdie", "wilder-hernani", "tania-doukas", "gamez-burner"]) assert.ok(migration.includes(`'${slug}'`) || expansion.includes(`"slug":"${slug}"`), `missing ${slug}`);
   assert.equal((expansion.match(/"id":"10000000-/g) ?? []).length, 52);
   for (const name of ["Mom", "Jonathan Murao", "Auntie Grace Ponticelle", "Kuya Maikhi Cabrera", "Ate Michelle Cabrera", "Trish", "Tique", "Danny Sainz", "Jenna Sainz", "Angelina", "Lily", "Ava", "DJ", "Ray", "Facundo Morales", "Kelly Diaz", "Eleni", "Jose Castro", "Thalía Castro", "Uncle Jeff Murao", "Auntie Joyce Murao", "Justine", "Jade", "Frankie Gamez", "Shaun Burner"]) assert.ok(migration.includes(`'${name}'`) || expansion.includes(`"${name}"`), `missing ${name}`);
