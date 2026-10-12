@@ -2,26 +2,18 @@
 
 import { Anton } from "next/font/google";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { PHOTO_ALBUM_NAME, PHOTO_ALBUM_URL, REGISTRY_URL } from "@/lib/event-links";
 import { BABY_NAME, SHOWER_PHOTO, type ThankYouPostcard } from "@/lib/thank-you";
 import "./thank-you.css";
 
 const blockLetters = Anton({ weight: "400", subsets: ["latin"], variable: "--font-postcard-block" });
 
-const AUTO_FLIP_MS = 1800;
+const FLIP_ICON = <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8" /><path d="M4 3v5h5" /><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16" /><path d="M20 21v-5h-5" /></svg>;
 
 export default function ThankYouPostcardPage({ postcard }: { postcard: ThankYouPostcard }) {
   const [flipped, setFlipped] = useState(false);
   const [touched, setTouched] = useState(false);
-
-  // Flip once on its own so nobody misses the note, unless motion is reduced
-  // or they already flipped it themselves.
-  useEffect(() => {
-    if (touched || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const timer = window.setTimeout(() => setFlipped(true), AUTO_FLIP_MS);
-    return () => window.clearTimeout(timer);
-  }, [touched]);
 
   function flip() {
     setTouched(true);
@@ -37,7 +29,7 @@ export default function ThankYouPostcardPage({ postcard }: { postcard: ThankYouP
       <p className="ty-script">a little something for you ✈</p>
       <h1 className="ty-title">Thank you, <em>{postcard.greeting}</em></h1>
 
-      <div className={`ty-card${flipped ? " flipped" : ""}`} role="button" tabIndex={0} aria-pressed={flipped} aria-label={flipped ? "Postcard, showing the note. Flip to the front." : "Postcard, showing the front. Flip to read the note."}
+      <div className={`ty-card${flipped ? " flipped" : ""}${touched ? "" : " untouched"}`} role="button" tabIndex={0} aria-pressed={flipped} aria-label={flipped ? "Postcard, showing the note. Flip to the front." : "Postcard, showing the front. Flip to read the note."}
         onClick={flip} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); flip(); } }}>
         <div className="ty-card-inner">
           <section className="ty-face ty-front" aria-hidden={flipped} inert={flipped}>
@@ -49,8 +41,9 @@ export default function ThankYouPostcardPage({ postcard }: { postcard: ThankYouP
             </div>
             <p className="ty-greetings">Greetings from</p>
             <p className={`ty-letters${SHOWER_PHOTO ? " photo" : ""}`} style={letterFill}><span>Baby</span><span>Moncada</span></p>
-            <p className="ty-front-foot">Rohnert Park, California · 09.26.26</p>
-            <span className="ty-tap">Tap to flip ↻</span>
+            <p className="ty-front-foot">Rohnert Park, CA · 09.26.26</p>
+            <span className="ty-tap">{FLIP_ICON}Tap to flip it over</span>
+            <span className="ty-peel" aria-hidden="true" />
           </section>
 
           <section className="ty-face ty-back" aria-hidden={!flipped} inert={!flipped}>
@@ -71,11 +64,12 @@ export default function ThankYouPostcardPage({ postcard }: { postcard: ThankYouP
                 <p>Flight JF926 · Arrived</p>
                 {postcard.gift && <p className="ty-gift"><span>With thanks for</span>{postcard.gift}</p>}
               </div>
+              <p className="ty-back-hint">Tap the card to see the front</p>
             </div>
           </section>
         </div>
       </div>
-      <button className="ty-flip-button" onClick={flip}>{flipped ? "See the front ↻" : "Read the note ↻"}</button>
+      <button className="ty-flip-button" onClick={flip}>{FLIP_ICON}{flipped ? "See the front" : "Flip it to read your note"}</button>
 
       <nav className="ty-links" aria-label="More from the shower">
         <a href={PHOTO_ALBUM_URL} target="_blank" rel="noopener noreferrer">
