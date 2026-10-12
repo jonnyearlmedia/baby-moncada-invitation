@@ -1,0 +1,87 @@
+.ty-page { --ty-ink:#17324a;--ty-navy:#183e5d;--ty-paper:#fffdf8;--ty-gold:#f2c46d;--ty-sky:#dbe8f1;--ty-muted:#5b7183;--ty-line:rgba(24,62,93,.16);min-height:100svh;padding:0 0 max(36px,env(safe-area-inset-bottom));overflow-x:clip;color:var(--ty-ink);background:radial-gradient(110% 50% at 100% 0%,rgba(242,196,109,.32),transparent 60%),radial-gradient(90% 40% at 0% 30%,rgba(255,253,248,.7),transparent 60%),linear-gradient(180deg,#e6eff6 0%,#dbe8f1 60%,#cfdfeb 100%); }
+.ty-shell { width:min(100%,480px);margin:0 auto;padding:0 16px; }
+.ty-topbar { display:flex;justify-content:space-between;gap:12px;padding:max(18px,env(safe-area-inset-top)) 2px 18px;color:var(--ty-muted);font-family:var(--font-ticket-mono),monospace;font-size:10px;font-weight:600;letter-spacing:.2em;text-transform:uppercase; }
+.ty-script { margin:4px 0 0;color:#b4722a;font-family:var(--font-ticket-script),cursive;font-size:26px;line-height:1; }
+.ty-title { margin:6px 0 20px;font-family:var(--font-ticket-serif),Georgia,serif;font-size:clamp(36px,10vw,46px);font-weight:400;line-height:1;letter-spacing:-.02em;text-wrap:balance; }
+.ty-title em { color:var(--ty-navy);font-style:italic; }
+
+/* The card: both faces share one grid cell, so it is as tall as its taller face. */
+.ty-card { perspective:1600px;border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent; }
+.ty-card:focus-visible { outline:3px solid #5e9bc8;outline-offset:4px; }
+.ty-card-inner { display:grid;transform-style:preserve-3d;transition:transform .9s cubic-bezier(.3,1.25,.45,1); }
+.ty-card.flipped .ty-card-inner { transform:rotateY(180deg); }
+.ty-face { grid-area:1/1;min-height:520px;border-radius:14px;backface-visibility:hidden;-webkit-backface-visibility:hidden;box-shadow:0 2px 0 rgba(255,253,248,.9) inset,0 22px 44px rgba(18,45,68,.22),0 4px 10px rgba(18,45,68,.12); }
+.ty-back { transform:rotateY(180deg); }
+
+/* Front: a large letter "Greetings from" card. */
+.ty-front { position:relative;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:28px 18px 56px;overflow:hidden;border:10px solid var(--ty-paper);background:linear-gradient(180deg,#9cc4e2 0%,#cfe2ef 38%,#f6dcb0 70%,#f2c46d 100%); }
+.ty-scene { position:absolute;inset:0;pointer-events:none; }
+.ty-sun { position:absolute;bottom:16%;left:50%;width:180px;height:180px;margin-left:-90px;border-radius:50%;background:radial-gradient(circle,#fff3d6 0,#f9d28b 45%,rgba(242,196,109,0) 70%); }
+.ty-cloud { position:absolute;height:34px;border-radius:40px;background:rgba(255,253,248,.85);filter:blur(.5px); }
+.ty-cloud::before,.ty-cloud::after { content:"";position:absolute;bottom:10px;border-radius:50%;background:inherit; }
+.ty-cloud::before { left:18%;width:46%;height:48px; }
+.ty-cloud::after { right:14%;width:34%;height:36px; }
+.ty-cloud.one { top:9%;left:-22px;width:130px; }
+.ty-cloud.two { top:17%;right:-30px;width:150px;opacity:.85; }
+.ty-cloud.three { bottom:30%;left:12%;width:90px;opacity:.6;transform:scale(.8); }
+.ty-plane { position:absolute;top:28%;left:16%;width:26px;color:var(--ty-navy);transform:rotate(58deg); }
+.ty-plane svg { display:block;width:100%;fill:currentColor; }
+.ty-plane::after { content:"";position:absolute;top:50%;right:22px;width:120px;border-top:2px dashed rgba(24,62,93,.35);transform:translateY(-50%) rotate(-90deg);transform-origin:right center; }
+.ty-hills { position:absolute;inset:auto -10% -2px;height:24%;border-radius:50% 50% 0 0/100% 100% 0 0;background:linear-gradient(180deg,#5c8a6a,#41704f);box-shadow:-120px 18px 0 -6px #6f9a78,130px 22px 0 -4px #4f7d5d; }
+.ty-greetings { position:relative;z-index:2;margin:0 0 14px;color:var(--ty-paper);font-family:var(--font-ticket-script),cursive;font-size:44px;line-height:1;text-shadow:0 2px 0 var(--ty-navy),0 4px 14px rgba(24,62,93,.35);transform:rotate(-6deg); }
+.ty-letters { position:relative;display:grid;justify-items:center;margin:0;font-family:var(--font-postcard-block),Impact,sans-serif;line-height:.86;letter-spacing:.01em;text-transform:uppercase;text-align:center;color:transparent;background:linear-gradient(170deg,#183e5d 0%,#2f6a93 34%,#e07a5f 62%,#f2c46d 100%);background-size:cover;background-position:center;-webkit-background-clip:text;background-clip:text;-webkit-text-stroke:2px var(--ty-paper);filter:drop-shadow(5px 5px 0 var(--ty-navy)) drop-shadow(0 10px 18px rgba(24,62,93,.28)); }
+.ty-letters.photo { background-color:var(--ty-navy); }
+.ty-letters span:first-child { font-size:clamp(96px,30vw,132px); }
+.ty-letters span:last-child { font-size:clamp(62px,19vw,86px); }
+.ty-front-foot { position:absolute;bottom:18px;left:0;right:0;margin:0;color:var(--ty-paper);font-family:var(--font-ticket-mono),monospace;font-size:10px;font-weight:600;letter-spacing:.18em;text-align:center;text-transform:uppercase;text-shadow:0 1px 2px rgba(18,45,68,.5); }
+.ty-tap { position:absolute;top:12px;right:12px;padding:6px 10px;border-radius:999px;color:var(--ty-navy);background:rgba(255,253,248,.88);font-family:var(--font-ticket-mono),monospace;font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase; }
+
+/* Back: airmail stripes around a paper postcard. */
+.ty-back { padding:9px;background:repeating-linear-gradient(135deg,var(--ty-navy) 0 14px,var(--ty-paper) 14px 21px,var(--ty-gold) 21px 35px,var(--ty-paper) 35px 42px); }
+.ty-back-paper { display:flex;flex-direction:column;height:100%;padding:18px 18px 20px;border-radius:7px;background:var(--ty-paper); }
+.ty-back-head { display:flex;justify-content:space-between;align-items:flex-start;gap:12px; }
+.ty-back-head>div:first-child { display:grid;gap:4px;padding-top:4px; }
+.ty-postcard-label { font-family:var(--font-ticket-serif),Georgia,serif;font-size:26px;letter-spacing:.14em;text-transform:uppercase;line-height:1; }
+.ty-postcard-sub { color:var(--ty-muted);font-family:var(--font-ticket-mono),monospace;font-size:9px;font-weight:600;letter-spacing:.16em;text-transform:uppercase; }
+.ty-postage { position:relative;flex:none;width:86px;height:104px;margin-right:2px; }
+.ty-stamp { display:block;width:86px;height:auto;transform:rotate(3deg);filter:drop-shadow(0 2px 3px rgba(18,45,68,.22)); }
+.ty-stamp-mono { font-family:var(--font-ticket-mono),monospace;font-weight:700;letter-spacing:.08em; }
+.ty-stamp-serif { font-family:var(--font-ticket-serif),Georgia,serif; }
+.ty-postmark { position:absolute;bottom:-14px;left:-74px;width:122px;height:auto;color:rgba(24,62,93,.62);transform:rotate(-12deg);mix-blend-mode:multiply; }
+.ty-letter { flex:1;margin-top:18px;color:#1d3b55;font-family:var(--font-ticket-script),cursive;font-size:21px;line-height:1.3; }
+.ty-letter p { margin:0 0 10px; }
+.ty-dear { font-size:23px; }
+.ty-sign { margin-top:14px!important;text-align:right; }
+.ty-address { display:grid;gap:2px;margin-top:14px;padding-top:14px;border-top:1.5px solid var(--ty-line); }
+.ty-address p { margin:0;padding:3px 0;border-bottom:1px solid var(--ty-line);color:var(--ty-ink);font-family:var(--font-ticket-mono),monospace;font-size:11px;font-weight:500;letter-spacing:.06em; }
+.ty-address-label { color:var(--ty-muted);font-family:var(--font-ticket-mono),monospace;font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase; }
+.ty-address .ty-address-name { font-family:var(--font-ticket-serif),Georgia,serif;font-size:19px;letter-spacing:0; }
+.ty-address .ty-gift { display:grid;gap:4px;margin-top:10px;padding:10px 12px;border:1.5px dashed rgba(180,114,42,.55);border-radius:8px;color:#5e3b14;background:rgba(242,196,109,.14);font-family:var(--font-ticket-serif),Georgia,serif;font-size:18px;letter-spacing:0;line-height:1.2; }
+.ty-gift span { font-family:var(--font-ticket-mono),monospace; }
+.ty-gift span { color:#b4722a;font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase; }
+
+.ty-flip-button { display:block;margin:16px auto 0;padding:10px 16px;border:1.5px solid rgba(24,62,93,.25);border-radius:999px;color:var(--ty-navy);background:rgba(255,253,248,.7);font-family:var(--font-ticket-mono),monospace;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer; }
+
+.ty-links { display:grid;gap:10px;margin:28px 0 0; }
+.ty-links a { display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;padding:14px 16px;border:1px solid var(--ty-line);border-radius:16px;color:var(--ty-ink);background:var(--ty-paper);box-shadow:0 8px 20px rgba(24,52,72,.07);text-decoration:none;transition:transform .18s ease,box-shadow .18s ease; }
+.ty-links a:first-child { color:var(--ty-paper);background:linear-gradient(165deg,#1d4463,#122d44);border-color:transparent; }
+.ty-links a:first-child small { color:rgba(255,253,248,.74); }
+.ty-links a:first-child .ty-link-icon { color:var(--ty-navy);background:var(--ty-gold); }
+.ty-links a:hover { transform:translateY(-1px);box-shadow:0 12px 26px rgba(24,52,72,.12); }
+.ty-links a:active { transform:scale(.98); }
+.ty-links strong { display:block;font-family:var(--font-ticket-serif),Georgia,serif;font-size:19px;font-weight:400;line-height:1.15; }
+.ty-links small { display:block;margin-top:3px;color:var(--ty-muted);font-size:12px;line-height:1.45; }
+.ty-links i { font-size:22px;font-style:normal;opacity:.6; }
+.ty-link-icon { display:grid;place-items:center;width:40px;height:40px;border-radius:12px;color:var(--ty-paper);background:var(--ty-navy); }
+.ty-link-icon svg { width:20px;height:20px; }
+.ty-registry { display:block;margin:18px 0 0;color:var(--ty-muted);font-size:12px;text-align:center; }
+.ty-foot { margin:26px 0 0;color:var(--ty-muted);font-family:var(--font-ticket-mono),monospace;font-size:9.5px;font-weight:600;letter-spacing:.18em;text-align:center;text-transform:uppercase; }
+
+@media (max-width:360px) { .ty-shell { padding:0 12px; } .ty-letter { font-size:19px; } .ty-postcard-label { font-size:22px; } }
+@media (prefers-reduced-motion:reduce) {
+  .ty-card-inner { transition:none; }
+  .ty-card.flipped .ty-card-inner { transform:none; }
+  .ty-back { transform:none; }
+  .ty-card .ty-front,.ty-card.flipped .ty-back { visibility:visible; }
+  .ty-card .ty-back,.ty-card.flipped .ty-front { visibility:hidden; }
+}

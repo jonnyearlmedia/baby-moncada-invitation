@@ -8,8 +8,8 @@ on:
         required: true
         type: boolean
         default: true
-  schedule:
-    - cron: "17 */6 * * *"
+  # The six hour schedule is off now that the shower is over. Run it by hand
+  # from the Actions tab if the invitation ever needs a fresh registry copy.
 
 concurrency:
   group: amazon-registry-sync
