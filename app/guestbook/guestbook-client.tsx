@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GUESTBOOK_MESSAGE_MAX, GUESTBOOK_NAME_MAX, GUESTBOOK_PHOTO_MAX_BYTES, GUESTBOOK_SIGN_OFFS, type GuestbookEntry, type GuestbookFrame, type GuestbookSignOff } from "@/lib/guestbook";
-import { PHOTO_ALBUM_NAME, PHOTO_ALBUM_URL, REGISTRY_URL } from "@/lib/event-links";
+import { PHOTO_ALBUM_URL, REGISTRY_URL } from "@/lib/event-links";
 import { FRAME_HEIGHT, FRAME_OPTIONS, FRAME_WIDTH, loadPhoto, renderFrame, type PhotoCrop } from "@/lib/guestbook-frames";
 import PhotoPositioner, { clampCrop } from "./photo-positioner";
 
@@ -242,12 +242,12 @@ export default function GuestbookClient() {
         <p className="gb-section-label">From the shower</p>
         <a href={PHOTO_ALBUM_URL} target="_blank" rel="noopener noreferrer">
           <span className="gb-link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="9" cy="10" r="1.6" /><path d="m21 16-5-5-8 8" /></svg></span>
-          <span><strong>Add your photos!</strong><small>Drop everything you took at the shower into the {PHOTO_ALBUM_NAME} album! No Apple account needed.</small></span>
+          <span><strong>Help us fill our album</strong><small>We’re putting together an album of our special night. If you took any photos, we’d be so grateful if you added them. No Apple account needed.</small></span>
           <i aria-hidden="true">›</i>
         </a>
         <a href={REGISTRY_URL} target="_blank" rel="noopener noreferrer">
           <span className="gb-link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="8" width="18" height="4" rx="1" /><path d="M5 12v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8M12 8v13" /><path d="M12 8C10.5 4.5 6.5 3.5 6.5 6.2 6.5 8 12 8 12 8Zm0 0c1.5-3.5 5.5-4.5 5.5-1.8C17.5 8 12 8 12 8Z" /></svg></span>
-          <span><strong>The registry</strong><small>Want to send something later? It’s all on Amazon!</small></span>
+          <span><strong>Our registry</strong><small>Having you celebrate with us meant the world. If you’d still like to send something for Adrian John, our registry is open on Amazon.</small></span>
           <i aria-hidden="true">›</i>
         </a>
       </nav>}
