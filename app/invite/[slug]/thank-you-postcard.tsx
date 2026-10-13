@@ -50,7 +50,6 @@ export default function ThankYouPostcardPage({ postcard }: { postcard: ThankYouP
             <p className="ty-letters"><span>Baby</span><span>Moncada</span></p>
             {SHOWER_PHOTO && <button type="button" className="ty-print" aria-label="See the whole shower photo" onClick={(event) => { event.stopPropagation(); setViewing(true); }}>
               <Image src={SHOWER_PHOTO.src} alt="Everyone at the shower, with Janelle in the middle" width={SHOWER_PHOTO.width} height={SHOWER_PHOTO.height} sizes="(max-width: 480px) 86vw, 400px" priority />
-              <span className="ty-print-caption">the whole crew · tap to see everyone</span>
             </button>}
             <p className="ty-front-foot">Rohnert Park, CA · 09.26.26</p>
             <span className="ty-tap">{FLIP_ICON}Tap or peel the corner</span>
