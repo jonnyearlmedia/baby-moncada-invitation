@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { createAdminServerClient } from "@/lib/supabase-server";
 import { DEFAULT_THANK_YOU_SETTINGS, THANK_YOU_BUCKET, type ThankYouNote, type ThankYouPostcard, type ThankYouSettings } from "@/lib/thank-you";
+import { THANK_YOU_DRAFTS } from "@/lib/thank-you-drafts";
 
 // Like the guestbook, thank yous live as small JSON files in one storage
 // bucket, so they need no database migration. This bucket is private: only the
@@ -124,11 +125,14 @@ export async function getThankYouPostcard(slug: string, preview: boolean): Promi
   const household = await findHousehold(slug);
   if (!household) return null;
   const note = await getThankYouNote(household.id);
+  // A preview shows the draft until a note is saved, so drafts can be checked
+  // and shared as examples. Live postcards only ever show saved notes.
+  const draft = preview ? THANK_YOU_DRAFTS[household.slug] : undefined;
   return {
     slug: household.slug,
     greeting: household.message_greeting,
     addressee: household.invitation_label,
-    gift: note?.gift.trim() ?? "",
-    note: note?.note.trim() || settings.defaultNote,
+    gift: note?.gift.trim() || draft?.gift || "",
+    note: note?.note.trim() || draft?.note || settings.defaultNote,
   };
 }

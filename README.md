@@ -66,7 +66,7 @@ After the shower, every invitation link becomes that household's thank you postc
 
 The dashboard's Thank Yous section holds a gift line and personal note per household, a general note for anyone without one, and the text message template. Copy message copies the text and marks that household sent. Postcards stay off until the host turns them on, so links keep showing the arrived boarding pass until then; `?postcard=preview` on any invitation link shows its postcard early. When live, the link preview switches to `public/thank-you-og.png`.
 
-Notes and settings live as JSON files in the private `thank-yous` storage bucket, which creates itself, so no migration is needed. First drafts can ship in `lib/thank-you-drafts.ts`, keyed by slug; they prefill the dashboard and never reach a postcard until saved. To put the shower photo inside the front's block letters, add it to `public/` and set `SHOWER_PHOTO` in `lib/thank-you.ts`.
+Notes and settings live as JSON files in the private `thank-yous` storage bucket, which creates itself, so no migration is needed. First drafts can ship in `lib/thank-you-drafts.ts`, keyed by slug; they prefill the dashboard and show on a `?postcard=preview` link, but never on a live postcard until saved. To put the shower photo inside the front's block letters, add it to `public/` and set `SHOWER_PHOTO` in `lib/thank-you.ts`.
 
 ## Guestbook photos
 
