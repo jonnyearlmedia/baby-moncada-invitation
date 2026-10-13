@@ -48,13 +48,24 @@ export async function loadPhoto(file: File) {
   }
 }
 
-// Crops like object-fit: cover, biased upward because selfies put faces in the top half.
-function drawCover(ctx: CanvasRenderingContext2D, image: HTMLImageElement, x: number, y: number, w: number, h: number) {
-  const scale = Math.max(w / image.naturalWidth, h / image.naturalHeight);
+// Where a guest placed their photo: the image point (0 to 1 on each axis) to
+// center in the frame, and how far past a plain cover fit to zoom.
+export type PhotoCrop = { x: number; y: number; zoom: number };
+
+export const MAX_ZOOM = 4;
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+// Crops like object-fit: cover. Without a crop it biases upward, because
+// selfies put faces in the top half.
+function drawCover(ctx: CanvasRenderingContext2D, image: HTMLImageElement, x: number, y: number, w: number, h: number, crop?: PhotoCrop) {
+  const scale = Math.max(w / image.naturalWidth, h / image.naturalHeight) * (crop?.zoom ?? 1);
   const sw = w / scale;
   const sh = h / scale;
-  const sx = (image.naturalWidth - sw) / 2;
-  const sy = (image.naturalHeight - sh) * 0.4;
+  const sx = crop ? clamp(crop.x * image.naturalWidth - sw / 2, 0, image.naturalWidth - sw) : (image.naturalWidth - sw) / 2;
+  const sy = crop ? clamp(crop.y * image.naturalHeight - sh / 2, 0, image.naturalHeight - sh) : (image.naturalHeight - sh) * 0.4;
   ctx.drawImage(image, sx, sy, sw, sh, x, y, w, h);
 }
 
@@ -68,7 +79,7 @@ function spaced(ctx: CanvasRenderingContext2D, value: string) {
   if ("letterSpacing" in ctx) (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = value;
 }
 
-function drawBoarding(ctx: CanvasRenderingContext2D, image: HTMLImageElement, fonts: Fonts) {
+function drawBoarding(ctx: CanvasRenderingContext2D, image: HTMLImageElement, fonts: Fonts, crop?: PhotoCrop) {
   ctx.fillStyle = PAPER;
   ctx.fillRect(0, 0, FRAME_WIDTH, FRAME_HEIGHT);
 
@@ -85,7 +96,7 @@ function drawBoarding(ctx: CanvasRenderingContext2D, image: HTMLImageElement, fo
 
   ctx.save();
   roundedClip(ctx, 60, 190, 960, 820, 20);
-  drawCover(ctx, image, 60, 190, 960, 820);
+  drawCover(ctx, image, 60, 190, 960, 820, crop);
   ctx.restore();
 
   ctx.strokeStyle = "rgba(24,62,93,.35)";
@@ -127,10 +138,10 @@ function drawBoarding(ctx: CanvasRenderingContext2D, image: HTMLImageElement, fo
   }
 }
 
-function drawPolaroid(ctx: CanvasRenderingContext2D, image: HTMLImageElement, fonts: Fonts) {
+function drawPolaroid(ctx: CanvasRenderingContext2D, image: HTMLImageElement, fonts: Fonts, crop?: PhotoCrop) {
   ctx.fillStyle = "#fbfaf6";
   ctx.fillRect(0, 0, FRAME_WIDTH, FRAME_HEIGHT);
-  drawCover(ctx, image, 70, 70, 940, 1000);
+  drawCover(ctx, image, 70, 70, 940, 1000, crop);
   ctx.strokeStyle = "rgba(0,0,0,.08)";
   ctx.lineWidth = 2;
   ctx.strokeRect(70, 70, 940, 1000);
@@ -147,8 +158,8 @@ function drawPolaroid(ctx: CanvasRenderingContext2D, image: HTMLImageElement, fo
   ctx.fillText("09 · 26 · 26", FRAME_WIDTH / 2, 1276);
 }
 
-function drawStamp(ctx: CanvasRenderingContext2D, image: HTMLImageElement, fonts: Fonts) {
-  drawCover(ctx, image, 0, 0, FRAME_WIDTH, FRAME_HEIGHT);
+function drawStamp(ctx: CanvasRenderingContext2D, image: HTMLImageElement, fonts: Fonts, crop?: PhotoCrop) {
+  drawCover(ctx, image, 0, 0, FRAME_WIDTH, FRAME_HEIGHT, crop);
   ctx.strokeStyle = PAPER;
   ctx.lineWidth = 56;
   ctx.strokeRect(0, 0, FRAME_WIDTH, FRAME_HEIGHT);
@@ -211,7 +222,7 @@ function toBlob(canvas: HTMLCanvasElement, quality: number) {
   return new Promise<Blob>((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Photo could not be prepared")), "image/jpeg", quality));
 }
 
-export async function renderFrame(image: HTMLImageElement, frame: GuestbookFrame, maxBytes: number) {
+export async function renderFrame(image: HTMLImageElement, frame: GuestbookFrame, maxBytes: number, crop?: PhotoCrop) {
   const fonts = readFonts();
   await ensureFonts(fonts);
   const canvas = document.createElement("canvas");
@@ -219,10 +230,10 @@ export async function renderFrame(image: HTMLImageElement, frame: GuestbookFrame
   canvas.height = FRAME_HEIGHT;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas is not available");
-  if (frame === "boarding") drawBoarding(ctx, image, fonts);
-  else if (frame === "polaroid") drawPolaroid(ctx, image, fonts);
-  else if (frame === "stamp") drawStamp(ctx, image, fonts);
-  else drawCover(ctx, image, 0, 0, FRAME_WIDTH, FRAME_HEIGHT);
+  if (frame === "boarding") drawBoarding(ctx, image, fonts, crop);
+  else if (frame === "polaroid") drawPolaroid(ctx, image, fonts, crop);
+  else if (frame === "stamp") drawStamp(ctx, image, fonts, crop);
+  else drawCover(ctx, image, 0, 0, FRAME_WIDTH, FRAME_HEIGHT, crop);
   for (const quality of [0.86, 0.74, 0.6]) {
     const blob = await toBlob(canvas, quality);
     if (blob.size <= maxBytes) return blob;

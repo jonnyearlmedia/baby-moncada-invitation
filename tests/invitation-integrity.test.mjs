@@ -108,7 +108,8 @@ test("registry refreshes every current Amazon page and preserves registry-linked
   assert.ok(amazonHandoff > -1 && amazonHandoff < productList);
   assert.doesNotMatch(page, /Babylist/);
   assert.doesNotMatch(page, /className="registry-footer"/);
-  assert.match(workflow, /cron: "17 \*\/6 \* \* \*"/);
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.doesNotMatch(workflow, /cron:/);
   assert.match(workflow, /REGISTRY_SYNC_TOKEN/);
   assert.match(scheduledSync, /chromium\.launch/);
   assert.match(scheduledSync, /visitor-view-load-more-items/);
@@ -189,4 +190,36 @@ test("guestbook validates uploads server side and lets hosts hide entries", asyn
   assert.match(adminRoute, /hasHostSession/);
   assert.match(dashboard, /<GuestbookModeration \/>/);
   for (const frame of ["boarding", "polaroid", "stamp", "none"]) assert.match(frames, new RegExp(`id: "${frame}"`));
+});
+
+test("thank you postcards stay private, host gated, and off until turned on", async () => {
+  const [store, adminRoute, page, postcard, dashboard] = await Promise.all([
+    read("lib/thank-you-store.ts"),
+    read("app/api/admin/thank-yous/route.ts"),
+    read("app/invite/[slug]/page.tsx"),
+    read("app/invite/[slug]/thank-you-postcard.tsx"),
+    read("app/dashboard/dashboard-client.tsx"),
+  ]);
+  assert.match(store, /createBucket\(THANK_YOU_BUCKET, \{ public: false/);
+  assert.match(store, /if \(!settings\.live && !preview\) return null/);
+  for (const method of ["GET", "PUT", "PATCH"]) assert.match(adminRoute, new RegExp(`export async function ${method}\\([^)]*\\) \\{\\n  if \\(!\\(await hasHostSession\\(\\)\\)\\) return unauthorized\\(\\);`));
+  assert.match(adminRoute, /includes\("\{\{link\}\}"\)/);
+  assert.match(page, /if \(postcard\) return <ThankYouPostcardPage/);
+  assert.match(page, /return <Home inviteSlug=\{slug\} \/>/);
+  assert.match(page, /thank-you-og\.png/);
+  assert.match(postcard, /PHOTO_ALBUM_URL/);
+  assert.match(postcard, /REGISTRY_URL/);
+  assert.doesNotMatch(postcard, /\/guestbook\/book/);
+  assert.match(postcard, /BABY_NAME/);
+  assert.match(dashboard, /<ThankYouManager /);
+});
+
+test("guestbook offers party, any, and camera photos, with placement for camera roll picks", async () => {
+  const [client, frames] = await Promise.all([read("app/guestbook/guestbook-client.tsx"), read("lib/guestbook-frames.ts")]);
+  assert.match(client, /accept="image\/\*" capture="user"/);
+  assert.match(client, /<input ref=\{libraryRef\} className="gb-hidden-input" type="file" accept="image\/\*" onChange/);
+  for (const source of ["party", "any", "camera"]) assert.match(client, new RegExp(`choosePhoto\\("${source}"\\)`));
+  assert.match(client, /Skip the photo and just write/);
+  assert.match(client, /step === "position"/);
+  assert.match(frames, /renderFrame\(image: HTMLImageElement, frame: GuestbookFrame, maxBytes: number, crop\?: PhotoCrop\)/);
 });

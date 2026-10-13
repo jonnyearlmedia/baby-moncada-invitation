@@ -381,3 +381,28 @@ details[open] .household-body { animation:panel-in .24s ease-out; }
 .guestbook-admin-list strong { display:block;font-size:14px; }
 .guestbook-admin-list p { margin:3px 0 4px;color:#38556a!important;font-size:13px;line-height:1.4;white-space:pre-wrap;overflow-wrap:anywhere; }
 .guestbook-admin-list time { color:#647b8a;font-size:11px; }
+
+/* Thank you postcards */
+.thank-you-admin { border-color:#e6c98f;background:linear-gradient(150deg,#fffdf8 0,#fbf3e3 100%); }
+.thank-you-live { display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:16px;padding:16px 18px;border:1px solid #d9c49b;border-radius:14px;background:#fff; }
+.thank-you-live.on { border-color:#8cc3a3;background:#effaf3; }
+.thank-you-live strong { font-family:Georgia,serif;font-size:18px; }
+.thank-you-live p { margin:4px 0 0;font-size:13px; }
+.thank-you-live button { flex-shrink:0; }
+.thank-you-settings { margin-bottom:6px; }
+.thank-you-settings>.admin-primary { margin:0 14px 14px; }
+.thank-you-settings textarea { min-height:110px; }
+.thank-you-list { display:grid;gap:12px; }
+.thank-you-card { padding:16px;border:1px solid rgba(24,62,93,.14);border-radius:16px;background:#fff; }
+.thank-you-card.sent { border-color:#8cc3a3; }
+.thank-you-card header { display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px; }
+.thank-you-card header strong { display:block;font-family:Georgia,serif;font-size:18px; }
+.thank-you-card header span { color:#60788a;font-size:12px; }
+.thank-you-card .field-grid { margin:0; }
+.thank-you-card textarea { min-height:120px; }
+.thank-you-card .optional { color:#8a9aa6;font-weight:400; }
+.thank-you-card .copy-row { margin:12px 0 0; }
+.thank-you-card .copy-row button:disabled { cursor:default;opacity:.55; }
+.thank-you-status { flex-shrink:0;padding:4px 10px;border-radius:999px;color:#7a4d1c;background:#fbeed3;font-size:11px;font-style:normal;font-weight:700; }
+.thank-you-card.sent .thank-you-status { color:#285c43;background:#dff3e8; }
+@media(max-width:640px){ .thank-you-live,.thank-you-card header { flex-direction:column;align-items:stretch; } .thank-you-status { align-self:flex-start; } }
