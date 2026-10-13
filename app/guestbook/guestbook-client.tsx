@@ -233,7 +233,7 @@ export default function GuestbookClient() {
         </button>
         {photos.length > 0 && <button className="gb-strip" onClick={() => setStep("wall")}>
           <span className="gb-strip-photos" aria-hidden="true">{photos.map((entry) => <img key={entry.id} src={entry.photoUrl ?? ""} alt="" width={FRAME_WIDTH} height={FRAME_HEIGHT} loading="lazy" decoding="async" />)}</span>
-          <span className="gb-strip-caption">{count} {count === 1 ? "guest has" : "guests have"} signed! Tap to read</span>
+          <span className="gb-strip-caption"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 6c-2-1.5-5-2-8-1.5V19c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V4.5C17 4 14 4.5 12 6Z" /><path d="M12 6v14.5" /></svg>Read the guestbook · {count} signed<i aria-hidden="true">›</i></span>
         </button>}
         {photos.length === 0 && <button className="gb-button" onClick={() => setStep("wall")}>Read the guestbook{count ? ` · ${count} ${count === 1 ? "entry" : "entries"}` : ""}</button>}
       </section>}
@@ -253,15 +253,22 @@ export default function GuestbookClient() {
       </nav>}
 
       {step === "photo" && <section className="gb-screen">
-        <StepHeader index={1} title="Add your photo!" onBack={() => setStep("welcome")} />
-        <p className="gb-lede">Pull one from the party, use any photo of you that you love, or snap one right now.</p>
+        <StepHeader index={1} title="Pick your guestbook photo!" onBack={() => setStep("welcome")} />
+        <div className="gb-entry-preview" aria-hidden="true">
+          <span className="gb-entry-photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="9" r="3.5" /><path d="M5 20c1.2-3.6 4-5.5 7-5.5s5.8 1.9 7 5.5" /></svg><b>Your photo</b></span>
+          <span className="gb-entry-note"><i /><i /><i /><b>Your note</b></span>
+        </div>
+        <p className="gb-lede">This photo goes on your page in the Moncadas&apos; guestbook, right next to your note.</p>
+        <p className="gb-pick">Pick one</p>
         <div className="gb-options">
-          <PhotoOption icon="party" title="A photo from the party" detail="Pick one from your camera roll" busy={preparing === "party"} disabled={Boolean(preparing)} featured onClick={() => choosePhoto("party")} />
-          <PhotoOption icon="any" title="Any photo of you" detail="Your favorite, from anywhere" busy={preparing === "any"} disabled={Boolean(preparing)} onClick={() => choosePhoto("any")} />
-          <PhotoOption icon="camera" title="Take one right now" detail="Opens your camera" busy={preparing === "camera"} disabled={Boolean(preparing)} onClick={() => choosePhoto("camera")} />
+          <PhotoOption icon="party" title="A photo from the party" detail="Best if you’re in it! Not in any? Any shot from the shower works." busy={preparing === "party"} disabled={Boolean(preparing)} featured onClick={() => choosePhoto("party")} />
+          <p className="gb-or" aria-hidden="true"><span>or</span></p>
+          <PhotoOption icon="any" title="Any photo of you" detail="No party pics of you? Use a favorite from anywhere." busy={preparing === "any"} disabled={Boolean(preparing)} onClick={() => choosePhoto("any")} />
+          <p className="gb-or" aria-hidden="true"><span>or</span></p>
+          <PhotoOption icon="camera" title="Take one right now" detail="Snap a quick selfie with your camera." busy={preparing === "camera"} disabled={Boolean(preparing)} onClick={() => choosePhoto("camera")} />
         </div>
         {error && <p className="gb-error" role="alert">{error}</p>}
-        <button className="gb-text-button" onClick={skipPhoto}>Skip the photo and just write</button>
+        <button className="gb-text-button" onClick={skipPhoto}>Skip the photo and just write a note</button>
       </section>}
 
       {step === "position" && picked && <section className="gb-screen">
