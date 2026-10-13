@@ -98,7 +98,6 @@
 .ty-links i { font-size:22px;font-style:normal;opacity:.6; }
 .ty-link-icon { display:grid;place-items:center;width:40px;height:40px;border-radius:12px;color:var(--ty-paper);background:var(--ty-navy); }
 .ty-link-icon svg { width:20px;height:20px; }
-.ty-registry { display:block;margin:18px 0 0;color:var(--ty-muted);font-size:12px;text-align:center; }
 .ty-foot { margin:26px 0 0;color:var(--ty-muted);font-family:var(--font-ticket-mono),monospace;font-size:9.5px;font-weight:600;letter-spacing:.18em;text-align:center;text-transform:uppercase; }
 
 @media (max-width:360px) { .ty-shell { padding:0 12px; } .ty-letter { font-size:19px; } .ty-postcard-label { font-size:22px; } }

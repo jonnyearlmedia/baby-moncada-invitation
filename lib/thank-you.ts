@@ -5,7 +5,7 @@ export const BABY_NAME = "Adrian John";
 
 // Drop the shower photo in /public and point this at it. Without one, the
 // postcard front paints its letters with a sunset instead.
-export const SHOWER_PHOTO: { src: string; width: number; height: number } | null = null;
+export const SHOWER_PHOTO: { src: string; width: number; height: number } | null = { src: "/shower-photo.jpg", width: 1865, height: 1035 };
 
 export type ThankYouSettings = {
   live: boolean;

@@ -82,18 +82,17 @@ export default function ThankYouPostcardPage({ postcard }: { postcard: ThankYouP
           <span><strong>Add your photos to the album</strong><small>Got pictures from the shower? Drop them in {PHOTO_ALBUM_NAME}. No Apple account needed.</small></span>
           <i aria-hidden="true">›</i>
         </a>
-        <Link href="/guestbook/book">
-          <span className="ty-link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 6c-2-1.5-5-2-8-1.5V19c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V4.5C17 4 14 4.5 12 6Z" /><path d="M12 6v14.5" /></svg></span>
-          <span><strong>Flip through the guestbook</strong><small>Every photo and note everyone left for the Moncadas.</small></span>
-          <i aria-hidden="true">›</i>
-        </Link>
         <Link href="/guestbook">
           <span className="ty-link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" /><path d="m13.5 6.5 4 4" /></svg></span>
           <span><strong>Sign the guestbook</strong><small>Missed it at the party? Add a photo and a note anytime.</small></span>
           <i aria-hidden="true">›</i>
         </Link>
+        <a href={REGISTRY_URL} target="_blank" rel="noopener noreferrer">
+          <span className="ty-link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="8" width="18" height="4" rx="1" /><path d="M5 12v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8M12 8v13" /><path d="M12 8C10.5 4.5 6.5 3.5 6.5 6.2 6.5 8 12 8 12 8Zm0 0c1.5-3.5 5.5-4.5 5.5-1.8C17.5 8 12 8 12 8Z" /></svg></span>
+          <span><strong>The registry</strong><small>Still open on Amazon if you want to send something for Adrian John.</small></span>
+          <i aria-hidden="true">›</i>
+        </a>
       </nav>
-      <a className="ty-registry" href={REGISTRY_URL} target="_blank" rel="noopener noreferrer">The registry is still open on Amazon ›</a>
       <footer className="ty-foot">Moncada Airways · Next stop: {BABY_NAME}</footer>
     </div>
   </main>;

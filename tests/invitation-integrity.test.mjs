@@ -208,7 +208,8 @@ test("thank you postcards stay private, host gated, and off until turned on", as
   assert.match(page, /return <Home inviteSlug=\{slug\} \/>/);
   assert.match(page, /thank-you-og\.png/);
   assert.match(postcard, /PHOTO_ALBUM_URL/);
-  assert.match(postcard, /\/guestbook\/book/);
+  assert.match(postcard, /REGISTRY_URL/);
+  assert.doesNotMatch(postcard, /\/guestbook\/book/);
   assert.match(postcard, /BABY_NAME/);
   assert.match(dashboard, /<ThankYouManager /);
 });
