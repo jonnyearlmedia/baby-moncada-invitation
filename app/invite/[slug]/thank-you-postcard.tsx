@@ -2,9 +2,10 @@
 
 import { Anton } from "next/font/google";
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { PHOTO_ALBUM_NAME, PHOTO_ALBUM_URL, REGISTRY_URL } from "@/lib/event-links";
 import { BABY_NAME, SHOWER_PHOTO, type ThankYouPostcard } from "@/lib/thank-you";
+import PeelCorner from "./peel-corner";
 import "./thank-you.css";
 
 const blockLetters = Anton({ weight: "400", subsets: ["latin"], variable: "--font-postcard-block" });
@@ -14,6 +15,8 @@ const FLIP_ICON = <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 export default function ThankYouPostcardPage({ postcard }: { postcard: ThankYouPostcard }) {
   const [flipped, setFlipped] = useState(false);
   const [touched, setTouched] = useState(false);
+  const frontRef = useRef<HTMLElement>(null);
+  const paperRef = useRef<HTMLDivElement>(null);
 
   function flip() {
     setTouched(true);
@@ -32,7 +35,8 @@ export default function ThankYouPostcardPage({ postcard }: { postcard: ThankYouP
       <div className={`ty-card${flipped ? " flipped" : ""}${touched ? "" : " untouched"}`} role="button" tabIndex={0} aria-pressed={flipped} aria-label={flipped ? "Postcard, showing the note. Flip to the front." : "Postcard, showing the front. Flip to read the note."}
         onClick={flip} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); flip(); } }}>
         <div className="ty-card-inner">
-          <section className="ty-face ty-front" aria-hidden={flipped} inert={flipped}>
+          <section ref={frontRef} className="ty-face ty-front" aria-hidden={flipped} inert={flipped}>
+            <div ref={paperRef} className="ty-front-paper">
             <div className="ty-scene" aria-hidden="true">
               <span className="ty-sun" />
               <span className="ty-cloud one" /><span className="ty-cloud two" /><span className="ty-cloud three" />
@@ -42,8 +46,9 @@ export default function ThankYouPostcardPage({ postcard }: { postcard: ThankYouP
             <p className="ty-greetings">Greetings from</p>
             <p className={`ty-letters${SHOWER_PHOTO ? " photo" : ""}`} style={letterFill}><span>Baby</span><span>Moncada</span></p>
             <p className="ty-front-foot">Rohnert Park, CA · 09.26.26</p>
-            <span className="ty-tap">{FLIP_ICON}Tap to flip it over</span>
-            <span className="ty-peel" aria-hidden="true" />
+            <span className="ty-tap">{FLIP_ICON}Tap or peel the corner</span>
+            </div>
+            <PeelCorner faceRef={frontRef} paperRef={paperRef} active={!flipped} onTouch={() => setTouched(true)} onPeeled={flip} />
           </section>
 
           <section className="ty-face ty-back" aria-hidden={!flipped} inert={!flipped}>
