@@ -1,8 +1,9 @@
 "use client";
 
 import { Anton } from "next/font/google";
+import Image from "next/image";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PHOTO_ALBUM_NAME, PHOTO_ALBUM_URL, REGISTRY_URL } from "@/lib/event-links";
 import { BABY_NAME, SHOWER_PHOTO, type ThankYouPostcard } from "@/lib/thank-you";
 import PeelCorner from "./peel-corner";
@@ -10,11 +11,14 @@ import "./thank-you.css";
 
 const blockLetters = Anton({ weight: "400", subsets: ["latin"], variable: "--font-postcard-block" });
 
+const JANELLE_X = 0.51;
+
 const FLIP_ICON = <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8" /><path d="M4 3v5h5" /><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16" /><path d="M20 21v-5h-5" /></svg>;
 
 export default function ThankYouPostcardPage({ postcard }: { postcard: ThankYouPostcard }) {
   const [flipped, setFlipped] = useState(false);
   const [touched, setTouched] = useState(false);
+  const [viewing, setViewing] = useState(false);
   const frontRef = useRef<HTMLElement>(null);
   const paperRef = useRef<HTMLDivElement>(null);
 
@@ -24,7 +28,6 @@ export default function ThankYouPostcardPage({ postcard }: { postcard: ThankYouP
   }
 
   const paragraphs = postcard.note.split(/\n\s*\n|\n/).map((line) => line.trim()).filter(Boolean);
-  const letterFill = SHOWER_PHOTO ? { backgroundImage: `url(${SHOWER_PHOTO.src})` } : undefined;
 
   return <main className={`ty-page ${blockLetters.variable}`}>
     <div className="ty-shell">
@@ -44,7 +47,11 @@ export default function ThankYouPostcardPage({ postcard }: { postcard: ThankYouP
               <span className="ty-hills" />
             </div>
             <p className="ty-greetings">Greetings from</p>
-            <p className={`ty-letters${SHOWER_PHOTO ? " photo" : ""}`} style={letterFill}><span>Baby</span><span>Moncada</span></p>
+            <p className="ty-letters"><span>Baby</span><span>Moncada</span></p>
+            {SHOWER_PHOTO && <button type="button" className="ty-print" aria-label="See the whole shower photo" onClick={(event) => { event.stopPropagation(); setViewing(true); }}>
+              <Image src={SHOWER_PHOTO.src} alt="Everyone at the shower, with Janelle in the middle" width={SHOWER_PHOTO.width} height={SHOWER_PHOTO.height} sizes="(max-width: 480px) 86vw, 400px" priority />
+              <span className="ty-print-caption">the whole crew · tap to see everyone</span>
+            </button>}
             <p className="ty-front-foot">Rohnert Park, CA · 09.26.26</p>
             <span className="ty-tap">{FLIP_ICON}Tap or peel the corner</span>
             </div>
@@ -76,17 +83,18 @@ export default function ThankYouPostcardPage({ postcard }: { postcard: ThankYouP
       </div>
       <button className="ty-flip-button" onClick={flip}>{FLIP_ICON}{flipped ? "See the front" : "Flip it to read your note"}</button>
 
+      <p className="ty-links-label">Before you go</p>
       <nav className="ty-links" aria-label="More from the shower">
-        <a href={PHOTO_ALBUM_URL} target="_blank" rel="noopener noreferrer">
-          <span className="ty-link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="9" cy="10" r="1.6" /><path d="m21 16-5-5-8 8" /></svg></span>
-          <span><strong>Add your photos to the album</strong><small>Got pictures from the shower? Drop them in {PHOTO_ALBUM_NAME}. No Apple account needed.</small></span>
-          <i aria-hidden="true">›</i>
-        </a>
         <Link href="/guestbook">
           <span className="ty-link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" /><path d="m13.5 6.5 4 4" /></svg></span>
           <span><strong>Sign the guestbook</strong><small>Missed it at the party? Add a photo and a note anytime.</small></span>
           <i aria-hidden="true">›</i>
         </Link>
+        <a href={PHOTO_ALBUM_URL} target="_blank" rel="noopener noreferrer">
+          <span className="ty-link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="9" cy="10" r="1.6" /><path d="m21 16-5-5-8 8" /></svg></span>
+          <span><strong>Add your photos to the album</strong><small>Got pictures from the shower? Drop them in {PHOTO_ALBUM_NAME}. No Apple account needed.</small></span>
+          <i aria-hidden="true">›</i>
+        </a>
         <a href={REGISTRY_URL} target="_blank" rel="noopener noreferrer">
           <span className="ty-link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="8" width="18" height="4" rx="1" /><path d="M5 12v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8M12 8v13" /><path d="M12 8C10.5 4.5 6.5 3.5 6.5 6.2 6.5 8 12 8 12 8Zm0 0c1.5-3.5 5.5-4.5 5.5-1.8C17.5 8 12 8 12 8Z" /></svg></span>
           <span><strong>The registry</strong><small>Still open on Amazon if you want to send something for Adrian John.</small></span>
@@ -94,8 +102,33 @@ export default function ThankYouPostcardPage({ postcard }: { postcard: ThankYouP
         </a>
       </nav>
       <footer className="ty-foot">Moncada Airways · Next stop: {BABY_NAME}</footer>
+      {viewing && SHOWER_PHOTO && <PhotoViewer src={SHOWER_PHOTO.src} width={SHOWER_PHOTO.width} height={SHOWER_PHOTO.height} onClose={() => setViewing(false)} />}
     </div>
   </main>;
+}
+
+// The group photo, full screen at a height where faces read, swiped sideways
+// to find everyone. It opens centered on Janelle, who stands just right of
+// the middle of the frame.
+function PhotoViewer({ src, width, height, onClose }: { src: string; width: number; height: number; onClose: () => void }) {
+  const stripRef = useRef<HTMLDivElement>(null);
+  const centerOnJanelle = () => {
+    const strip = stripRef.current;
+    if (strip) strip.scrollLeft = strip.scrollWidth * JANELLE_X - strip.clientWidth / 2;
+  };
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
+  }, [onClose]);
+  return <div className="ty-viewer" role="dialog" aria-modal="true" aria-label="The whole shower photo">
+    <button className="ty-viewer-close" onClick={onClose} aria-label="Close the photo">×</button>
+    <div ref={stripRef} className="ty-viewer-strip">
+      <Image src={src} alt="Everyone at the shower" width={width} height={height} sizes="200vw" quality={90} onLoad={() => requestAnimationFrame(centerOnJanelle)} />
+    </div>
+    <p className="ty-viewer-hint">Swipe to find everyone ⟷</p>
+  </div>;
 }
 
 // A commemorative stamp: perforated edge, a little sky, and his name.
